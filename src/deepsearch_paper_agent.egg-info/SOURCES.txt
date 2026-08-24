@@ -1,0 +1,11 @@
+README.md
+pyproject.toml
+src/deepsearch_agent/__init__.py
+src/deepsearch_paper_agent.egg-info/PKG-INFO
+src/deepsearch_paper_agent.egg-info/SOURCES.txt
+src/deepsearch_paper_agent.egg-info/dependency_links.txt
+src/deepsearch_paper_agent.egg-info/requires.txt
+src/deepsearch_paper_agent.egg-info/top_level.txt
+tests/test_config.py
+tests/test_llm.py
+tests/test_project_name.py
