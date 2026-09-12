@@ -149,6 +149,50 @@ def test_graph_small_context_preserves_full_evidence():
     state = {'evidence': [small_chunk], 'question': '灯塔？', 'history': []}
     items = wf.context(state)
     assert items[0]['text'] == '灯塔闪白光。'
+    # Chunks without page_spans keep an empty pages list (no synthetic excerpts).
+    assert items[0]['pages'] == []
+
+
+def test_graph_truncation_does_not_reinflate_via_page_excerpts():
+    """When text is truncated, page excerpts must not restore the full original."""
+    from deepsearch_agent.tokens import estimate_tokens
+    original = '灯塔每隔十二秒闪白光。' * 100
+    chunk = TextChunk(
+        text=original,
+        source_path='a.pdf',
+        page_number=1,
+        page_end=1,
+        chunk_index=0,
+        page_spans=[{'page_number': 1, 'start': 0, 'end': len(original),
+                     'chunk_start': 0, 'chunk_end': len(original)}],
+    )
+    chunk.validate_structure()
+    wf = ResearchWorkflowForTest(Library(), context_window=512, max_output_tokens=128)
+    state = {'evidence': [chunk, chunk], 'question': '灯塔？', 'history': []}
+    items = wf.context(state)
+    budget = wf._evidence_budget(state)
+    assert len(items[0]['text']) < len(original)
+    # Truncated path keeps page numbers but not page bodies.
+    assert items[0]['pages'] == [{'page_number': 1, 'text': ''}]
+    assert all(p['text'] == '' for item in items for p in item['pages'])
+    # Text+metadata should stay near the (floored) evidence budget.
+    body_tokens = sum(estimate_tokens(item['text']) for item in items)
+    assert body_tokens <= max(budget, 100)
+
+
+def test_graph_evidence_budget_accounts_for_history_and_tasks():
+    short = {'question': 'q', 'history': [], 'evidence': [TextChunk(text='x', source_path='a.pdf', page_number=1, chunk_index=0)]}
+    long = {
+        'question': 'q',
+        'history': [{'role': 'user', 'content': '很长的历史。' * 80}] * 6,
+        'tasks': [{'question': '子问题' * 40, 'status': 'pending'}] * 6,
+        'claims': [{'text': '结论' * 50, 'citations': [1]}] * 6,
+        'issues': ['问题说明' * 30] * 4,
+        'missing_answerable': [{'question': '漏项' * 40, 'citations': [1]}] * 4,
+        'evidence': short['evidence'],
+    }
+    wf = ResearchWorkflowForTest(Library())
+    assert wf._evidence_budget(long) < wf._evidence_budget(short)
 
 
 class ResearchWorkflowForTest:
