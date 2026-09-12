@@ -1,0 +1,541 @@
+{
+  "version": 1,
+  "status": "draft_assistant_grounded_not_human_reviewed",
+  "corpus_kind": "synthetic fixture and fictional story; not scientific papers",
+  "label_policy": "one sufficient evidence page per question; not exhaustive relevance judgments",
+  "split_policy": "odd PDF pages dev, even pages test; same documents in both, not independent generalization evidence",
+  "documents": [
+    {
+      "source_path": "pdf://2c96ac259b06f312dcabf224d6a38b4d6bffbb697f8a86963c65bb3f5c8b68e5/section-integration-fixture.pdf",
+      "title": "section-integration-fixture.pdf",
+      "pdf_sha256": "2c96ac259b06f312dcabf224d6a38b4d6bffbb697f8a86963c65bb3f5c8b68e5"
+    },
+    {
+      "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+      "title": "雾港来信-检索测试.pdf",
+      "pdf_sha256": "d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c"
+    }
+  ],
+  "cases": [
+    {
+      "id": "q001",
+      "question": "林遥离开青汀镇多久后回来？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 1,
+          "evidence": "她离开这里已经十一年"
+        }
+      ]
+    },
+    {
+      "id": "q002",
+      "question": "老邮局的钟为何停摆？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 1,
+          "evidence": "更换电池时折断了接触弹片"
+        }
+      ]
+    },
+    {
+      "id": "q003",
+      "question": "邮局挂钟停在什么时间？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 1,
+          "evidence": "下午四点十七分"
+        }
+      ]
+    },
+    {
+      "id": "q004",
+      "question": "父亲的木匣里留下了什么？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 1,
+          "evidence": "只有一把缺了半颗齿的钥匙"
+        }
+      ]
+    },
+    {
+      "id": "q005",
+      "question": "蓝色铁盒保存了多少封未寄信件？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 2,
+          "evidence": "三十七封未寄出的"
+        }
+      ]
+    },
+    {
+      "id": "q006",
+      "question": "绿色信封上写的收件人是谁？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 2,
+          "evidence": "绿色信封的收件人叫许闻舟"
+        }
+      ]
+    },
+    {
+      "id": "q007",
+      "question": "绿信封的寄件人一栏写了什么？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 2,
+          "evidence": "只写了一个“岑”字"
+        }
+      ]
+    },
+    {
+      "id": "q008",
+      "question": "整理铁盒信件时，最初登记哪些信息？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 2,
+          "evidence": "只记封面的字迹和破损程度"
+        }
+      ]
+    },
+    {
+      "id": "q009",
+      "question": "北岬灯塔的闪光周期和颜色是什么？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 3,
+          "evidence": "每隔十二秒闪一次白光"
+        }
+      ]
+    },
+    {
+      "id": "q010",
+      "question": "南岸码头导航灯怎样闪烁？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 3,
+          "evidence": "每隔六秒闪一次红光"
+        }
+      ]
+    },
+    {
+      "id": "q011",
+      "question": "岑棠以前在镇小学教什么课？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 3,
+          "evidence": "过去在镇小学教音乐"
+        }
+      ]
+    },
+    {
+      "id": "q012",
+      "question": "许闻舟和岑棠约定写到多少页就交换本子？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 3,
+          "evidence": "谁先攒满一百页"
+        }
+      ]
+    },
+    {
+      "id": "q013",
+      "question": "轮渡票背面的线表示航线还是别的路线？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 4,
+          "evidence": "一条避开塌桥的步行路线"
+        }
+      ]
+    },
+    {
+      "id": "q014",
+      "question": "票背路线从哪里出发，经过哪里，到哪里结束？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 4,
+          "evidence": "路线从东栈桥起，经榆树巷"
+        }
+      ]
+    },
+    {
+      "id": "q015",
+      "question": "岑棠在罗婶茶铺通常喝什么？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 4,
+          "evidence": "不加糖的烘青茶"
+        }
+      ]
+    },
+    {
+      "id": "q016",
+      "question": "合影里林遥父亲抱着风琴，是否说明他会弹？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 4,
+          "evidence": "他不会，他只是负责搬运"
+        }
+      ]
+    },
+    {
+      "id": "q017",
+      "question": "岑棠的借书卡藏在哪本书里？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 5,
+          "evidence": "一本旧版植物图谱"
+        }
+      ]
+    },
+    {
+      "id": "q018",
+      "question": "储物柜的密码是多少？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 5,
+          "evidence": "二七四六"
+        }
+      ]
+    },
+    {
+      "id": "q019",
+      "question": "柜子密码源于洪水年份还是学生生日？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 5,
+          "evidence": "四名学生生日的月份"
+        }
+      ]
+    },
+    {
+      "id": "q020",
+      "question": "旧图书室书籍编号以什么开头？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 5,
+          "evidence": "所有藏书都以字母开头"
+        }
+      ]
+    },
+    {
+      "id": "q021",
+      "question": "器材借用单记载林遥父亲借走了什么？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 6,
+          "evidence": "一台便携式录音机"
+        }
+      ]
+    },
+    {
+      "id": "q022",
+      "question": "洪灾后的救济粮存放在哪里？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 6,
+          "evidence": "集中放在磨坊二楼"
+        }
+      ]
+    },
+    {
+      "id": "q023",
+      "question": "洪灾时邮局地下室存的是什么？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 6,
+          "evidence": "空邮袋和一批受潮的课本"
+        }
+      ]
+    },
+    {
+      "id": "q024",
+      "question": "父亲为什么打开又重新封好绿色信封？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 6,
+          "evidence": "为了晾干信纸"
+        }
+      ]
+    },
+    {
+      "id": "q025",
+      "question": "第三盘磁带录下的是排练还是正式演出？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 7,
+          "evidence": "孩子们排练《晚风过桥》的声音"
+        }
+      ]
+    },
+    {
+      "id": "q026",
+      "question": "镇庆正式演出为什么没有录音？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 7,
+          "evidence": "机器的电池耗尽"
+        }
+      ]
+    },
+    {
+      "id": "q027",
+      "question": "许闻舟的本子已经写了多少页？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 7,
+          "evidence": "他写满了八十六页"
+        }
+      ]
+    },
+    {
+      "id": "q028",
+      "question": "唐青修好第三盘磁带前做了什么？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 7,
+          "evidence": "从邻镇借来清洁工具"
+        }
+      ]
+    },
+    {
+      "id": "q029",
+      "question": "阅读站每周哪几天、什么时间开放？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 8,
+          "evidence": "每周三和周六下午两点到六点"
+        }
+      ]
+    },
+    {
+      "id": "q030",
+      "question": "阅读站主钥匙和备用钥匙分别由谁保管？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 8,
+          "evidence": "钥匙由唐青保管，顾师傅"
+        }
+      ]
+    },
+    {
+      "id": "q031",
+      "question": "邮局搬迁后蓝色铁盒交到哪里？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 8,
+          "evidence": "把蓝色铁盒交给社区档案室"
+        }
+      ]
+    },
+    {
+      "id": "q032",
+      "question": "未寄出的信是否被公开展览？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://d661c34809bcda8cb37bcc52000b4ce86fcd464cd2fc2973039f6336de58279c/%E9%9B%BE%E6%B8%AF%E6%9D%A5%E4%BF%A1-%E6%A3%80%E7%B4%A2%E6%B5%8B%E8%AF%95.pdf",
+          "page_number": 8,
+          "evidence": "三十七封信并没有被公开展示"
+        }
+      ]
+    },
+    {
+      "id": "q033",
+      "question": "AX-247 仪器的采样频率是多少？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://2c96ac259b06f312dcabf224d6a38b4d6bffbb697f8a86963c65bb3f5c8b68e5/section-integration-fixture.pdf",
+          "page_number": 1,
+          "evidence": "samples at 100 Hz"
+        }
+      ]
+    },
+    {
+      "id": "q034",
+      "question": "合成实验使用了多少张 GPU？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://2c96ac259b06f312dcabf224d6a38b4d6bffbb697f8a86963c65bb3f5c8b68e5/section-integration-fixture.pdf",
+          "page_number": 1,
+          "evidence": "uses two GPUs"
+        }
+      ]
+    },
+    {
+      "id": "q035",
+      "question": "实验是否采用固定随机种子？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://2c96ac259b06f312dcabf224d6a38b4d6bffbb697f8a86963c65bb3f5c8b68e5/section-integration-fixture.pdf",
+          "page_number": 1,
+          "evidence": "a fixed random seed"
+        }
+      ]
+    },
+    {
+      "id": "q036",
+      "question": "AX-247 材料是否属于科学发表论文？",
+      "split": "dev",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://2c96ac259b06f312dcabf224d6a38b4d6bffbb697f8a86963c65bb3f5c8b68e5/section-integration-fixture.pdf",
+          "page_number": 1,
+          "evidence": "not a scientific publication"
+        }
+      ]
+    },
+    {
+      "id": "q037",
+      "question": "合成实验报告的准确率是多少？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://2c96ac259b06f312dcabf224d6a38b4d6bffbb697f8a86963c65bb3f5c8b68e5/section-integration-fixture.pdf",
+          "page_number": 2,
+          "evidence": "accuracy is 87 percent"
+        }
+      ]
+    },
+    {
+      "id": "q038",
+      "question": "校准参考信号是什么颜色？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://2c96ac259b06f312dcabf224d6a38b4d6bffbb697f8a86963c65bb3f5c8b68e5/section-integration-fixture.pdf",
+          "page_number": 2,
+          "evidence": "reference signal is white"
+        }
+      ]
+    },
+    {
+      "id": "q039",
+      "question": "材料是否指定了大学名称或毕业年份？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://2c96ac259b06f312dcabf224d6a38b4d6bffbb697f8a86963c65bb3f5c8b68e5/section-integration-fixture.pdf",
+          "page_number": 2,
+          "evidence": "No university name or graduation year is specified"
+        }
+      ]
+    },
+    {
+      "id": "q040",
+      "question": "合成材料中的事实用于验证什么流程？",
+      "split": "test",
+      "review_status": "draft_assistant_grounded",
+      "relevant": [
+        {
+          "source_path": "pdf://2c96ac259b06f312dcabf224d6a38b4d6bffbb697f8a86963c65bb3f5c8b68e5/section-integration-fixture.pdf",
+          "page_number": 2,
+          "evidence": "verify the document retrieval workflow"
+        }
+      ]
+    }
+  ]
+}
