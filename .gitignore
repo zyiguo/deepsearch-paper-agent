@@ -9,22 +9,34 @@ volumes/
 backups/
 artifacts/
 model_cache/
+output/
+tmp/
 
 # Python
-__pycache__/
+.venv/
+venv/
 *.py[cod]
+__pycache__/
+*.egg-info/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-.venv/
 
 # Node
 node_modules/
 dist/
 coverage/
 
+# Personal notes (do not publish)
+deepsearch-paper-agent-teaching-summary.md
+
 # Editors and operating systems
 .idea/
 .vscode/
 .DS_Store
 Thumbs.db
+
+*.tsbuildinfo
+
+.zcode/
+
