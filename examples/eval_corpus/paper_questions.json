@@ -1,0 +1,79 @@
+[
+  {
+    "id": "q-bert-01",
+    "document": "acl-bert-2019.pdf",
+    "question": "What pre-training corpora does BERT use, and roughly how large are they?",
+    "support_quote": "BooksCorpus (800M words)",
+    "note": "BooksCorpus 800M words + English Wikipedia 2,500M words"
+  },
+  {
+    "id": "q-bert-02",
+    "document": "acl-bert-2019.pdf",
+    "question": "How many parameters do BERT_BASE and BERT_LARGE have?",
+    "support_quote": "Total Parameters=340M",
+    "note": "PDF hyphenates Param-eters for 110M; 340M line is intact"
+  },
+  {
+    "id": "q-bert-03",
+    "document": "acl-bert-2019.pdf",
+    "question": "What WordPiece vocabulary size does BERT use?",
+    "support_quote": "30,000 token vocabulary",
+    "note": "Input representation"
+  },
+  {
+    "id": "q-bert-04",
+    "document": "acl-bert-2019.pdf",
+    "question": "What GLUE score does the paper report, and what is the absolute improvement?",
+    "support_quote": "GLUE score to 80.5%",
+    "note": "Abstract; line-break in PDF but compact form matches"
+  },
+  {
+    "id": "q-bert-05",
+    "document": "acl-bert-2019.pdf",
+    "question": "Besides masked language modeling, what second pre-training task does BERT use?",
+    "support_quote": "next sentence prediction",
+    "note": "NSP objective"
+  },
+  {
+    "id": "q-rag-01",
+    "document": "rag-lewis-2020.pdf",
+    "question": "What serves as the non-parametric memory in RAG, and how is it accessed?",
+    "support_quote": "dense vector index of Wikipedia",
+    "note": "Abstract"
+  },
+  {
+    "id": "q-rag-02",
+    "document": "rag-lewis-2020.pdf",
+    "question": "Which generator architecture and size does the paper use for the parametric memory?",
+    "support_quote": "BART-large",
+    "note": "BART-large, 400M parameters"
+  },
+  {
+    "id": "q-rag-03",
+    "document": "rag-lewis-2020.pdf",
+    "question": "How many documents are in the Wikipedia index after splitting articles into 100-word chunks?",
+    "support_quote": "total of 21M documents",
+    "note": "December 2018 dump"
+  },
+  {
+    "id": "q-rag-04",
+    "document": "rag-lewis-2020.pdf",
+    "question": "What two RAG formulations does the paper compare?",
+    "support_quote": "RAG-Sequence, the model uses the same document",
+    "note": "RAG-Sequence vs RAG-Token"
+  },
+  {
+    "id": "q-rag-05",
+    "document": "rag-lewis-2020.pdf",
+    "question": "On which open-domain QA datasets does the paper report state-of-the-art results?",
+    "support_quote": "open Natural Questions",
+    "note": "NQ / WebQuestions / CuratedTrec"
+  },
+  {
+    "id": "q-cross-papers-01",
+    "document": ["acl-bert-2019.pdf", "rag-lewis-2020.pdf"],
+    "question": "Which paper reports a GLUE score of 80.5%, and which uses a dense Wikipedia index as non-parametric memory?",
+    "support_quote": "GLUE score to 80.5%",
+    "note": "Only BERT gold from this quote; second paper checked via separate RAG questions"
+  }
+]

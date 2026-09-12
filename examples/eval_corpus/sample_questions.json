@@ -1,0 +1,44 @@
+[
+  {
+    "id": "q-rfc8259-01",
+    "document": "rfc8259-text.pdf",
+    "question": "Does RFC 8259 require object member names to be unique, and how strongly is that stated?",
+    "support_quote": "The names within an object SHOULD be unique",
+    "note": "Preserve the SHOULD modality; do not upgrade to MUST"
+  },
+  {
+    "id": "q-rfc8259-02",
+    "document": "rfc8259-text.pdf",
+    "question": "What primitive and structured types can JSON represent?",
+    "support_quote": "four primitive types",
+    "note": "Enumerated type taxonomy in the introduction"
+  },
+  {
+    "id": "q-rfc7519-01",
+    "document": "rfc7519-text.pdf",
+    "question": "In JWT, what do the registered claims iss, sub, and aud represent?",
+    "support_quote": "\"iss\" (Issuer) Claim",
+    "note": "Registered claim definitions"
+  },
+  {
+    "id": "q-rfc7519-02",
+    "document": "rfc7519-text.pdf",
+    "question": "What time base do the JWT exp and nbf numeric date claims use?",
+    "support_quote": "NumericDate",
+    "note": "NumericDate / Seconds Since the Epoch"
+  },
+  {
+    "id": "q-rfc7232-01",
+    "document": "rfc7232-text.pdf",
+    "question": "What is the main difference between weak and strong validators in HTTP conditional requests?",
+    "support_quote": "Weak validators are easy to generate",
+    "note": "Concept contrast in validators section"
+  },
+  {
+    "id": "q-cross-01",
+    "document": ["rfc8259-text.pdf", "rfc7519-text.pdf"],
+    "question": "Across the imported JSON and JWT specs, which document states that names within an object should be unique?",
+    "support_quote": "SHOULD be unique",
+    "note": "Cross-document retrieval; gold page is the JSON uniqueness rule"
+  }
+]
