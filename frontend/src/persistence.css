@@ -1,0 +1,25 @@
+.persistence-panel {
+  width: 100%; padding: 15px 12px; margin-bottom: 16px;
+  border: 1px solid #566a53; border-radius: 6px; background: #294737;
+}
+.persistence-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 11px; }
+.persistence-badge { color: #dce8bf; font-size: 10px; }
+.persistence-detail { font-size: 10px; line-height: 1.9; color: #c1d0b8; margin-top: 11px; overflow-wrap: anywhere; }
+.persistence-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 13px; }
+.persistence-actions button { border: 1px solid #7e9272; border-radius: 4px; background: #365740; color: #edf1de; font-size: 10px; padding: 8px 4px; }
+.persistence-actions button:not(:disabled):hover { background: #496b4b; }
+.persistence-error { border-color: #b18a67; }
+.persistence-error .persistence-badge { color: #f2c6a8; }
+.persistence-pending .persistence-badge { color: #e5d89f; }
+.persistence-unknown .persistence-badge { color: #c9d0c1; }
+.reload-confirm { border-top: 1px solid #6f7752; margin-top: 13px; padding-top: 11px; }
+.reload-confirm p { color: #efdbb1; font-size: 11px; line-height: 1.8; }
+.reload-confirm button { margin: 10px 7px 0 0; border-radius: 4px; padding: 7px; font-size: 10px; background: #e5d6b4; color: #3e4731; }
+.reload-confirm button:last-child { background: transparent; color: #d6dfc7; border: 1px solid #7e9272; }
+@media (max-height: 820px) and (min-width: 761px) {
+  .sidebar { overflow-y: auto; }
+  .document-list { flex: 1 0 90px; }
+}
+@media (max-width: 760px) {
+  .sidebar-bottom .persistence-panel { margin: 12px 0 0; }
+}
