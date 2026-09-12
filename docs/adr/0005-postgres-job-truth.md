@@ -2,7 +2,8 @@
 
 ## 状态
 
-Accepted
+Superseded by [ADR-0006](0006-local-json-sqlite.md)（2026-09-12）。  
+无 Redis/Celery/PostgreSQL；PDF 后台任务状态在 `DocumentLibrary` 内存与本地文件中，进程重启不恢复进行中任务。
 
 ## 背景
 

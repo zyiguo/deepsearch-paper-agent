@@ -2,7 +2,8 @@
 
 ## 状态
 
-Accepted
+Superseded by [ADR-0006](0006-local-json-sqlite.md)（2026-09-12）。  
+保留「模块化单体」边界；**未实现** Docker Compose / 多进程 Worker，当前为单进程 uvicorn + 线程池。
 
 ## 背景
 

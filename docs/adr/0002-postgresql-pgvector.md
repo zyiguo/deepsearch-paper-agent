@@ -2,7 +2,8 @@
 
 ## 状态
 
-Accepted
+Superseded by [ADR-0006](0006-local-json-sqlite.md)（2026-09-12）。  
+实现改为 JSON 索引快照 + SQLite 会话，**未使用** PostgreSQL/pgvector。
 
 ## 背景
 
