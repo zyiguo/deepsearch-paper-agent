@@ -89,6 +89,8 @@ def create_app(
     conversation_path: Path | None = None,
     llm_settings: LLMSettings | None = None,
     embedding_settings: EmbeddingSettings | None = None,
+    search_intent=None,
+    trace_path: Path | None = None,
 ) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -148,6 +150,17 @@ def create_app(
                 max_output_tokens=settings.max_output_tokens,
             ) if is_live else None
             query_expander = LLMQueryExpander(llm_client) if is_live else None
+            recorder = None
+            local_trace_path = trace_path
+            if local_trace_path is None and llm_settings is None:
+                local_trace_path = os.environ.get('RAG_TRACE_DB') or None
+            if local_trace_path is not None:
+                from deepsearch_agent.trajectory_adapter import RAGTraceRecorder
+                recorder = RAGTraceRecorder(local_trace_path, metadata={
+                    'application': 'deepsearch-paper-agent', 'main_model': settings.model,
+                    'embedding_model': embeddings.model, 'retrieval_backend': embeddings.backend,
+                    'index_path': str(app.state.index_path),
+                })
             app.state.answer_service = AnswerService(
                 client=llm_client,
                 knowledge_base=app.state.kb,
@@ -156,6 +169,8 @@ def create_app(
                 max_output_tokens=settings.max_output_tokens,
                 reranker=reranker,
                 query_expander=query_expander,
+                search_intent=search_intent,
+                run_recorder=recorder,
             )
 
             app.state.documents = DocumentLibrary(Path(index_path).parent / 'documents', app.state)

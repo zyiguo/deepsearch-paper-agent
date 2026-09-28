@@ -2,8 +2,20 @@
 
 The backend reads `.env.embedding` independently of the chat-model `.env`.
 Fill `EMBEDDING_API_KEY` and `EMBEDDING_BASE_URL` locally. Use the OpenAI-compatible
-base URL shown by the provider console, without `/embeddings`. Default model:
-`text-embedding-v4`, 1024 dimensions, batches of up to 10 texts. Do not share keys.
+base URL shown by the provider console, without `/embeddings`. The checked-in
+`.env.embedding.example` now selects SiliconFlow `BAAI/bge-m3`, 1024 dimensions,
+batches of up to 10 texts. The code's fallback model remains `text-embedding-v4`;
+always set the model explicitly when switching providers. Do not share keys.
+
+Copy the template only when creating a new local configuration; preserve an
+existing `.env.embedding` and its credentials. The portable copy is also at
+`examples/config/siliconflow-embedding.env.example`. Pricing, quotas and model
+availability are controlled by the provider, not this project.
+
+For BGE-M3 on `api.siliconflow.cn`, the client omits the `dimensions` request
+parameter because this integration uses fixed-size vectors. It still validates
+all returned vectors against `EMBEDDING_DIMENSIONS`. Other models retain the
+existing dimensions parameter.
 
 Restart the backend after editing configuration. A missing key or invalid URL
 stops startup explicitly; it never silently switches to demo embeddings.
@@ -19,14 +31,16 @@ currently share one retrieval corpus. Citation page buttons open rendered pages.
 Remote indexes are saved beside the original index as `embedding-<identity>.json`.
 Identity includes endpoint, model, dimensions and encoding version, but not keys.
 Old demo snapshots and conversations are preserved. Changing model, endpoint or
-dimensions selects a new index; import again to build it. Same model names may
+dimensions selects a new index. Rebuild document vectors for the new model;
+re-uploading the same PDF can trigger document deduplication and is not a rebuild
+mechanism. Keep the old index for rollback and do not mix vector spaces. Same model names may
 change upstream: version-pinned models are preferable for reproducibility.
 
 Both question endpoints accept arbitrary text only when real embeddings are
 enabled. Retrieval still returns nearest chunks without a relevance threshold;
 a returned citation does not prove the material answers the question. Live mode
-uses LLM query expansion / coreference rewrite when configured; failures fall
-back to the original question.
+uses the DeepSearch graph with generated research queries; the basic non-graph
+path supports LLM query expansion / coreference rewrite with fallback.
 
 Tests should inject both `llm_settings=LLMSettings()` and
 `embedding_settings=EmbeddingSettings()` to avoid local credentials and network.
@@ -46,9 +60,10 @@ preserved identifiers such as AX-247, and a small stopword list. Parameters are
 k1=1.5 and b=0.75. Its in-memory inverted index is derived from stored chunks
 and refreshed after their text changes, including loading or appending a PDF.
 
-Hybrid retrieves up to max(20, top_k) candidates from each branch and combines
-their ranks with equal-weight reciprocal rank fusion (constant 60), removing
-duplicate chunk IDs. Scores are not confidence probabilities. An unmatched
+Hybrid retrieves up to max(20, top_k) candidates from each branch, min-max
+normalizes branch scores, then combines them with a weighted sum, deduplicating
+chunk IDs. The default semantic/BM25 weights are 0.5/0.5 (`semantic_weight` in
+KnowledgeBase); this is score fusion, not reciprocal rank fusion. Scores are not confidence probabilities. An unmatched
 keyword query contributes no lexical candidates; semantic results remain.
 Embedding failures are reported rather than silently switching retrieval modes.
 

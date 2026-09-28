@@ -84,11 +84,18 @@ class RemoteEmbeddingClient:
             with httpx.Client(timeout=60, follow_redirects=False, transport=self.transport) as client:
                 for start in range(0, len(texts), self.settings.batch_size):
                     batch = texts[start:start + self.settings.batch_size]
+                    payload = {"model": self.settings.model, "input": batch,
+                               "encoding_format": "float"}
+                    # SiliconFlow BGE-M3 has a fixed output size and rejects dimensions.
+                    # Still validate every returned vector against the configured size.
+                    fixed_bge = (urlsplit(self.settings.base_url).hostname == "api.siliconflow.cn"
+                                 and self.settings.model in {"BAAI/bge-m3", "Pro/BAAI/bge-m3"})
+                    if not fixed_bge:
+                        payload["dimensions"] = self.settings.dimensions
                     response = client.post(
                         f"{self.settings.base_url.rstrip('/')}/embeddings",
                         headers={"Authorization": f"Bearer {self.settings.api_key}"},
-                        json={"model": self.settings.model, "input": batch,
-                              "dimensions": self.settings.dimensions, "encoding_format": "float"},
+                        json=payload,
                     )
                     if not response.is_success:
                         reasons = {401: "认证失败", 403: "没有模型权限", 429: "限流或额度不足"}

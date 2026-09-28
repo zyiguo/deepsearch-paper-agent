@@ -7,7 +7,8 @@ from deepsearch_agent.prompts import SYSTEM_PROMPT, build_qa_prompt
 from deepsearch_agent.query_expander import QueryExpander
 from deepsearch_agent.reranker import Reranker
 from deepsearch_agent.tokens import estimate_tokens, truncate_text
-from dataclasses import dataclass, field, replace as dc_replace
+from dataclasses import dataclass, field, replace as dc_replace, asdict
+from deepsearch_agent.observability import notify
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -55,6 +56,8 @@ class AnswerService:
         max_output_tokens: int = 1024,
         reranker: Reranker | None = None,
         query_expander: QueryExpander | None = None,
+        search_intent=None,
+        run_recorder=None,
     ):
         self.client = client
         self.knowledge_base = knowledge_base
@@ -64,9 +67,27 @@ class AnswerService:
         self.max_output_tokens = max_output_tokens
         self.reranker = reranker
         self.query_expander = query_expander
+        self.search_intent = search_intent
+        self.run_recorder = run_recorder
 
     def answer(self, question: str, top_k: int = 5,
-    history: list[dict[str, str]] | None = None, *, on_progress=None, allowed_sources: set[str] | None = None, memory_context=None) -> Answer:
+    history: list[dict[str, str]] | None = None, *, on_progress=None, allowed_sources: set[str] | None = None,
+    memory_context=None, trace_context=None) -> Answer:
+        kwargs = dict(on_progress=on_progress, allowed_sources=allowed_sources, memory_context=memory_context)
+        if self.run_recorder is None:
+            return self._answer(question, top_k, history, **kwargs)
+        metadata = {'question': question, 'top_k': top_k, 'history': history or [],
+                    'allowed_sources': sorted(allowed_sources) if allowed_sources is not None else None,
+                    'memory_context': memory_context, 'use_graph': self.use_graph,
+                    'conversation_id': (trace_context or {}).get('conversation_id')}
+        with self.run_recorder.capture(metadata) as observer:
+            result = self._answer(question, top_k, history, observer=observer, **kwargs)
+            notify(observer, 'answer.final', asdict(result))
+            return result
+
+    def _answer(self, question: str, top_k: int = 5,
+    history: list[dict[str, str]] | None = None, *, on_progress=None, allowed_sources=None,
+    memory_context=None, observer=None) -> Answer:
         question = question.strip()
 
         if not question:
@@ -78,6 +99,14 @@ class AnswerService:
         kb = self.knowledge_base
         if allowed_sources is not None and kb is not None:
             kb = kb.restrict_sources(allowed_sources)
+        if observer is not None and kb is not None:
+            notify(observer, 'retrieval.config', {
+                **{key: getattr(kb, key, None) for key in (
+                    'retrieval_mode', 'semantic_weight', 'ann_threshold', 'embedding_id',
+                    'chunking_strategy', 'chunk_size', 'overlap', 'max_chunk_size')},
+                'reranker_enabled': self.reranker is not None,
+                'context_window': self.context_window, 'max_output_tokens': self.max_output_tokens,
+            })
         if self.use_graph and kb is not None:
             from deepsearch_agent.research_graph import ResearchWorkflow
             result = ResearchWorkflow(
@@ -87,6 +116,8 @@ class AnswerService:
                 reranker=self.reranker,
                 on_progress=on_progress,
                 memory_context=memory_context,
+                search_intent=self.search_intent,
+                observer=observer,
             ).answer(question, top_k, history)
             if self.history_store is not None:
                 self.history_store.append(question=question, answer=result)

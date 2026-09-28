@@ -61,3 +61,18 @@ def test_index_isolation_free_question_and_restore(tmp_path, monkeypatch):
 def test_identity_changes_with_model_not_credentials():
     assert settings().identity != settings(model='other').identity
     assert 'test-only' not in repr(settings())
+
+
+def test_bge_m3_omits_dimensions_but_checks_response_dimension():
+    import json
+    config = EmbeddingSettings(backend='openai_compatible', api_key='test-only',
+        base_url='https://api.siliconflow.cn/v1', model='BAAI/bge-m3', dimensions=1024)
+    def handler(request):
+        body = json.loads(request.content)
+        assert 'dimensions' not in body
+        assert body['model'] == 'BAAI/bge-m3'
+        return httpx.Response(200, json={'data': [{'index': 0, 'embedding': [1.] * 1024}]})
+    assert len(RemoteEmbeddingClient(config, httpx.MockTransport(handler)).embed(['text'])[0]) == 1024
+    bad = httpx.MockTransport(lambda r: httpx.Response(200, json={'data': [{'index': 0, 'embedding': [1., 0.]}]}))
+    with pytest.raises(ModelServiceError):
+        RemoteEmbeddingClient(config, bad).embed(['text'])

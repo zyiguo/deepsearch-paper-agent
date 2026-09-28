@@ -189,6 +189,8 @@ def generate_turn(
         memory_context, history = manager.context(session_id)
 
         progress = {'on_progress': on_progress} if on_progress is not None else {}
+        if getattr(state.answer_service, 'run_recorder', None) is not None:
+            progress['trace_context'] = {'conversation_id': session_id}
         if sources is not None:
             progress['allowed_sources'] = sources
         answer = state.answer_service.answer(

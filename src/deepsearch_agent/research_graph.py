@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictInt, ValidationError
 
 from deepsearch_agent.tokens import estimate_tokens, truncate_text
 from deepsearch_agent.reranker import Reranker
+from deepsearch_agent.observability import notify, chunk_record
 
 
 logger = logging.getLogger(__name__)
@@ -91,13 +92,15 @@ class ResearchState(TypedDict, total=False):
 
 class ResearchWorkflow:
     def __init__(self, client, knowledge_base, context_window=8192, max_output_tokens=1024,
-                 reranker: Reranker | None = None, on_progress=None, memory_context=None):
+                 reranker: Reranker | None = None, on_progress=None, memory_context=None, search_intent=None, observer=None):
         self.client, self.kb = client, knowledge_base
         self.context_window = context_window
         self.max_output_tokens = max_output_tokens
         self.reranker = reranker
         self.on_progress = on_progress
         self.memory_context = memory_context
+        self.search_intent = search_intent
+        self.observer = observer
         graph = StateGraph(ResearchState)
         graph.add_node('supervisor', self.supervise)
         graph.add_node('researcher', self.research)
@@ -128,10 +131,15 @@ class ResearchWorkflow:
             + '\ndata: ' + json.dumps(data, ensure_ascii=False)
         )
         complete = getattr(self.client, 'complete_structured', self.client.complete)
+        call_id = uuid4().hex
+        notify(self.observer, 'rag.request', {'call_id': call_id, 'role': role, 'prompt': prompt})
         raw = complete(prompt).strip()
+        notify(self.observer, 'rag.response', {'call_id': call_id, 'role': role, 'raw': raw})
         if raw.startswith('```') and raw.endswith('```'):
             raw = re.sub(r'^```(?:json)?\s*', '', raw)[:-3].strip()
-        return schema.model_validate_json(raw)
+        result = schema.model_validate_json(raw)
+        notify(self.observer, 'rag.parsed', {'call_id': call_id, 'role': role, 'value': result.model_dump()})
+        return result
 
     def context(self, state):
         from deepsearch_agent.qa import chunk_to_source_reference
@@ -269,19 +277,42 @@ class ResearchWorkflow:
                 'stopped': action == 'stop' or (action == 'finish' and not complete)}
 
     def research(self, state):
-        plan = self.call('Researcher', '围绕当前问题和证据缺口生成最多三个简短检索查询；补查时优先处理缺口。', Queries,
-                         {'question': state['question'], 'history': state['history'], 'tasks': state['tasks'],
-                          'instruction': state['instruction'], 'gaps': state.get('queries', [])})
-        queries = [q.strip()[:1000] for q in plan.queries if q.strip()]
+        decision = None
+        if self.search_intent is not None and state['rounds'] == 0:
+            if self.on_progress:
+                self.on_progress('retrieving')
+            decision = self.search_intent.decide(state['question'], state['history'])
+        if decision is not None and decision.action == 'search':
+            queries = [decision.query]
+        else:
+            # answer/UNKNOWN cannot skip the first evidence search; use the
+            # original planner on answer actions and policy failures.
+            plan = self.call('Researcher', '围绕当前问题和证据缺口生成最多三个简短检索查询；补查时优先处理缺口。', Queries,
+                             {'question': state['question'], 'history': state['history'], 'tasks': state['tasks'],
+                              'instruction': state['instruction'], 'gaps': state.get('queries', [])})
+            queries = [q.strip()[:1000] for q in plan.queries if q.strip()]
         if not queries:
             queries = [state['question']]
+        origin = 'policy' if decision is not None and decision.action == 'search' else 'researcher'
+        notify(self.observer, 'search.plan', {'round': state['rounds'], 'origin': origin,
+               'policy_call_id': getattr(decision, 'call_id', None), 'queries': queries})
         evidence = list(state['evidence'])
         keys = {(c.source_path, c.page_number, c.chunk_index, c.text) for c in evidence}
         fetch_count = min(state['top_k'] * 4, 20) if self.reranker else state['top_k']
         for query in dict.fromkeys(queries):
+            search_id = uuid4().hex
+            notify(self.observer, 'retrieval.request', {'search_id': search_id, 'query': query,
+                   'origin': origin, 'policy_call_id': getattr(decision, 'call_id', None),
+                   'round': state['rounds'], 'top_k': fetch_count})
             candidates = self.kb.search(query, top_k=fetch_count)
+            if self.observer is not None:
+                notify(self.observer, 'retrieval.candidates', {'search_id': search_id,
+                       'chunks': [chunk_record(c) for c in candidates]})
             if self.reranker and len(candidates) > 1:
                 candidates = self.reranker.rerank(query, candidates, state['top_k'])
+            if self.observer is not None:
+                notify(self.observer, 'retrieval.result', {'search_id': search_id,
+                       'chunks': [chunk_record(c) for c in candidates]})
             for c in candidates:
                 key = (c.source_path, c.page_number, c.chunk_index, c.text)
                 if key not in keys:
@@ -330,6 +361,7 @@ class ResearchWorkflow:
                                            'dispatches': 0, 'verified': False, 'stopped': False, 'missing_answerable': []},
                                           config={'recursion_limit': 32, 'callbacks': []})
         except ValidationError:
+            notify(self.observer, 'rag.outcome', {'status': 'schema_validation_failed'})
             log_failure({}, 'schema_validation_failed')
             return Answer('模型输出未通过格式校验，无法确认答案，请重试。', [])
         claims = [state['claims'][i] for i in state['supported']]
@@ -342,6 +374,12 @@ class ResearchWorkflow:
             lines.append('现有证据不足或未通过核验，部分问题无法根据资料确认。')
         incomplete = (not claims or len(claims) < len(state['claims']) or state['queries']
                       or state['issues'] or state['stopped'] or state.get('missing_answerable'))
+        notify(self.observer, 'rag.outcome', {'status': 'incomplete' if incomplete else 'verified',
+               'claims': state['claims'], 'supported': state['supported'],
+               'queries': state['queries'], 'issues': state['issues'],
+               'missing_answerable': state.get('missing_answerable', []),
+               'stop_reason': state.get('stop_reason'),
+               'evidence': [chunk_record(c) for c in state['evidence']] if self.observer is not None else []})
         if incomplete:
             reason = state.get('stop_reason')
             if not reason:

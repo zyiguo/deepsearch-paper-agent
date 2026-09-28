@@ -64,9 +64,21 @@ class OpenAICompatibleClient:
         if not prompt.strip():
             raise ValueError("提示词不能为空")
 
+        return self.generate_messages([{'role': 'user', 'content': prompt}], structured=structured)
+
+    def complete_messages(self, messages: list[dict[str, str]]) -> str:
+        return self.generate_messages(messages).text
+
+    def generate_messages(self, messages: list[dict[str, str]], *, structured: bool = False) -> LLMResponse:
+        if not messages or any(
+            m.get('role') not in {'system', 'user', 'assistant'}
+            or not isinstance(m.get('content'), str) or not m['content'].strip()
+            for m in messages
+        ):
+            raise ValueError('消息必须包含有效角色和非空内容')
         payload = {
             'model': self.settings.model,
-            'messages': [{'role': 'user', 'content': prompt}],
+            'messages': messages,
             'stream': False,
             'max_tokens': self.settings.max_output_tokens,
         }
