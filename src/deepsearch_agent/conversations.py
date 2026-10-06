@@ -45,6 +45,9 @@ class ConversationStore:
                     payload TEXT NOT NULL
                 );
             """)
+            columns = {row['name'] for row in db.execute('PRAGMA table_info(turns)')}
+            if 'attachments_json' not in columns:
+                db.execute("ALTER TABLE turns ADD COLUMN attachments_json TEXT NOT NULL DEFAULT '[]'")
 
     @contextmanager
     def _db(self):
@@ -115,7 +118,7 @@ class ConversationStore:
 
             rows = db.execute(
                 """
-                SELECT id, question, answer_json, created_at
+                SELECT id, question, answer_json, created_at, attachments_json
                 FROM turns
                 WHERE session_id = ?
                 ORDER BY id
@@ -131,6 +134,7 @@ class ConversationStore:
                     "question": row["question"],
                     "answer": json.loads(row["answer_json"]),
                     "created_at": row["created_at"],
+                    "attachments": json.loads(row['attachments_json']),
                 }
                 for row in rows
             ],
@@ -141,6 +145,7 @@ class ConversationStore:
         session_id: str,
         question: str,
         answer: Answer,
+        attachments: list[dict] | None = None,
     ) -> dict:
         now = utc_now()
         answer_data = {
@@ -154,6 +159,8 @@ class ConversationStore:
             ],
         }
 
+        if getattr(answer, 'skills_used', None):
+            answer_data['skills_used'] = answer.skills_used
         with self._db() as db:
             exists = db.execute(
                 "SELECT id FROM sessions WHERE id = ?",
@@ -166,14 +173,15 @@ class ConversationStore:
             cursor = db.execute(
                 """
                 INSERT INTO turns
-                (session_id, question, answer_json, created_at)
-                VALUES (?, ?, ?, ?)
+                (session_id, question, answer_json, created_at, attachments_json)
+                VALUES (?, ?, ?, ?, ?)
                 """,
                 (
                     session_id,
                     question,
                     json.dumps(answer_data, ensure_ascii=False),
                     now,
+                    json.dumps(attachments or [], ensure_ascii=False),
                 ),
             )
 
@@ -189,4 +197,5 @@ class ConversationStore:
             "question": question,
             "answer": answer_data,
             "created_at": now,
+            "attachments": attachments or [],
         }

@@ -110,5 +110,5 @@ def test_supervisor_repeated_research_stops_without_infinite_loop():
 
 def test_supervisor_unknown_action_fails_closed():
     bad = decision('execute_shell')
-    result = AnswerService(Script([('Supervisor', bad)]), Library(), use_graph=True).answer('信号？')
+    result = AnswerService(Script([('Supervisor', bad), ('Supervisor', bad)]), Library(), use_graph=True).answer('信号？')
     assert '格式校验' in result.text and not result.sources

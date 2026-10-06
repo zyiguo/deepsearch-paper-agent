@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { imageContentType } from './imageFiles'
 
 const documentSchema = z.object({
   id: z.string(), title: z.string(), source_path: z.string(),
@@ -6,16 +7,28 @@ const documentSchema = z.object({
   status: z.string().default('ready'), page_count: z.number().int().nonnegative().default(0),
   error: z.string().nullable().default(null), warnings: z.array(z.string()).default([]),
   file_url: z.string().nullable().default(null),
+  vision_available: z.boolean().optional(), analysis_mode: z.enum(['text', 'vision']).optional(),
+  image_index_available: z.boolean().optional(), image_indexed_pages: z.number().int().nonnegative().optional(),
+  media_type: z.string().optional(),
 })
+const attachmentSchema = z.object({
+  id: z.string(), title: z.string(), source_path: z.string(), image_url: z.string(),
+  width: z.number().int().positive(), height: z.number().int().positive(),
+})
+export type ImageAttachment = z.infer<typeof attachmentSchema>
 const sourceSchema = z.object({
   citation_id: z.number().int().positive(),
   source_path: z.string(), page_number: z.number().int().positive(), text: z.string(),
   page_end: z.number().int().positive().nullable().optional(),
   section_path: z.array(z.string()).optional(),
   pages: z.array(z.object({ page_number: z.number().int().positive(), text: z.string() })).optional(),
+  evidence_kind: z.enum(['text', 'ocr', 'figure', 'table', 'formula', 'image']).optional(),
+  visual_pages: z.array(z.number().int().positive()).optional(),
+  chunk_id: z.string().optional(), content_id: z.string().optional(), asset_ids: z.array(z.string()).optional(),
 })
 const answerSchema = z.object({
   mode: z.string(), text: z.string(), sources: z.array(sourceSchema),
+  skills_used: z.array(z.object({ name: z.string(), sha256: z.string() })).optional(),
 })
 const persistenceSchema = z.object({
   snapshot_exists: z.boolean(), chunk_count: z.number().int().nonnegative(),
@@ -26,7 +39,7 @@ export type PaperDocument = z.infer<typeof documentSchema>
 export type Answer = z.infer<typeof answerSchema>
 export type Source = z.infer<typeof sourceSchema>
 const sessionSchema = z.object({ id: z.string(), title: z.string(), created_at: z.string(), updated_at: z.string() })
-const turnSchema = z.object({ id: z.number().int(), question: z.string(), created_at: z.string(), answer: answerSchema.omit({ mode: true }) })
+const turnSchema = z.object({ id: z.number().int(), question: z.string(), created_at: z.string(), answer: answerSchema.omit({ mode: true }), attachments: z.array(attachmentSchema).optional() })
 const memorySchema = z.object({
   version: z.number(), revision: z.number(), document_ids: z.array(z.string()).nullable(),
   research_goal: z.string(), language: z.string(), answer_style: z.string(), summary: z.string(),
@@ -43,11 +56,11 @@ const statusEvent = z.object({ stage: z.enum(['queued', 'planning', 'retrieving'
 const answerEvent = z.object({ text: z.string(), sources: z.array(sourceSchema) })
 export type StreamUpdate = ({ type: 'status' } & z.infer<typeof statusEvent>) | ({ type: 'answer' } & z.infer<typeof answerEvent>)
 
-async function streamTurn(id: string, question: string, topK: number, onEvent: (event: StreamUpdate) => void, signal?: AbortSignal, documentIds?: string[]): Promise<Turn> {
+async function streamTurn(id: string, question: string, topK: number, onEvent: (event: StreamUpdate) => void, signal?: AbortSignal, documentIds?: string[], attachmentIds?: string[], skillIds?: string[]): Promise<Turn> {
   const timeout = AbortSignal.timeout(600000)
   const response = await fetch(`/api/sessions/${encodeURIComponent(id)}/turns/stream`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
-    body: JSON.stringify({ question, top_k: topK, document_ids: documentIds }), signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+    body: JSON.stringify({ question, top_k: topK, document_ids: documentIds, attachment_ids: attachmentIds, skill_ids: skillIds }), signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
   })
   if (!response.ok) throw new ApiError(detailMessage(await response.json().catch(() => null)) ?? '无法开始回答。', response.status)
   if (!response.body || !response.headers.get('content-type')?.includes('text/event-stream')) throw new ApiError('接口未提供流式响应，请重启后端。')
@@ -128,6 +141,14 @@ async function request<T>(
 }
 
 export const api = {
+  skills: () => request('/api/skills', z.object({ skills: z.array(z.object({ name: z.string(), description: z.string() })), warnings: z.array(z.string()), max_active: z.number(), automatic: z.boolean() })),
+  uploadImage: (file: File) => request(`/api/documents/upload-image?filename=${encodeURIComponent(file.name)}`, documentSchema, {
+    method: 'POST', headers: { 'Content-Type': imageContentType(file) }, body: file,
+  }, 90000),
+  uploadAttachment: (session: string, file: File) => request(`/api/sessions/${encodeURIComponent(session)}/attachments?filename=${encodeURIComponent(file.name)}`, attachmentSchema, {
+    method: 'POST', headers: { 'Content-Type': imageContentType(file) }, body: file,
+  }, 90000),
+  indexAttachment: (session: string, id: string) => request(`/api/sessions/${encodeURIComponent(session)}/attachments/${encodeURIComponent(id)}/index`, documentSchema, { method: 'POST' }),
   memory: (id: string) => request(`/api/sessions/${encodeURIComponent(id)}/memory`, memorySchema),
   setMemoryScope: (id: string, document_ids: string[]) => request(`/api/sessions/${encodeURIComponent(id)}/memory/scope`, memorySchema, {
     method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ document_ids }),
@@ -141,8 +162,11 @@ export const api = {
     method: 'POST', headers: { 'Content-Type': 'application/pdf' }, body: file,
   }, 90000),
   retryDocument: (id: string) => request(`/api/documents/${encodeURIComponent(id)}/retry`, documentSchema, { method: 'POST' }),
+  analyzeDocument: (id: string) => request(`/api/documents/${encodeURIComponent(id)}/analyze`, documentSchema, { method: 'POST' }),
+  indexDocumentImages: (id: string) => request(`/api/documents/${encodeURIComponent(id)}/index-images`, documentSchema, { method: 'POST' }),
   documentPage: (id: string, page: number, signal?: AbortSignal) => request(`/api/documents/${encodeURIComponent(id)}/pages/${page}`, z.object({
     id: z.string(), title: z.string(), page_number: z.number().int().positive(), page_count: z.number().int().positive(), text: z.string(),
+    media_type: z.string().optional(),
   }), { signal }),
   sessions: (signal?: AbortSignal) => request('/api/sessions', z.array(sessionSchema), { signal }),
   deleteSession: (id: string) => request(`/api/sessions/${encodeURIComponent(id)}`, z.object({ message: z.string() }), { method: 'DELETE' }),
@@ -156,6 +180,8 @@ export const api = {
   health: (signal?: AbortSignal) => request('/api/health', z.object({
     status: z.literal('ok'), mode: z.string(),
     retrieval_mode: z.enum(['semantic', 'bm25', 'hybrid']).optional(),
+    vision_enabled: z.boolean().optional(),
+    image_retrieval_enabled: z.boolean().optional(),
   }), { signal }),
   documents: (signal?: AbortSignal) => request('/api/documents', z.array(documentSchema), { signal }),
   persistenceStatus: (signal?: AbortSignal) => request('/api/knowledge-base/status', persistenceSchema, { signal }),

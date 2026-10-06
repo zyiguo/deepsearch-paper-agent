@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+import base64
+from pathlib import Path
 
 import httpx
 
@@ -60,19 +62,51 @@ class OpenAICompatibleClient:
     def complete_structured(self, prompt: str) -> str:
         return self.generate(prompt, structured=True).text
 
+    def complete_images(self, prompt: str, images: list[Path], *, structured: bool = False) -> str:
+        if not images or not prompt.strip():
+            raise ValueError('视觉请求需要提示词和图片')
+        content = [{'type': 'text', 'text': prompt}]
+        for path in images:
+            data = Path(path).read_bytes()
+            if not data.startswith(b'\x89PNG\r\n\x1a\n') or len(data) > 10 * 1024 * 1024:
+                raise ValueError('视觉输入必须是小于 10 MB 的 PNG')
+            content.append({'type': 'image_url', 'image_url': {
+                'url': 'data:image/png;base64,' + base64.b64encode(data).decode('ascii'),
+                'detail': 'high',
+            }})
+        return self.generate_messages([{'role': 'user', 'content': content}], structured=structured).text
+
     def generate(self, prompt: str, *, structured: bool = False) -> LLMResponse:
         if not prompt.strip():
             raise ValueError("提示词不能为空")
 
         return self.generate_messages([{'role': 'user', 'content': prompt}], structured=structured)
 
-    def complete_messages(self, messages: list[dict[str, str]]) -> str:
+    def complete_messages(self, messages: list[dict]) -> str:
         return self.generate_messages(messages).text
 
-    def generate_messages(self, messages: list[dict[str, str]], *, structured: bool = False) -> LLMResponse:
+    def generate_messages(self, messages: list[dict], *, structured: bool = False) -> LLMResponse:
+        def valid_content(content):
+            if isinstance(content, str):
+                return bool(content.strip())
+            if not isinstance(content, list) or not content:
+                return False
+            for part in content:
+                if not isinstance(part, dict):
+                    return False
+                if part.get('type') == 'text':
+                    if not isinstance(part.get('text'), str) or not part['text'].strip():
+                        return False
+                elif part.get('type') == 'image_url':
+                    image = part.get('image_url')
+                    if not isinstance(image, dict) or not isinstance(image.get('url'), str) or not image['url'].startswith('data:image/png;base64,'):
+                        return False
+                else:
+                    return False
+            return True
         if not messages or any(
             m.get('role') not in {'system', 'user', 'assistant'}
-            or not isinstance(m.get('content'), str) or not m['content'].strip()
+            or not valid_content(m.get('content'))
             for m in messages
         ):
             raise ValueError('消息必须包含有效角色和非空内容')

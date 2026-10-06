@@ -4,6 +4,17 @@ import { api } from './api'
 afterEach(() => vi.unstubAllGlobals())
 
 describe('HTTP contract', () => {
+  it('preserves persistent evidence identities in answer references', async () => {
+    const source = {
+      citation_id: 1, source_path: 'paper.pdf', page_number: 1, text: 'Evidence',
+      chunk_id: 'chk_' + 'a'.repeat(64), content_id: 'cnt_' + 'b'.repeat(64),
+      asset_ids: ['ast_' + 'c'.repeat(64)],
+    }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      mode: 'live-llm-live-retrieval', text: 'Answer [1]', sources: [source],
+    }))))
+    expect((await api.ask('question', 1)).sources).toEqual([source])
+  })
   it('sends question and top_k and accepts an evidence-free refusal', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
       mode: 'demo', text: '未检索到证据', sources: [],

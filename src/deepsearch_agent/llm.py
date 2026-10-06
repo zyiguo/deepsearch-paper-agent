@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
+from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -26,6 +27,10 @@ class ModelServiceError(RuntimeError):
 @runtime_checkable
 class LLMClient(Protocol):
     def complete(self, prompt: str) -> str: ...
+
+
+class ImageLLMClient(Protocol):
+    def complete_images(self, prompt: str, images: list[Path], *, structured: bool = False) -> str: ...
 
 
 class FakeLLMClient:

@@ -47,6 +47,7 @@ class KnowledgeBase:
 
         self.chunks: list[TextChunk] = []
         self._vectors: list[list[float]] = []
+        self.image_index = None
 
     def ingest_pdf(self, path: str) -> list[TextChunk]:
         pages = self.pdf_reader.read(path)
@@ -62,8 +63,13 @@ class KnowledgeBase:
                 overlap=self.overlap,
             )
 
-        # 过滤没有实际文本的片段。
+        return self.ingest_chunks(chunks)
+
+    def ingest_chunks(self, chunks: list[TextChunk]) -> list[TextChunk]:
+        """Index prepared text or visual descriptions as one atomic embedding batch."""
         chunks = [chunk for chunk in chunks if chunk.text.strip()]
+        for chunk in chunks:
+            chunk.validate_structure()
 
         if not chunks:
             return []
@@ -119,6 +125,7 @@ class KnowledgeBase:
         view._bm25_count = 0
         view._ann = None
         view._ann_size = 0
+        view.image_index = self.image_index.restrict_sources(sources) if self.image_index is not None else None
         return view
 
     def _lexical_index(self):
@@ -145,6 +152,17 @@ class KnowledgeBase:
         return self._ann.search(query_vector, limit)
 
     def search(self, query: str, top_k: int = 5) -> list[TextChunk]:
+        if top_k < 0:
+            raise ValueError("top_k cannot be negative")
+        if not query.strip() or top_k == 0:
+            return []
+        if self.image_index is None or self.image_index.client is None or not self.image_index.chunks:
+            return self._search_text(query, top_k)
+        from deepsearch_agent.image_index import fuse_rankings
+        limit = max(20, top_k)
+        return fuse_rankings([self._search_text(query, limit), self.image_index.search(query, limit)], top_k)
+
+    def _search_text(self, query: str, top_k: int = 5) -> list[TextChunk]:
         if top_k < 0:
             raise ValueError("top_k 不能为负数")
 
@@ -203,6 +221,12 @@ class KnowledgeBase:
         if len(self.chunks) != len(self._vectors):
             raise ValueError("片段与向量数量不一致")
 
+        for chunk in self.chunks:
+            chunk.validate_structure()
+        if self.image_index is not None:
+            for chunk in self.image_index.chunks:
+                chunk.validate_structure()
+
         vectors = [normalize(vector) for vector in self._vectors]
         dimension = len(vectors[0]) if vectors else 0
 
@@ -210,7 +234,7 @@ class KnowledgeBase:
             raise ValueError("向量维度不一致")
 
         payload = {
-            "schema_version": 2,
+            "schema_version": 4,
             "embedding_id": self.embedding_id,
             "dimension": dimension,
             "chunk_size": self.chunk_size,
@@ -229,6 +253,8 @@ class KnowledgeBase:
                 )
             ],
         }
+        if self.image_index is not None:
+            payload['image_index'] = self.image_index.snapshot()
 
         # 先序列化，确保能转换成合法 JSON。
         content = json.dumps(
@@ -268,7 +294,7 @@ class KnowledgeBase:
             Path(path).read_text(encoding="utf-8")
         )
 
-        if payload["schema_version"] not in (1, 2):
+        if payload["schema_version"] not in (1, 2, 3, 4):
             raise ValueError("不支持的知识库格式版本")
 
         if payload["embedding_id"] != self.embedding_id:
@@ -295,6 +321,8 @@ class KnowledgeBase:
         vectors: list[list[float]] = []
 
         for entry in payload["entries"]:
+            if payload['schema_version'] == 4 and not {'chunk_id', 'content_id', 'asset_ids', 'identity_version'} <= entry['chunk'].keys():
+                raise ValueError('快照缺少片段 ID')
             chunk = TextChunk(**entry["chunk"])
             vector = normalize(entry["vector"])
 
@@ -321,9 +349,28 @@ class KnowledgeBase:
         if not chunks and dimension != 0:
             raise ValueError("空索引的向量维度应为 0")
 
+        image_index = self.image_index
+        if payload['schema_version'] == 3 and 'image_index' not in payload:
+            raise ValueError('快照缺少图像索引')
+        if payload['schema_version'] == 4 and 'image_index' in payload:
+            if any(not {'chunk_id', 'content_id', 'asset_ids', 'identity_version'} <= entry['chunk'].keys()
+                   for entry in payload['image_index']['entries']):
+                raise ValueError('快照缺少图像片段 ID')
+        if 'image_index' in payload:
+            from deepsearch_agent.image_index import ImageVectorIndex
+            image_index = ImageVectorIndex.restore(
+                payload['image_index'],
+                client=self.image_index.client if self.image_index else None,
+                expected_identity=self.image_index.identity if self.image_index and self.image_index.client else None,
+            )
+        elif self.image_index is not None:
+            from deepsearch_agent.image_index import ImageVectorIndex
+            image_index = ImageVectorIndex(self.image_index.identity, self.image_index.client)
+
         # 所有读取和校验成功后，才替换当前知识库。
         self.chunks = chunks
         self._vectors = vectors
+        self.image_index = image_index
         self._bm25_index = None
         self._bm25_count = 0
         self._ann = None

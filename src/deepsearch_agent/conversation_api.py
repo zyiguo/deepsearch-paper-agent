@@ -3,12 +3,14 @@ from pydantic import BaseModel, Field, field_validator
 from fastapi.responses import StreamingResponse
 import json
 from queue import Queue, Empty
-from threading import Thread
+from threading import Thread, Lock
 
 from deepsearch_agent.demo import DEMO_QUESTIONS
 from deepsearch_agent.source_schemas import CitationResponse
 from deepsearch_agent.retrieval_scope import resolve_sources
 from deepsearch_agent.memory import MemoryManager, MemoryState
+from deepsearch_agent.skill_api import validate_skills
+from deepsearch_agent.qa import snapshot_answer_service
 import logging
 
 
@@ -31,6 +33,15 @@ class SendTurnRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
     top_k: int = Field(default=3, ge=1, le=10)
     document_ids: list[str] | None = Field(default=None, max_length=1000)
+    attachment_ids: list[str] = Field(default_factory=list, max_length=4)
+    skill_ids: list[str] | None = Field(default=None, max_length=3)
+
+    @field_validator('attachment_ids')
+    @classmethod
+    def unique_attachments(cls, value):
+        if len(set(value)) != len(value):
+            raise ValueError('图片附件不能重复')
+        return value
 
     @field_validator("question")
     @classmethod
@@ -44,6 +55,7 @@ class SendTurnRequest(BaseModel):
 class TurnAnswerResponse(BaseModel):
     text: str
     sources: list[CitationResponse]
+    skills_used: list[dict[str, str]] = Field(default_factory=list)
 
 
 class TurnResponse(BaseModel):
@@ -51,6 +63,7 @@ class TurnResponse(BaseModel):
     question: str
     answer: TurnAnswerResponse
     created_at: str
+    attachments: list[dict] = Field(default_factory=list)
 
 
 class SessionResponse(BaseModel):
@@ -137,7 +150,36 @@ def edit_memory(session_id: str, body: MemoryEdit, request: Request):
 def clear_memory(session_id: str, request: Request):
     with request.app.state.lock:
         require_session(request.app.state.conversations, session_id)
+        clear_working_memory_files(request.app.state, session_id)
         return MemoryManager(request.app.state.conversations).clear(session_id)
+
+
+def clear_working_memory_files(state, session_id):
+    if getattr(state, 'working_memory', None) is None:
+        return
+    try:
+        state.working_memory.clear(session_id)
+    except (OSError, ValueError):
+        raise HTTPException(status_code=503, detail='working_memory_unavailable') from None
+
+
+@router.get('/{session_id}/working-memory')
+def get_working_memory(session_id: str, request: Request):
+    with request.app.state.lock:
+        require_session(request.app.state.conversations, session_id)
+        try:
+            memory = request.app.state.working_memory.bind(session_id)
+            return {name: memory.read(name) for name in ('plan', 'history')}
+        except (OSError, ValueError):
+            raise HTTPException(status_code=503, detail='working_memory_unavailable') from None
+
+
+@router.delete('/{session_id}/working-memory')
+def clear_working_memory(session_id: str, request: Request):
+    with request.app.state.lock:
+        require_session(request.app.state.conversations, session_id)
+        clear_working_memory_files(request.app.state, session_id)
+    return {'cleared': True}
 
 
 @router.delete('/{session_id}')
@@ -145,7 +187,14 @@ def delete_session(session_id: str, request: Request):
     state = request.app.state
     with state.lock:
         try:
+            require_session(state.conversations, session_id)
+            clear_working_memory_files(state, session_id)
             state.conversations.delete(session_id)
+            if getattr(state, 'attachments', None) is not None:
+                try:
+                    state.attachments.delete_session(session_id)
+                except (OSError, ValueError):
+                    logging.getLogger(__name__).warning('attachment_cleanup_failed')
         except KeyError:
             raise HTTPException(status_code=404, detail='会话不存在') from None
     return {'message': '会话及全部问答记录已删除'}
@@ -164,6 +213,23 @@ def send_turn(
     return generate_turn(session_id, body, request)
 
 
+def turn_inputs(state, session_id, body, document_ids):
+    validate_skills(state, body.skill_ids)
+    attachments, evidence = [], []
+    if body.attachment_ids:
+        if not getattr(state, 'vision_enabled', False):
+            raise HTTPException(409, '请先配置视觉模型后带图提问')
+        try:
+            attachments, evidence = state.attachments.evidence(session_id, body.attachment_ids)
+        except KeyError:
+            raise HTTPException(404, '图片附件不存在或不属于当前会话') from None
+        settings = getattr(getattr(state.answer_service, 'visual_evidence', None), 'settings', None)
+        if settings is not None and len(evidence) > settings.max_images:
+            raise HTTPException(422, '附件数量超过当前视觉模型的图片上限')
+    sources = set() if evidence and document_ids == [] else resolve_sources(state, document_ids)
+    return sources, attachments, evidence
+
+
 def generate_turn(
     session_id: str,
     body: SendTurnRequest,
@@ -171,15 +237,27 @@ def generate_turn(
     on_progress=None,
 ):
     state = request.app.state
+    with state.lock:
+        if not hasattr(state, 'turn_locks'):
+            from weakref import WeakValueDictionary
+            state.turn_locks = WeakValueDictionary()
+        turn_lock = state.turn_locks.setdefault(session_id, Lock())
+    # Keep turns within a conversation ordered without blocking corpus readers.
+    with turn_lock:
+        return _generate_turn(session_id, body, request, on_progress)
+
+
+def _generate_turn(session_id, body, request, on_progress=None):
+    state = request.app.state
 
     with state.lock:
         session = require_session(state.conversations, session_id)
         manager = MemoryManager(state.conversations)
         saved_memory = manager.get(session_id)
         ids = body.document_ids if body.document_ids is not None else saved_memory.document_ids
-        sources = resolve_sources(state, ids)
+        sources, attachments, input_evidence = turn_inputs(state, session_id, body, ids)
 
-        if state.demo_retrieval and body.question not in DEMO_QUESTIONS:
+        if state.demo_retrieval and not input_evidence and body.question not in DEMO_QUESTIONS:
             raise HTTPException(
                 status_code=400,
                 detail="演示模式仅支持：" + "、".join(DEMO_QUESTIONS),
@@ -189,22 +267,31 @@ def generate_turn(
         memory_context, history = manager.context(session_id)
 
         progress = {'on_progress': on_progress} if on_progress is not None else {}
+        if getattr(state, 'agentic_rag_enabled', False):
+            progress['working_memory'] = state.working_memory.bind(session_id)
         if getattr(state.answer_service, 'run_recorder', None) is not None:
             progress['trace_context'] = {'conversation_id': session_id}
         if sources is not None:
             progress['allowed_sources'] = sources
-        answer = state.answer_service.answer(
+        if input_evidence:
+            progress['input_evidence'] = input_evidence
+        if body.skill_ids is not None:
+            progress['skill_ids'] = body.skill_ids
+        service = snapshot_answer_service(state)
+    answer = service.answer(
             question=body.question,
             top_k=body.top_k,
             history=history,
             memory_context=memory_context,
             **progress,
-        )
+    )
 
+    with state.lock:
         turn = state.conversations.append_turn(
             session_id=session_id,
             question=body.question,
             answer=answer,
+            **({'attachments': attachments} if attachments else {}),
         )
     # Memory failure must never undo a successfully persisted answer.
     try:
@@ -222,7 +309,8 @@ def stream_turn(session_id: str, body: SendTurnRequest, request: Request):
     with request.app.state.lock:
         require_session(request.app.state.conversations, session_id)
         saved = MemoryManager(request.app.state.conversations).get(session_id)
-        resolve_sources(request.app.state, body.document_ids if body.document_ids is not None else saved.document_ids)
+        turn_inputs(request.app.state, session_id, body,
+                    body.document_ids if body.document_ids is not None else saved.document_ids)
     events = Queue()
 
     def emit(stage):
@@ -235,7 +323,7 @@ def stream_turn(session_id: str, body: SendTurnRequest, request: Request):
             for index, paragraph in enumerate(turn['answer']['text'].split('\n\n')):
                 events.put(('answer', {'text': ('\n\n' if index else '') + paragraph,
                                        'sources': turn['answer']['sources']}))
-            events.put(('done', turn))
+            events.put(('done', TurnResponse.model_validate(turn).model_dump()))
         except Exception:
             # No exception string: providers may include private request details.
             events.put(('error', {'message': '回答未完成，请刷新会话核对结果；不要自动重复发送。'}))

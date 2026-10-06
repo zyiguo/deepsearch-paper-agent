@@ -2,14 +2,22 @@
 
 本地单用户个人文献研究助手：导入自己的文字型 PDF，在指定文献范围内进行快速问答或迭代式 DeepSearch，所有回答都附带**可核验的证据**（论文、页码、原文片段）。FastAPI 后端 + React 前端，单机运行，开箱即用。
 
+可选多模态阅读：独立配置云端视觉模型后，可识别扫描文字、图、表和公式；另配置视觉 Embedding，可直接检索原页图像，与正文检索通过 RRF 融合，并在重排、回答与核验时读取原图。支持为旧文献单独补建图像索引。配置与使用见 [MULTIMODAL_SETUP.md](docs/MULTIMODAL_SETUP.md)。当前按页单向量定位，真实论文集的检索与识别精度仍需评测。
+
 ## 功能特性
 
-- **多查询混合检索**：LLM 查询扩展（含多轮对话指代消解）→ 多路召回合并去重 → BM25（jieba 分词）与语义向量加权融合 → LLM listwise 重排 → Token 预算内贪心组装上下文
+- **Agentic RAG 与 MCP**：Researcher 自主选择检索、读页和按需 OCR 工具，LangGraph 执行并反馈观察，保留回答与引用核验；共享工具服务支持对外 MCP 和受信任外部 MCP 扩展，见 [AGENTIC_RAG.md](docs/AGENTIC_RAG.md) 与 [MCP.md](docs/MCP.md)。MCP 默认关闭，云端端到端效果仍需独立验收。
+- **统一证据 ID 与多模态重排**：内容指纹、来源片段 ID 和原页关联贯穿检索与引用；独立视觉重排器按图片与 Token 预算分批读取原图评分，失败回退原序，见 [CONTENT_IDS_RERANKING.md](docs/CONTENT_IDS_RERANKING.md)
+- **公开多模态评测**：ChartQA 与 PDFVQA 独立数据适配、阅读基线、受控重排与 RAG 评测，保留逐题输出、输入指纹及可续跑结果，见 [PUBLIC_MULTIMODAL_EVAL.md](docs/PUBLIC_MULTIMODAL_EVAL.md)
+- **多查询混合检索**：LLM 查询扩展（含多轮对话指代消解）→ 多路召回按片段 ID 合并去重 → BM25（jieba 分词）与文本向量加权融合，可与图像向量通过 RRF 融合 → 文字或多模态重排 → Token 预算内贪心组装上下文
 - **自研 ANN**：少于 1024 个向量时精确扫描，达到阈值后切换 numpy 实现的 IVF 索引（k-means 聚类 + 探测），支持增量添加
 - **迭代式 DeepSearch**：LangGraph 编排的研究工作流（supervisor → researcher → answerer → verifier），多轮补充检索，只保留通过验证且可溯源的结论
 - **可核验引用**：回答中的每条结论都对应论文、页码和原文片段，前端内置 PDF 原文定位
 - **多轮会话**：会话隔离的对话历史与结构化记忆，可配置记忆范围
-- **PDF 文献管理**：上传解析（后台任务）、按文献范围检索、页面预览
+- **模型工作记忆**：Agentic RAG 可调用 `working_memory` 读写当前会话的 `PLAN.md`（待实施计划）和 `HISTORY.md`（已实施事项、明确用户偏好），支持版本检查、清空撤销与非证据隔离，见 [WORKING_MEMORY.md](docs/WORKING_MEMORY.md)。
+- **LLM Wiki**：从指定文献编译带原文引用的 Markdown 知识页，支持版本更新、关联页、搜索和来源失效检查；Agent 通过只读工具访问，见 [LLM_WIKI.md](docs/LLM_WIKI.md)。
+- **动态研究技能**：发现本地 `SKILL.md` 元信息，Supervisor 按需加载正文；支持热更新、手动指定与关闭，保留独立证据核验，见 [SKILLS.md](docs/SKILLS.md)
+- **PDF 与图片管理**：上传解析（后台任务）、按资料范围检索、原页预览；会话支持图片附件提问、粘贴图片及附件转入资料库
 - **流式输出**：SSE 推送处理阶段，核验完成后分段发送最终答案
 - **可选搜索决策模型**：独立模型提供首轮检索词；无效输出或服务失败回退原 Researcher，保留后续补检和引用核验
 - **可选后训练数据管线**：本地运行轨迹 → 人工审核 → 单步搜索决策 SFT 数据；独立标准库模块，默认关闭，见 [使用说明](docs/POLICY_DATA_PIPELINE.md)
@@ -21,7 +29,7 @@
 - 索引：内存知识库 + JSON 快照（`data/indexes/`）
 - 会话：SQLite
 - 进程：单进程 FastAPI + 线程池解析 PDF；无 Docker / Redis / Celery / PostgreSQL
-- 限制：单 PDF ≤100 页且提取文本 ≤10 万字符；不支持 OCR 与加密 PDF
+- 限制：单 PDF ≤100 页且正文文本 ≤10 万字符；OCR 需要启用视觉模型；不支持加密 PDF
 - 嵌入：OpenAI 兼容云端 API（独立 `.env.embedding`），见 [EMBEDDING_SETUP.md](EMBEDDING_SETUP.md)
 
 早期设计中的 Compose/pgvector/任务队列等已标记 Superseded，不代表当前能力。
@@ -37,14 +45,17 @@
 查询扩展（LLMQueryExpander）—— 改写为最多 5 条检索查询，利用历史消解指代
    │
    ▼
-多路召回 —— 每条查询独立检索，按（来源, 页码, 片段）合并去重
+多路召回 —— 每条查询独立检索，按 chunk_id 合并去重，保留不同来源
    │
    ▼
 混合检索（knowledge_base.py）—— BM25 分数 ⊕ 语义相似度
    │                            min-max 归一化后加权融合（0.5 / 0.5）
    │                            向量侧：<1024 精确扫描，≥1024 切换 IVF
    ▼
-LLM 重排（LLMReranker）—— listwise 对候选池精选 top_k，失败回退原序
+可选图像向量召回 —— 与正文检索通过 RRF 融合
+   │
+   ▼
+重排 —— 纯文字 listwise；含视觉页时分批读取原图评分，失败回退原序
    │
    ▼
 Token 预算 —— 按上下文窗口贪心填充，放不下的片段跳过
@@ -63,7 +74,8 @@ Token 预算 —— 按上下文窗口贪心填充，放不下的片段跳过
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe -m pip install --upgrade "pip>=26.2,<27"
+.\.venv\Scripts\python.exe -m pip install -c constraints-security.txt -e ".[dev]"
 ```
 
 ### 2. 配置模型
@@ -132,6 +144,7 @@ npm run dev
 | POST | `/api/sessions/{id}/turns` | 会话内提问（多轮） |
 | POST | `/api/sessions/{id}/turns/stream` | 会话内流式提问（SSE） |
 | PUT/GET/DELETE | `/api/sessions/{id}/memory` | 结构化记忆管理 |
+| GET/DELETE | `/api/sessions/{id}/working-memory` | 查看/清空两个 Markdown 工作记忆文件 |
 | GET | `/api/knowledge-base/status` | 索引状态（片段数、快照、脏标记） |
 | POST | `/api/knowledge-base/save` / `load` | 持久化 / 恢复向量索引快照 |
 | POST | `/api/demo/ingest` | 导入演示文献（演示模式） |
@@ -216,3 +229,7 @@ Python 3.12 · FastAPI · LangGraph · numpy · jieba · pypdf · React 19 · Ty
 ## 检索质量评测
 
 已新增 40 条测试文档问题与原文页码标注、Recall@k/MRR@k 脚本及消融入口。数据尚待人工复核；运行方式和指标边界见 [eval/README.md](eval/README.md)。
+
+公开多模态数据集的 Agentic RAG 配对消融、逐阶段追踪与独立工具验收见 [实验手册](docs/AGENTIC_ABLATION.md)。Badcase 使用统一阶段标签、证据定位与独立人工复核记录，规则见 [归因标准](docs/BADCASE_TAXONOMY.md)；自动阶段标签不是已证实的因果根因。
+
+本轮实际完成度、任务分数、工具结果与成本见 [消融报告](docs/AGENTIC_ABLATION_RESULTS.md)，日志及原图抽查见 [Badcase 抽查](docs/AGENTIC_ABLATION_AUDIT.md)。

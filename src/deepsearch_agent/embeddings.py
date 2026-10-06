@@ -1,11 +1,17 @@
 from math import isfinite, sqrt
 from typing import Protocol
+from pathlib import Path
 
 import httpx
 
 
 class EmbeddingClient(Protocol):
     def embed(self, texts: list[str]) -> list[list[float]]: ...
+
+
+class ImageEmbeddingClient(Protocol):
+    def embed_images(self, images: list[Path]) -> list[list[float]]: ...
+    def embed_query(self, text: str) -> list[float]: ...
 
 
 def normalize(vector: list[float]) -> list[float]:

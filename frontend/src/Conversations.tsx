@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { api, ApiError } from './api'
-import type { Session, SessionDetail, Source, SessionMemory } from './api'
+import type { Session, SessionDetail, Source, SessionMemory, ImageAttachment } from './api'
 import './conversations.css'
 import EvidenceSource, { sourcePageLabel } from './EvidenceSource'
+import ImageAttachments from './ImageAttachments'
+import SkillOptions from './SkillOptions'
+import { imageAccept, validateImageFile } from './imageFiles'
 
 const selectionKey = 'deepsearch.active-session'
 function remember(id: string) { try { localStorage.setItem(selectionKey, id) } catch { /* Storage can be disabled. */ } }
@@ -12,12 +15,16 @@ const message = (e: unknown) => e instanceof ApiError && e.status === 404
   ? '会话不存在或接口尚未加载，请刷新会话；若持续出现，请重启后端。'
   : e instanceof Error ? e.message : '操作失败，请重试。'
 
-export default function Conversations({ disabled, canAsk = true, totalChunks, documentIds, onRestoreScope, onAskingChange, onOpenSource }: { disabled: boolean; canAsk?: boolean; totalChunks: number; documentIds: string[]; onRestoreScope: (ids: string[] | null) => void; onAskingChange: (asking: boolean) => void; onOpenSource: (id: string, page: number) => void }) {
+export default function Conversations({ disabled, canAsk = true, canAttach = false, canIndexAttachments = false, onLibraryChange, totalChunks, documentIds, onRestoreScope, onAskingChange, onOpenSource }: { disabled: boolean; canAsk?: boolean; canAttach?: boolean; canIndexAttachments?: boolean; onLibraryChange?: () => Promise<unknown>; totalChunks: number; documentIds: string[]; onRestoreScope: (ids: string[] | null) => void; onAskingChange: (asking: boolean) => void; onOpenSource: (id: string, page: number) => void }) {
   const [sessions, setSessions] = useState<Session[]>([])
   const [active, setActive] = useState<SessionDetail | null>(null)
   const [title, setTitle] = useState('')
   const [question, setQuestion] = useState('')
+  const [attachments, setAttachments] = useState<ImageAttachment[]>([])
+  const [indexedAttachments, setIndexedAttachments] = useState<string[]>([])
+  const [attachmentNotice, setAttachmentNotice] = useState('')
   const [topK, setTopK] = useState(3)
+  const [skillIds, setSkillIds] = useState<string[] | undefined>(undefined)
   const [busy, setBusy] = useState<string | null>('加载会话')
   const [error, setError] = useState('')
   const [uncertain, setUncertain] = useState(false)
@@ -68,7 +75,7 @@ export default function Conversations({ disabled, canAsk = true, totalChunks, do
         const id = items.find(item => item.id === remembered())?.id ?? items[0]?.id
         const detail = id ? await api.session(id, signal) : null
         if (controller.signal.aborted) return
-        setSessions(items); setActive(detail)
+        setSessions(items); setActive(detail); setAttachments(detail?.turns.at(-1)?.attachments ?? [])
         showMemory(detail?.memory ?? null); onRestoreScope(detail?.memory?.document_ids ?? null)
         if (detail) remember(detail.id)
       } catch (e) { if (!controller.signal.aborted) setError(message(e)) }
@@ -94,7 +101,7 @@ export default function Conversations({ disabled, canAsk = true, totalChunks, do
       const items = await api.sessions()
       const id = items.find(item => item.id === active?.id)?.id ?? items[0]?.id
       const detail = id ? await api.session(id) : null
-      setSessions(items); setActive(detail); setUncertain(false)
+      setSessions(items); setActive(detail); setUncertain(false); setAttachments(detail?.turns.at(-1)?.attachments ?? [])
       showMemory(detail?.memory ?? null); onRestoreScope(detail?.memory?.document_ids ?? null)
       if (detail) remember(detail.id)
     })
@@ -107,6 +114,7 @@ export default function Conversations({ disabled, canAsk = true, totalChunks, do
     void run('新建会话', async () => {
       const session = await api.createSession(title.trim())
       setSessions(items => [session, ...items]); setActive({ ...session, turns: [] })
+      setAttachments([]); setIndexedAttachments([]); setAttachmentNotice('')
       showMemory(null)
       remember(session.id); setTitle(''); setQuestion(''); setUncertain(false)
     })
@@ -117,6 +125,7 @@ export default function Conversations({ disabled, canAsk = true, totalChunks, do
     void run('切换会话', async () => {
       const detail = await api.session(id)
       setActive(detail); remember(id); setQuestion(''); setUncertain(false)
+      setAttachments(detail.turns.at(-1)?.attachments ?? []); setIndexedAttachments([]); setAttachmentNotice('')
       showMemory(detail.memory ?? null); onRestoreScope(detail.memory?.document_ids ?? null)
     })
   }
@@ -129,6 +138,7 @@ export default function Conversations({ disabled, canAsk = true, totalChunks, do
       catch (e) { if (!(e instanceof ApiError && e.status === 404)) throw e }
       setSessions(items => items.filter(item => item.id !== id))
       setActive(null); setQuestion(''); setUncertain(false); setConfirmDelete(false)
+      setAttachments([]); setIndexedAttachments([]); setAttachmentNotice('')
       showMemory(null)
       try { localStorage.removeItem(selectionKey) } catch { /* Optional browser storage. */ }
     })
@@ -136,7 +146,7 @@ export default function Conversations({ disabled, canAsk = true, totalChunks, do
 
   function send(event: FormEvent) {
     event.preventDefault()
-    if (!active || !question.trim() || uncertain || !canAsk) return
+    if (!active || !question.trim() || uncertain || !(canAsk || (canAttach && attachments.length > 0))) return
     const session = active
     const submitted = question.trim()
     void run('生成回答', async () => {
@@ -150,7 +160,7 @@ export default function Conversations({ disabled, canAsk = true, totalChunks, do
             const labels = { queued: '等待处理', planning: '正在规划', retrieving: '正在检索', drafting: '正在整理回答', verifying: '正在核验', revising: '正在补充修订', summarizing: '正在整理会话记忆' }
             setStage(labels[event.stage])
           } else setPending(value => value ? { ...value, text: value.text + event.text, sources: event.sources } : value)
-        }, controller.signal, documentIds)
+        }, controller.signal, documentIds, attachments.map(image => image.id), skillIds)
         setActive({ ...session, turns: [...session.turns, turn], updated_at: turn.created_at })
         setSessions(items => [{ ...session, updated_at: turn.created_at }, ...items.filter(item => item.id !== session.id)])
         setQuestion('')
@@ -168,6 +178,41 @@ export default function Conversations({ disabled, canAsk = true, totalChunks, do
   }
 
   const blocked = disabled || busy !== null
+  const questionAllowed = canAsk || (canAttach && attachments.length > 0)
+
+  function uploadImages(files: File[]) {
+    if (!active || !canAttach || blocked || uncertain || !files.length) return
+    if (attachments.length + files.length > 4) { setError('每次提问最多附加 4 张图片。'); return }
+    for (const file of files) {
+      const issue = validateImageFile(file)
+      if (issue) { setError(issue); return }
+    }
+    const session = active.id
+    void run('上传图片', async () => {
+      setAttachmentNotice('')
+      for (const file of files) {
+        const image = await api.uploadAttachment(session, file)
+        setAttachments(items => [...items.filter(item => item.id !== image.id), image])
+      }
+    })
+  }
+
+  function indexImage(id: string) {
+    if (!active || !canIndexAttachments) return
+    const session = active.id
+    void run('图片入库', async () => {
+      const doc = await api.indexAttachment(session, id)
+      setIndexedAttachments(items => [...items, id])
+      setAttachmentNotice(doc.status === 'ready' ? '图片已在资料库中。' : '图片已提交入库，正在后台处理。')
+      await onLibraryChange?.()
+    })
+  }
+
+  function reuseImage(image: ImageAttachment) {
+    if (attachments.some(item => item.id === image.id)) return
+    if (attachments.length >= 4) { setError('每次提问最多附加 4 张图片。'); return }
+    setAttachments(items => [...items, image])
+  }
   return <section className="conversation-workspace" aria-label="研究会话">
     <aside className="session-panel panel" aria-label="会话列表">
       <div className="session-heading"><h2>研究会话</h2><span>{sessions.length}</span></div>
@@ -202,12 +247,14 @@ export default function Conversations({ disabled, canAsk = true, totalChunks, do
         {!active?.turns.length && !pending && <div className="empty-state"><h3>{active ? '向文献提问' : '新建或选择一个会话'}</h3></div>}
         {active?.turns.map((turn, index) => <article className="chat-turn" key={turn.id}>
           <div className="turn-question"><span>第 {index + 1} 轮 · 你</span><h3>{turn.question}</h3></div>
+          <ImageAttachments attachments={turn.attachments ?? []} disabled={blocked || uncertain} onReuse={canAttach ? reuseImage : undefined} />
           <div className="answer-panel panel"><div className="answer-title"><span className="answer-label">研究助手 · 已保存回答</span><button className="copy-button" onClick={async () => {
             try {
               await navigator.clipboard.writeText([turn.question, turn.answer.text, ...turn.answer.sources.map(source => `[${source.citation_id}] ${source.source_path} · ${sourcePageLabel(source)}\n${source.section_path?.join(' > ') ?? ''}\n${source.text}`)].join('\n\n'))
               setCopied(turn.id)
             } catch { setError('复制失败，请选中回答文字手动复制。') }
           }}>{copied === turn.id ? '已复制' : '复制回答'}</button></div><p className="answer-text">{turn.answer.text}</p>
+          {!!turn.answer.skills_used?.length && <p className="used-skills">本轮技能：{turn.answer.skills_used.map(skill => skill.name).join('、')}</p>}
             <details className="turn-evidence" open><summary>本轮证据 · {turn.answer.sources.length} 条</summary>
               {!turn.answer.sources.length && <p className="session-hint">暂无可展示的引用。</p>}
               {turn.answer.sources.map(source => <EvidenceSource key={source.citation_id} source={source} onOpenSource={onOpenSource} />)}
@@ -224,9 +271,17 @@ export default function Conversations({ disabled, canAsk = true, totalChunks, do
       </div>
       <p className="chat-status" role="status">{busy && busy !== '生成回答' ? `${busy}…` : ''}</p>
       <form className="question-panel panel" onSubmit={send}>
-        <div className="panel-heading"><label htmlFor="research-question">继续提问</label><span className="scope-hint">{documentIds.length ? `仅检索已选 ${documentIds.length} 篇` : '请先在左侧选择文献'}</span></div>
-        <textarea id="research-question" value={question} onChange={e => setQuestion(e.target.value)} placeholder="围绕已上传文献提问…" maxLength={2000} required disabled={blocked || !canAsk || !active || uncertain} />
-        <div className="form-footer"><details className="advanced-options"><summary>选项</summary><label className="top-k">检索片段数<select value={topK} onChange={e => setTopK(Number(e.target.value))} disabled={blocked}>{[1, 2, 3, 5, 10].map(k => <option key={k}>{k}</option>)}</select><span className="available">共 {totalChunks} 个片段</span></label></details><button className="primary-button" disabled={blocked || !canAsk || !active || !question.trim() || uncertain}>{busy === '生成回答' ? '回答中…' : '发送 →'}</button></div>
+        <div className="panel-heading"><label htmlFor="research-question">继续提问</label><span className="scope-hint">{documentIds.length ? `已选 ${documentIds.length} 份资料` : attachments.length ? '仅使用本次附件' : '未选择资料'}</span></div>
+        <ImageAttachments attachments={attachments} disabled={blocked || uncertain} indexed={indexedAttachments} onRemove={id => setAttachments(items => items.filter(item => item.id !== id))} onIndex={canIndexAttachments ? indexImage : undefined} />
+        {attachmentNotice && <p className="attachment-notice" role="status">{attachmentNotice}</p>}
+        <label className="attachment-upload">附图 · {attachments.length}/4
+          <input aria-label="添加提问图片" type="file" accept={imageAccept} multiple disabled={!canAttach || blocked || !active || uncertain || attachments.length >= 4} onChange={e => { uploadImages(Array.from(e.target.files ?? [])); e.target.value = '' }} />
+        </label>
+        <textarea id="research-question" value={question} onChange={e => setQuestion(e.target.value)} placeholder="围绕资料或附图提问…" maxLength={2000} required disabled={blocked || (!canAsk && !canAttach) || !active || uncertain} onPaste={event => {
+          const images = Array.from(event.clipboardData.files).filter(file => file.type.startsWith('image/'))
+          if (images.length && canAttach) { event.preventDefault(); uploadImages(images) }
+        }} />
+        <div className="form-footer"><details className="advanced-options"><summary>选项</summary><label className="top-k">检索片段数<select value={topK} onChange={e => setTopK(Number(e.target.value))} disabled={blocked}>{[1, 2, 3, 5, 10].map(k => <option key={k}>{k}</option>)}</select><span className="available">共 {totalChunks} 个片段</span></label><SkillOptions value={skillIds} onChange={setSkillIds} disabled={blocked} /></details><button className="primary-button" disabled={blocked || !questionAllowed || !active || !question.trim() || uncertain}>{busy === '生成回答' ? '回答中…' : '发送 →'}</button></div>
       </form>
     </div>
   </section>

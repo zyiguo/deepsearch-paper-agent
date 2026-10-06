@@ -24,14 +24,15 @@ export default function PdfViewer({ id, initialPage, onClose }: { id: string; in
       .catch(e => { if (!controller.signal.aborted) setError(e instanceof Error ? e.message : '页面加载失败') })
     return () => controller.abort()
   }, [id, page])
-  return <dialog ref={dialog} className="pdf-dialog" aria-label="PDF 原文查看" onCancel={e => { e.preventDefault(); onClose() }}>
+  const isImage = data?.media_type === 'image/png'
+  return <dialog ref={dialog} className="pdf-dialog" aria-label="原文查看" onCancel={e => { e.preventDefault(); onClose() }}>
     <header className="pdf-toolbar"><div><small>ORIGINAL DOCUMENT</small><h2>{data?.title ?? '原文查看'}</h2></div><button onClick={onClose} autoFocus>关闭 ×</button></header>
     <nav className="pdf-controls" aria-label="PDF 翻页">
       <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}>上一页</button>
       <span>第 {page} / {data?.page_count ?? '…'} 页</span>
       <button disabled={!data || page >= data.page_count} onClick={() => setPage(p => p + 1)}>下一页</button>
       <button onClick={() => setTextOnly(value => !value)}>{textOnly ? '查看原页' : '查看提取文字'}</button>
-      <a href={`/api/documents/${encodeURIComponent(id)}/file`}>下载原始 PDF</a>
+      <a href={`/api/documents/${encodeURIComponent(id)}/file`}>{isImage ? '下载图片' : '下载原始 PDF'}</a>
     </nav>
     <div className="pdf-canvas">
       {error && <p role="alert" className="error">{error}</p>}

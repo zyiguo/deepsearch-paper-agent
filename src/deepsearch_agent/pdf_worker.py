@@ -6,7 +6,7 @@ from pathlib import Path
 
 def main():
     operation, source, target = sys.argv[1:4]
-    if operation == 'extract':
+    if operation in {'extract', 'extract-visual'}:
         from pypdf import PdfReader
         reader = PdfReader(source)
         if reader.is_encrypted:
@@ -21,10 +21,10 @@ def main():
             if total > 100_000:
                 raise ValueError('提取文本超过 100000 字符，请拆分 PDF')
             pages.append(text)
-        if sum(len(''.join(text.split())) for text in pages) < 10:
+        if operation == 'extract' and sum(len(''.join(text.split())) for text in pages) < 10:
             raise ValueError('没有足够的可提取文字，扫描件需要 OCR，本轮暂不支持')
         Path(target).write_text(json.dumps(pages, ensure_ascii=False), encoding='utf-8')
-    elif operation == 'render':
+    elif operation in {'render', 'render-vision'}:
         import pypdfium2 as pdfium
         page_number = int(sys.argv[4])
         with pdfium.PdfDocument(source) as doc:
@@ -33,7 +33,8 @@ def main():
                 width, height = page.get_size()
                 if width <= 0 or height <= 0:
                     raise ValueError('PDF 页面尺寸无效')
-                bitmap = page.render(scale=min(1.5, 1800 / max(width, height)))
+                scale, max_side = (3, 3200) if operation == 'render-vision' else (1.5, 1800)
+                bitmap = page.render(scale=min(scale, max_side / max(width, height)))
                 try:
                     bitmap.to_pil().save(target, format='PNG')
                 finally:

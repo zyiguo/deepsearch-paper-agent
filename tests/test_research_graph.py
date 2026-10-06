@@ -44,7 +44,7 @@ def test_graph_returns_only_verified_claims():
 
 
 def test_graph_rejects_fabricated_citation_even_if_verifier_accepts():
-    result = run([{'queries':['信号']}, {'claims':[{'text':'编造','citations':[99]}]}, {'supported':[0], 'queries':[]}])
+    result = run([{'queries':['信号']}] + [{'claims':[{'text':'编造','citations':[99]}]}] * 3)
     assert '编造' not in result.text
     assert result.sources == []
 
@@ -61,7 +61,7 @@ def test_graph_stops_after_two_supplementary_rounds():
 
 
 def test_graph_malformed_output_fails_closed():
-    result = run([{'queries':['信号']}, {'wrong':'schema'}])
+    result = run([{'queries':['信号']}, {'wrong':'schema'}, {'wrong':'schema'}])
     assert '无法' in result.text and not result.sources
 
 

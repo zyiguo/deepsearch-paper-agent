@@ -11,6 +11,27 @@ class TextChunk:
     page_end: int | None = None
     page_spans: list[dict[str, int]] = field(default_factory=list)
     chunking: dict = field(default_factory=dict)
+    evidence_kind: str = 'text'
+    visual_pages: list[int] = field(default_factory=list)
+    content_id: str = ''
+    chunk_id: str = ''
+    asset_ids: list[str] = field(default_factory=list)
+    identity_version: int = 1
+
+    def __post_init__(self):
+        from deepsearch_agent.content_identity import identities
+        content, chunk_id, assets = identities(self)
+        # Keep original IDs on prompt-only excerpts created with dataclasses.replace.
+        if not self.content_id:
+            self.content_id = content
+        if not self.chunk_id:
+            self.chunk_id = chunk_id
+        if not self.asset_ids:
+            self.asset_ids = assets
+
+    def refresh_identity(self):
+        from deepsearch_agent.content_identity import identities
+        self.content_id, self.chunk_id, self.asset_ids = identities(self)
 
     @property
     def retrieval_text(self) -> str:
@@ -20,6 +41,14 @@ class TextChunk:
 
     def validate_structure(self) -> None:
         """Validate additive metadata before accepting a snapshot."""
+        if self.evidence_kind not in {'text', 'ocr', 'figure', 'table', 'formula', 'image'}:
+            raise ValueError('片段证据类型无效')
+        if (not isinstance(self.visual_pages, list)
+                or any(type(p) is not int or not self.page_number <= p <= (self.page_end or self.page_number) for p in self.visual_pages)
+                or len(set(self.visual_pages)) != len(self.visual_pages)):
+            raise ValueError('片段视觉页码无效')
+        if self.evidence_kind != 'text' and not self.visual_pages:
+            raise ValueError('视觉片段缺少原页引用')
         if not isinstance(self.section_path, list) or any(not isinstance(s, str) or not s.strip() for s in self.section_path):
             raise ValueError('片段章节路径无效')
         if self.page_end is not None and (type(self.page_end) is not int or self.page_end < self.page_number):
@@ -47,6 +76,9 @@ class TextChunk:
             SectionConfig(**self.chunking)
             if not self.page_spans:
                 raise ValueError('结构化片段缺少页码映射')
+        from deepsearch_agent.content_identity import identities
+        if (self.content_id, self.chunk_id, self.asset_ids) != identities(self):
+            raise ValueError('片段内容、位置与 ID 不一致')
 
 def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> list[str]:
     if chunk_size <= 0:

@@ -7,11 +7,15 @@ from deepsearch_agent.documents import DocumentError, MAX_UPLOAD_BYTES
 router = APIRouter(prefix='/api/documents', tags=['PDF 文献'])
 
 
-def writable(request):
+def local_origin(request):
     origin = request.headers.get('origin')
     if origin and origin not in {'http://127.0.0.1:5173', 'http://localhost:5173',
                                   'http://127.0.0.1:8000', 'http://localhost:8000'}:
         raise HTTPException(403, '仅允许本地工作台上传')
+
+
+def writable(request):
+    local_origin(request)
     if request.app.state.demo_retrieval:
         raise HTTPException(409, '请先配置真实 Embedding，再上传 PDF')
     if request.app.state.write_blocked:
@@ -75,6 +79,28 @@ def page(ident: str, number: int, request: Request):
         raise HTTPException(404, '文献或页码不存在，或尚未解析完成') from None
 
 
+@router.post('/{ident}/analyze', status_code=202)
+def analyze(ident: str, request: Request):
+    writable(request)
+    try:
+        return request.app.state.documents.retry(ident, analyze=True)
+    except KeyError:
+        raise HTTPException(404, '文献不存在') from None
+    except DocumentError as error:
+        raise HTTPException(409, str(error)) from None
+
+
+@router.post('/{ident}/index-images', status_code=202)
+def index_images(ident: str, request: Request):
+    writable(request)
+    try:
+        return request.app.state.documents.index_images(ident)
+    except KeyError:
+        raise HTTPException(404, '文献不存在') from None
+    except DocumentError as error:
+        raise HTTPException(409, str(error)) from None
+
+
 @router.get('/{ident}/pages/{number}/image')
 def image(ident: str, number: int, request: Request):
     try:
@@ -91,10 +117,12 @@ def original(ident: str, request: Request):
     try:
         library = request.app.state.documents
         record = library.view(ident)
-        path = library.path(ident, '.pdf')
+        is_image = record['media_type'] == 'image/png'
+        path = library.path(ident, '.png' if is_image else '.pdf')
         if not path.is_file():
             raise KeyError()
-        return FileResponse(path, media_type='application/pdf', filename=record['title'],
+        filename = record['title'].rsplit('.', 1)[0] + '.png' if is_image else record['title']
+        return FileResponse(path, media_type=record['media_type'], filename=filename,
                             headers={'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': 'sandbox'})
     except KeyError:
         raise HTTPException(404, '原始文件不存在') from None

@@ -10,12 +10,12 @@ def retrieve(kb, question, top_k=5, *, query_expander=None, reranker=None, histo
             pass  # fallback: use original query only
 
     fetch_count = min(top_k * 4, 20) if reranker else top_k
-    seen_keys: set[tuple] = set()
+    seen_keys: set[str] = set()
     searched_queries = []
     for q in queries:
         searched_queries.append(q)
         for c in kb.search(q, top_k=fetch_count):
-            key = (c.source_path, c.page_number, c.chunk_index, c.text)
+            key = c.chunk_id
             if key not in seen_keys:
                 seen_keys.add(key)
                 chunks.append(c)

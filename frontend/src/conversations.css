@@ -17,3 +17,21 @@
 .memory-preferences{display:flex;gap:12px}.memory-preferences label{flex:1;min-width:0}.memory-panel button{padding:7px 10px;margin:6px 8px 6px 0;color:#426341;background:#edf1e6;border-radius:4px}
 .memory-panel p{line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}.memory-summary{margin:14px 0}
 @media(prefers-reduced-motion:reduce){.loading-ring{animation:none}}
+.image-attachments { display: grid; grid-template-columns: repeat(auto-fill, minmax(144px, 1fr)); gap: 12px; margin: 12px 0; max-width: 100%; }
+.image-attachment { margin: 0; min-width: 0; max-width: 220px; }
+.image-attachment > a { display: block; width: 100%; aspect-ratio: 3 / 2; background: #fff; border: 1px solid #d8ded9; border-radius: 4px; overflow: hidden; }
+.image-attachment img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.image-attachment figcaption { font-size: 12px; line-height: 1.5; margin-top: 4px; overflow-wrap: anywhere; }
+.attachment-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.attachment-actions button { font-size: 12px; padding: 4px 6px; }
+.attachment-actions .attachment-remove { width: 28px; height: 28px; padding: 0; font-size: 20px; }
+.attachment-upload { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; margin: 12px 0; }
+.attachment-upload input { max-width: 100%; min-width: 0; font-size: 12px; }
+.attachment-notice { font-size: 12px; overflow-wrap: anywhere; }
+.skill-options { border: 0; border-top: 1px solid #ddd; padding: 12px 0 0; margin: 12px 0 0; min-width: 0; }
+.skill-options legend, .used-skills { font-size: 12px; color: #586458; overflow-wrap: anywhere; }
+.skill-options-toolbar { display: flex; align-items: center; gap: 8px; }
+.skill-options-toolbar select { max-width: 100%; min-width: 0; }
+.skill-options-toolbar button { flex: 0 0 32px; width: 32px; height: 32px; padding: 0; }
+.skill-choice { display: flex; gap: 8px; align-items: start; margin-top: 8px; font-size: 12px; }
+.skill-choice span, .skill-options p { overflow-wrap: anywhere; }

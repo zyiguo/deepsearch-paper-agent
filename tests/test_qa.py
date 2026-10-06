@@ -37,6 +37,9 @@ def test_answer_service_uses_knowledge_base_context_when_available() -> None:
             source_path="papers/rag.pdf",
             page_number=1,
             text="RAG 使用检索增强生成回答。",
+            chunk_id=kb.chunks[0].chunk_id,
+            content_id=kb.chunks[0].content_id,
+            asset_ids=kb.chunks[0].asset_ids,
     )
 ]
 def test_answer_without_knowledge_base_returns_empty_sources():

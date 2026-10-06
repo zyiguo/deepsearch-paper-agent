@@ -1,0 +1,4 @@
+# Security floors verified for the 2026-10-06 release; not a complete lockfile.
+pip>=26.2,<27
+pypdf>=6.19,<7
+urllib3>=2.8,<3

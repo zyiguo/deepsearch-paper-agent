@@ -4,7 +4,8 @@ import type { PaperDocument, PersistenceStatus } from './api'
 import { persistenceView } from './persistence'
 import Conversations from './Conversations'
 import PdfViewer from './PdfViewer'
-import { pdfDocumentId } from './pdfSource'
+import { libraryDocumentId } from './pdfSource'
+import { imageAccept, validateImageFile } from './imageFiles'
 
 type IconName = 'book' | 'plus' | 'refresh' | 'arrow' | 'file' | 'search' | 'check' | 'copy' | 'external'
 const paths: Record<IconName, string> = {
@@ -36,6 +37,7 @@ async function fetchLibrary(signal?: AbortSignal) {
     mode: health.status === 'fulfilled' ? health.value.mode : null,
     retrievalMode: health.status === 'fulfilled' ? health.value.retrieval_mode ?? null : null,
     connected: health.status === 'fulfilled',
+    visionEnabled: health.status === 'fulfilled' && !!health.value.vision_enabled,
     connectionError: health.status === 'rejected' ? messageOf(health.reason)
       : documents.status === 'rejected' ? messageOf(documents.reason) : '',
   }
@@ -43,6 +45,7 @@ async function fetchLibrary(signal?: AbortSignal) {
 
 export default function App() {
   const [mode, setMode] = useState<string | null>(null)
+  const [visionEnabled, setVisionEnabled] = useState(false)
   const [documents, setDocuments] = useState<PaperDocument[]>([])
   const [selectedIds, setSelectedIds] = useState<string[] | null>(null)
   const [asking, setAsking] = useState(false)
@@ -59,7 +62,7 @@ export default function App() {
   const [notice, setNotice] = useState('')
   const actionLock = useRef(false)
   const fileInput = useRef<HTMLInputElement>(null)
-  const hasPending = documents.some(doc => ['queued', 'parsing', 'embedding'].includes(doc.status))
+  const hasPending = documents.some(doc => ['queued', 'parsing', 'analyzing', 'embedding'].includes(doc.status))
 
   useEffect(() => {
     if (!hasPending) return
@@ -87,7 +90,7 @@ export default function App() {
         if (!controller.signal.aborted) {
           if (snapshot.items !== null) setDocuments(snapshot.items)
           setPersistence(snapshot.persistence); setPersistenceIssue(snapshot.issue)
-          setConnection(snapshot.connected ? 'online' : 'unknown'); setMode(snapshot.mode)
+          setConnection(snapshot.connected ? 'online' : 'unknown'); setMode(snapshot.mode); setVisionEnabled(snapshot.visionEnabled)
           setError(snapshot.connectionError)
         }
       })
@@ -103,7 +106,7 @@ export default function App() {
     const snapshot = await fetchLibrary()
     if (snapshot.items !== null) setDocuments(snapshot.items)
     setPersistence(snapshot.persistence); setPersistenceIssue(snapshot.issue)
-    setConnection(snapshot.connected ? 'online' : 'unknown'); setMode(snapshot.mode)
+    setConnection(snapshot.connected ? 'online' : 'unknown'); setMode(snapshot.mode); setVisionEnabled(snapshot.visionEnabled)
     return snapshot
   }
 
@@ -121,25 +124,26 @@ export default function App() {
 
   async function uploadPdf() {
     if (!file || !consent || busy || actionLock.current) return
-    if (!file.name.toLowerCase().endsWith('.pdf') || file.size === 0 || file.size > 10 * 1024 * 1024) {
-      setError('请选择非空 PDF 文件，大小不超过 10 MiB。'); return
+    const isPdf = file.name.toLowerCase().endsWith('.pdf')
+    if ((isPdf && (!file.size || file.size > 10 * 1024 * 1024)) || (!isPdf && validateImageFile(file))) {
+      setError('请选择非空 PDF、PNG、JPEG 或 WebP 文件，大小不超过 10 MiB。'); return
     }
     actionLock.current = true; setBusy('upload'); setError(''); setNotice('')
     try {
-      const doc = await api.uploadPdf(file)
+      const doc = await (isPdf ? api.uploadPdf(file) : api.uploadImage(file))
       setDocuments(items => [doc, ...items.filter(item => item.id !== doc.id)])
-      setNotice(doc.status === 'ready' ? '这份 PDF 已入库，未重复生成向量。' : '上传完成，正在后台处理。文献显示“可提问”后即可开始研究。')
+      setNotice(doc.status === 'ready' ? '这份资料已入库，未重复生成向量。' : '上传完成，正在后台处理。资料显示“可提问”后即可开始研究。')
       setFile(null); setConsent(false)
       if (fileInput.current) fileInput.current.value = ''
     } catch (e) { setError(`${messageOf(e)} 上传结果不确定时，请先刷新文献列表核对。`) }
     finally { await reconcileLibrary(); setBusy(null); actionLock.current = false }
   }
 
-  async function retryDocument(id: string) {
+  async function retryDocument(id: string, analyze = false, images = false) {
     if (busy || actionLock.current) return
     actionLock.current = true; setBusy('upload'); setError('')
     try {
-      const doc = await api.retryDocument(id)
+      const doc = await (images ? api.indexDocumentImages(id) : analyze ? api.analyzeDocument(id) : api.retryDocument(id))
       setDocuments(items => items.map(item => item.id === id ? doc : item))
       setNotice('已重新提交文献处理，可能再次调用向量服务。')
     } catch (e) { setError(messageOf(e)) }
@@ -167,7 +171,7 @@ export default function App() {
     else void persist('load')
   }
 
-  const selectable = documents.filter(doc => doc.status === 'ready' && doc.chunk_count > 0 && pdfDocumentId(doc.source_path))
+  const selectable = documents.filter(doc => doc.status === 'ready' && (doc.chunk_count > 0 || (doc.image_indexed_pages ?? 0) > 0) && libraryDocumentId(doc.source_path))
   const chosen = selectable.filter(doc => selectedIds === null || selectedIds.includes(doc.id))
   const chosenIds = chosen.map(doc => doc.id)
   const totalChunks = chosen.reduce((total, document) => total + document.chunk_count, 0)
@@ -176,7 +180,7 @@ export default function App() {
   const ready = mode === 'live-llm-live-retrieval'
   const storage = persistenceView(persistence, persistenceIssue)
   const canUpload = storage.canIngest && ['live-llm-live-retrieval', 'live-retrieval-demo-llm'].includes(mode ?? '')
-  const statusLabel: Record<string, string> = { queued: '排队中', parsing: '解析 PDF 中', embedding: '生成向量中', ready: '可提问', failed: '处理失败', not_indexed: '需重新入库' }
+  const statusLabel: Record<string, string> = { queued: '排队中', parsing: '解析 PDF 中', analyzing: '识别图表与扫描页中', embedding: '生成向量中', ready: '可提问', failed: '处理失败', not_indexed: '需重新入库' }
 
   return (
     <div className="workspace">
@@ -184,12 +188,12 @@ export default function App() {
       <aside className="sidebar" aria-label="文献库">
         <a className="brand" href="/" aria-label="DeepSearch 首页"><span className="brand-symbol">D<span>·</span></span><span><strong>DeepSearch</strong></span></a>
         <div className="library-heading"><h2>文献库</h2><span className="count">{documents.length}</span></div>
-        <section className="pdf-upload" aria-label="上传 PDF">
-          <label htmlFor="pdf-file">上传 PDF</label>
-          <input ref={fileInput} id="pdf-file" type="file" accept=".pdf,application/pdf" disabled={working || !canUpload} onChange={e => { setFile(e.target.files?.[0] ?? null); setConsent(false) }} />
-          <p>仅文字 PDF，最多 10 MiB。所有会话共享文献。</p>
+        <section className="pdf-upload" aria-label="上传资料">
+          <label htmlFor="pdf-file">上传 PDF 或图片</label>
+          <input ref={fileInput} id="pdf-file" type="file" accept={`.pdf,application/pdf,${imageAccept}`} disabled={working || !canUpload} onChange={e => { setFile(e.target.files?.[0] ?? null); setConsent(false) }} />
+          <p>PDF、PNG、JPEG、WebP，单文件最多 10 MiB。所有会话共享资料库。</p>
           {!canUpload && <p>请启用真实 Embedding，并确认知识库允许写入。</p>}
-          <label className="upload-consent"><input type="checkbox" checked={consent} disabled={working} onChange={e => setConsent(e.target.checked)} />我同意将提取文字发送至已配置的向量服务，可能产生费用。</label>
+          <label className="upload-consent"><input type="checkbox" checked={consent} disabled={working} onChange={e => setConsent(e.target.checked)} />我同意将文字发送至向量服务；启用视觉识别或图像检索时也会发送页面图片，可能产生费用。</label>
           <button onClick={uploadPdf} disabled={working || !canUpload || !file || !consent}>{busy === 'upload' ? '正在提交…' : '上传并入库'}</button>
         </section>
         <label className="library-search"><Icon name="search" /><input aria-label="搜索文献名称" placeholder="查找文献…" value={filter} onChange={event => setFilter(event.target.value)} /></label>
@@ -200,12 +204,16 @@ export default function App() {
           {visibleDocuments.map(document => <article className="document" key={document.id}><input type="checkbox" aria-label={`检索 ${document.title}`} checked={chosenIds.includes(document.id)} disabled={asking || working || !selectable.some(doc => doc.id === document.id)} onChange={e => {
             setSelectedIds(e.target.checked ? [...chosenIds, document.id] : chosenIds.filter(id => id !== document.id))
           }} /><div>
-            {pdfDocumentId(document.source_path) ? <button className="document-open" disabled={document.page_count < 1} title="打开原文" onClick={() => setViewer({ id: document.id, page: 1 })}>{document.title}</button> : <h3 title={document.title}>{document.title}</h3>}
+            {libraryDocumentId(document.source_path) ? <button className="document-open" disabled={document.page_count < 1} title="打开原文" onClick={() => setViewer({ id: document.id, page: 1 })}>{document.title}</button> : <h3 title={document.title}>{document.title}</h3>}
             <p>{document.chunk_count} 个片段 {document.page_count > 0 && ` · ${document.page_count} 页`}<span>文献资料</span></p>
             <small className="document-status">{statusLabel[document.status] ?? document.status}</small>
+            {document.analysis_mode === 'vision' && <small className="document-status">已识别图表与扫描页</small>}
+            {!!document.image_indexed_pages && <small className="document-status">已索引 {document.image_indexed_pages} 页图像</small>}
             {document.error && <p className="document-error">{document.error}</p>}
             {document.warnings.map(warning => <p className="document-warning" key={warning}>{warning}</p>)}
             {['failed', 'not_indexed'].includes(document.status) && <button className="retry-document" disabled={working || !canUpload} onClick={() => retryDocument(document.id)}>重新处理（可能计费）</button>}
+            {document.vision_available && document.status === 'ready' && document.analysis_mode !== 'vision' && <button className="retry-document" disabled={asking || working || !canUpload} onClick={() => retryDocument(document.id, true)}>识别图表与扫描页（可能计费）</button>}
+            {document.image_index_available && ['ready', 'failed'].includes(document.status) && document.chunk_count > 0 && (document.image_indexed_pages ?? 0) < document.page_count && <button className="retry-document" disabled={asking || working || !canUpload} onClick={() => retryDocument(document.id, false, true)}>建立图像索引（可能计费）</button>}
           </div></article>)}
           {documents.length > 0 && visibleDocuments.length === 0 && <p className="library-hint">没有匹配的文献名称。</p>}
         </div>
@@ -230,8 +238,8 @@ export default function App() {
           {!ready && <p className="notice">服务尚未就绪，请检查模型配置并重启后端。</p>}
           <div className="feedback" aria-live="polite">{notice && <p className="notice"><Icon name="check" />{notice}</p>}{error && <div className="error" role="alert"><span>{error}</span><button onClick={syncLibrary} disabled={working}>重新连接</button></div>}</div>
 
-          <Conversations disabled={working} canAsk={ready && chosenIds.length > 0} totalChunks={totalChunks} documentIds={chosenIds} onRestoreScope={setSelectedIds} onAskingChange={setAsking} onOpenSource={(id, page) => setViewer({ id, page })} />
-          <p className="privacy-note">提问会将相关文字发送至模型服务，可能计费。请核对原文。</p>
+          <Conversations disabled={working} canAsk={ready && chosenIds.length > 0} canAttach={visionEnabled} canIndexAttachments={canUpload} onLibraryChange={reconcileLibrary} totalChunks={totalChunks} documentIds={chosenIds} onRestoreScope={setSelectedIds} onAskingChange={setAsking} onOpenSource={(id, page) => setViewer({ id, page })} />
+          <p className="privacy-note">提问会将相关文字发送至模型服务；视觉证据也会发送原页图片，可能计费。请核对原文。</p>
         </main>
       </div>
       {viewer && <PdfViewer key={viewer.id + ':' + viewer.page} id={viewer.id} initialPage={viewer.page} onClose={() => setViewer(null)} />}
