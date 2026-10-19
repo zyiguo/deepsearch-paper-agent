@@ -2,12 +2,18 @@ from fastapi import Request
 from deepsearch_agent.core.errors import ApplicationError
 from fastapi.responses import JSONResponse
 from deepsearch_agent.core.models import ModelServiceError
+from deepsearch_agent.core.tool_execution import ToolExecutionBlocked
 from deepsearch_agent.workspace.skills import SkillError
 
 
 from deepsearch_agent.workspace.llm_wiki import WikiError
 
 def register_error_handlers(app):
+    @app.exception_handler(ToolExecutionBlocked)
+    async def handle_tool_execution_error(request, error):
+        return JSONResponse(status_code=503 if error.code.endswith('unavailable') else 409,
+            content={'detail': error.code, 'operation_id': error.operation_id})
+
     @app.exception_handler(ApplicationError)
     async def handle_application_error(request, error):
         return JSONResponse(status_code=error.status_code, content={'detail': error.detail})

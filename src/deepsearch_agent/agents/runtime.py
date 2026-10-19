@@ -107,6 +107,10 @@ class ResearchWorkflow(ModelCallsMixin, EvidenceContextMixin, CoordinatorMixin, 
                 config = {'recursion_limit': 32, 'callbacks': []}
                 if self.run_id:
                     config['configurable'] = {'thread_id': self.run_id}
+                if resume and getattr(self.tool_session, 'execution', None) is not None:
+                    saved = self.graph.get_state(config).values.get('tool_session_state')
+                    if saved is not None:
+                        self.tool_session.restore_runtime(saved)
                 options = {'durability': 'sync'} if self.run_id else {}
                 state = self.graph.invoke(initial, config=config, **options)
         except ValidationError:

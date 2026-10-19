@@ -227,7 +227,15 @@ def test_http_contract_matches_pre_refactor_snapshot():
     from deepsearch_agent.adapters.llm_config import LLMSettings
     from deepsearch_agent.adapters.mcp_config import MCPSettings
     app = create_app(llm_settings=LLMSettings(), mcp_settings=MCPSettings())
-    assert app.openapi() == json.loads((FIXTURES / 'openapi.json').read_text(encoding='utf-8'))
+    current = app.openapi()
+    previous = json.loads((FIXTURES / 'openapi.json').read_text(encoding='utf-8'))
+    # Preserve the immutable historical fixture and every original contract;
+    # this increment intentionally adds only the authorized ledger inspection API.
+    new_path = '/api/sessions/{session_id}/runs/{run_id}/operations'
+    assert set(current['paths']) - set(previous['paths']) == {new_path}
+    assert set(current['paths'][new_path]) == {'get'}
+    current['paths'].pop(new_path)
+    assert current == previous
 
 
 def test_explicit_disabled_agent_rejects_live_startup_before_creating_model(tmp_path, monkeypatch):

@@ -5,6 +5,7 @@ from dataclasses import asdict, is_dataclass
 from deepsearch_agent.core.identity import fingerprint
 from deepsearch_agent.core.errors import ApplicationError
 from deepsearch_agent.core.models import ModelServiceError
+from deepsearch_agent.core.tool_execution import ToolExecutionBlocked
 
 
 def submission_id(session_id, key):
@@ -41,6 +42,8 @@ def context_identity(state, manager, session_id):
 
 
 def error_code(error):
+    if isinstance(error, ToolExecutionBlocked):
+        return error.code
     if isinstance(error, ModelServiceError):
         return error.diagnostics().get('error_code') or 'model_service_error'
     if isinstance(error, ApplicationError) and error.status_code == 503:

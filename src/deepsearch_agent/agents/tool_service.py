@@ -1,5 +1,5 @@
 """Scoped paper tools shared by the agent and protocol adapters."""
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 import hashlib
 import json
 import time
@@ -9,6 +9,8 @@ from pydantic import BaseModel, ConfigDict, Field, StrictInt, ValidationError, m
 
 from deepsearch_agent.agents.agent_config import AgentSettings
 from deepsearch_agent.core.evidence import TextChunk
+from deepsearch_agent.core.tool_execution import ToolKind, ToolExecutionBlocked
+from deepsearch_agent.core.cancellation import ResearchCancelled
 from deepsearch_agent.core.identity import source_identity
 from deepsearch_tracing.context import notify
 from deepsearch_agent.knowledge.retrieval_pipeline import retrieve
@@ -99,6 +101,8 @@ class PaperToolSession:
         self.observer = observer
         self.memory = working_memory
         self.memory_notes = {}
+        self.execution = None
+        self.operation_slot = None
         self.tool_definitions = dict(TOOLS)
         if working_memory is not None:
             self.tool_definitions['working_memory'] = (WorkingMemoryArgs,
@@ -132,6 +136,18 @@ class PaperToolSession:
         self.deadline = time.monotonic() + self.settings.timeout_seconds
         self.image_refs = {(c.source_path, p) for c in (input_evidence or []) for p in c.visual_pages}
 
+    def runtime_snapshot(self):
+        return {'calls': self.calls, 'ocr_calls': self.ocr_calls,
+                'memory_notes': dict(self.memory_notes), 'evidence': list(self.evidence),
+                'image_refs': sorted(self.image_refs)}
+
+    def restore_runtime(self, snapshot):
+        self.calls, self.ocr_calls = snapshot['calls'], snapshot['ocr_calls']
+        self.memory_notes = dict(snapshot['memory_notes'])
+        self.evidence = []
+        self.image_refs = {tuple(ref) for ref in snapshot['image_refs']}
+        self.result({}, snapshot['evidence'])
+
     @property
     def remaining_calls(self):
         if time.monotonic() >= self.deadline:
@@ -155,9 +171,44 @@ class PaperToolSession:
             args = self.tool_definitions[name][0].model_validate(arguments)
         except ValidationError:
             raise ToolError('invalid_arguments') from None
+        values = args.model_dump()
+        if self.execution is not None:
+            if self.operation_slot is None:
+                raise ToolExecutionBlocked('tool_operation_identity_missing')
+            outcome = self.execution.execute(self.operation_slot, name, self.tool_kind(name, values), values,
+                lambda ident: asdict(self._invoke_validated(name, values)))
+            if outcome.replayed:
+                self.reserve(name)
+                if name == 'ocr_page':
+                    self.ocr_calls += 1
+                saved = outcome.value
+                restored = self.result(saved['data'], [TextChunk(**c) for c in saved['chunks']])
+                if name == 'working_memory':
+                    self.memory_notes[values['document']] = saved['data'].get('content', values.get('content', ''))
+                result = ToolResult(saved['content'], restored.chunks, saved['data'])
+            else:
+                saved = outcome.value
+                result = ToolResult(saved['content'], [TextChunk(**c) for c in saved['chunks']], saved['data'])
+            notify(self.observer, 'tool.execution', {'operation_id': outcome.operation_id,
+                   'name': name, 'replayed': outcome.replayed, 'status': 'succeeded'})
+            return result
+        return self._invoke_validated(name, values)
+
+    def tool_kind(self, name, arguments):
+        if name == 'working_memory' and arguments.get('action') == 'replace':
+            return ToolKind.EFFECTFUL
+        if name == 'ocr_page' or (name == 'search_evidence' and (
+                self.reranker is not None or getattr(self.kb, 'embedding_client', None) is not None
+                or getattr(self.kb, 'image_index', None) is not None)):
+            return ToolKind.PAID
+        return ToolKind.READ_ONLY
+
+    def _invoke_validated(self, name, arguments):
         self.reserve(name)
         try:
-            result = getattr(self, name)(**args.model_dump())
+            result = getattr(self, name)(**arguments)
+        except ResearchCancelled:
+            raise
         except ToolError:
             raise
         except Exception:

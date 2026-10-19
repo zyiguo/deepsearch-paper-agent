@@ -2,6 +2,7 @@
 
 
 from deepsearch_tracing.context import notify, event_scope
+from deepsearch_agent.core.identity import fingerprint
 
 
 class ResearcherMixin:
@@ -14,7 +15,13 @@ class ResearcherMixin:
                 assumptions = [('Provisional interpretations, not evidence: ' + '; '.join(
                     a['key'] + '=' + a['statement'] + ' (' + a['status'] + ')'
                     for a in state.get('plan_assumptions', [])))[:1000]]
-            task = SubagentTask(goal=state.get('research_goal') or state['question'], instruction=state['instruction'],
+            execution = getattr(self.tool_session, 'execution', None)
+            snapshot = state.get('tool_session_state')
+            if execution is not None and snapshot is not None:
+                self.tool_session.restore_runtime(snapshot)
+            task_identity = ({'task_id': fingerprint(['research-child-v1', self.run_id, state['rounds']])[:32]}
+                             if execution is not None else {})
+            task = SubagentTask(**task_identity, goal=state.get('research_goal') or state['question'], instruction=state['instruction'],
                 gaps=[q[:1000] for q in state.get('queries', [])[:3] if q.strip()],
                 constraints=['Use only the authorized local document scope.',
                              'Return candidate findings with original evidence IDs; do not claim verification.',
@@ -50,6 +57,7 @@ class ResearcherMixin:
                 planner=plan_tool,
                 max_steps=self.tool_session.settings.max_steps_per_round, observer=self.observer,
                 external_tools=external,
+                operation_scope=f'research:{state["rounds"]}',
                 stop_check=(stop_research if self.budget_control or self.evidence_policy else None),
                 context_budget_tokens=max(600, (self.context_window - self.max_output_tokens) // 2))
             with event_scope(task_id=task.task_id, parent_call_id=state.get('parent_call_id'),
@@ -75,6 +83,7 @@ class ResearcherMixin:
             notify(self.observer, 'research.tools_done', {'round': state['rounds'],
                    'stop_reason': researcher.stop_reason, 'remaining_calls': self.tool_session.remaining_calls})
             return {'evidence': [*state['evidence'], *gathered], 'rounds': state['rounds'] + 1,
+                    **({'tool_session_state': self.tool_session.runtime_snapshot()} if execution is not None else {}),
                     'subtask_results': [*state.get('subtask_results', []), result.model_dump()][-3:],
                     'supported': [], 'verified': False,
                     **({'review_action': '', 'review_stalled': False, 'plan_revision_pending': False}

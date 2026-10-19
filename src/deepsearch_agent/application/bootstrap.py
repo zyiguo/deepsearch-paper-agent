@@ -210,6 +210,7 @@ def create_app(
             from dataclasses import asdict
             from deepsearch_agent.core.identity import fingerprint
             app.state.run_identity = fingerprint({
+                'tool_ledger_protocol': 1,
                 'llm': asdict(settings), 'embedding': asdict(embeddings),
                 'image_embedding': asdict(image_settings), 'vision': asdict(visual_settings),
                 'agents': asdict(agents), 'mcp': asdict(mcp_config)})
@@ -217,6 +218,9 @@ def create_app(
             from deepsearch_agent.adapters.persistence.checkpoints import checkpoint_saver
             import sqlite3
             run_root = Path(index_path).parent
+            from deepsearch_agent.adapters.persistence.tool_ledger import SQLiteToolLedger
+            app.state.tool_ledger = SQLiteToolLedger(run_root / 'tool_executions.sqlite3')
+            app.state.tool_ledger.recover_interrupted()
             app.state.research_runs = research_run_store(app.state.business_database, _workspace_id or 'local',
                                                         run_root / 'research_runs.sqlite3')
             app.state.run_tokens = {}
@@ -298,6 +302,7 @@ def create_app(
                 mcp_settings=mcp_config,
                 wiki_store=app.state.wiki,
                 checkpointer=app.state.research_checkpointer,
+                tool_ledger=app.state.tool_ledger,
             )
 
             app.state.index.on_publish = lambda kb: setattr(app.state.answer_service, 'knowledge_base', kb)

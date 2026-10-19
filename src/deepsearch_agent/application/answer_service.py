@@ -39,6 +39,13 @@ class AnswerService(AuditedAnswerService):
                                                             observer=observer, input_evidence=input_evidence,
                                                             **memory_args)
             from deepsearch_agent.adapters.tool_adapters import langgraph_tools
+            if tool_session is not None and self.tool_ledger is not None and run_id:
+                from deepsearch_agent.application.tool_execution import ToolExecutor
+                from deepsearch_agent.core.tool_execution import ToolExecutionBlocked
+                if resume and not self.tool_ledger.has_run(run_id):
+                    raise ToolExecutionBlocked('tool_ledger_run_missing')
+                self.tool_ledger.begin_run(run_id)
+                tool_session.execution = ToolExecutor(self.tool_ledger, run_id)
             from deepsearch_agent.agents.evidence_policy import EvidencePolicy, SessionResearchControl
             policy = (EvidencePolicy.v5() if self.agent_settings.evidence_policy_version == 'v5' else EvidencePolicy.v4() if self.agent_settings.evidence_policy_version == 'v4' else EvidencePolicy.v3() if self.agent_settings.evidence_policy_version == 'v3'
                       else EvidencePolicy.v2() if self.agent_settings.evidence_policy_version == 'v2'

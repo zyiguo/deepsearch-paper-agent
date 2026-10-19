@@ -13,6 +13,7 @@ from deepsearch_agent.application.snapshots import snapshot_answer_service
 from deepsearch_agent.application.commands import TurnCommand
 from deepsearch_agent.application.run_reliability import submission_id, context_identity, error_code
 from deepsearch_agent.core.identity import fingerprint
+from deepsearch_agent.core.tool_execution import ToolExecutionBlocked
 
 
 class RunWorkers:
@@ -152,6 +153,9 @@ def delete_session(session_id, state):
             state.conversations.delete(session_id)
             if runs:
                 state.research_runs.delete_session(session_id)
+                if getattr(state, 'tool_ledger', None) is not None:
+                    for run in runs:
+                        state.tool_ledger.delete_run(run['id'])
                 if hasattr(state, 'research_checkpointer'):
                     for run in runs:
                         state.research_checkpointer.delete_thread(run['id'])
@@ -268,6 +272,8 @@ def prepare_run(session_id, body, state, idempotency_key=None):
                   '_runtime_identity': context_identity(state, manager, session_id),
                   '_submission_identity': body_identity, '_execution': {'attempts': 0}}
         run_id = state.research_runs.create(session_id, record, run_id=ident)
+        if getattr(state, 'tool_ledger', None) is not None:
+            state.tool_ledger.begin_run(run_id)
     return run_id, None
 
 
@@ -294,6 +300,14 @@ def scoped_chunk_ids(kb, sources):
 def list_runs(session_id, state):
     require_session(state.conversations, session_id)
     return [{key: value for key, value in run.items() if key != 'request_json'} for run in state.research_runs.list(session_id)]
+
+
+def list_tool_operations(session_id, run_id, state):
+    require_session(state.conversations, session_id)
+    if state.research_runs.get(run_id, session_id) is None:
+        raise ApplicationError(404, '研究任务不存在')
+    ledger = getattr(state, 'tool_ledger', None)
+    return ledger.list_run(run_id) if ledger is not None else []
 
 def cancel_run(session_id, run_id, state):
     with state.lock:
@@ -333,8 +347,18 @@ def resume_run(session_id, run_id, state):
         checkpoint = state.research_checkpointer.get_tuple({'configurable': {'thread_id': run_id}})
         if checkpoint is None:
             raise ApplicationError(409, '任务没有可恢复的检查点；请明确发起新任务，系统不会自动重新调用模型')
+        ledger = getattr(state, 'tool_ledger', None)
+        if ledger is not None and not ledger.has_run(run_id):
+            raise ApplicationError(409, '旧任务没有工具执行账本，无法确认工具结果；请核对后明确发起新任务')
         if not state.research_runs.claim_resume(run_id, session_id):
             raise ApplicationError(409, '只有中断的任务可以恢复')
+        if ledger is not None:
+            try:
+                ledger.recover_interrupted(run_id)
+            except Exception:
+                state.research_runs.update(run_id, 'interrupted', expected={'queued'},
+                    execution={'error_code': 'tool_ledger_unavailable'})
+                raise ApplicationError(503, '工具执行账本暂不可用，未重新调用工具') from None
     return run_stream(session_id, body, state, run_id, resume=True)
 
 
@@ -417,6 +441,9 @@ def run_stream(session_id, body, state, run_id, resume=False):
             events.put(('done', turn))
         except ResearchCancelled:
             events.put(('cancelled', {'message': '研究已取消，未保存本轮答案。'}))
+        except ToolExecutionBlocked as error:
+            events.put(('error', {'message': '工具执行结果未确认或恢复被阻止，请查看任务执行账本，勿自动重新提交。',
+                                 'code': error.code, 'operation_id': error.operation_id}))
         except Exception:
             events.put(('error', {'message': '回答未完成，请刷新会话核对结果；不要自动重复发送。'}))
 

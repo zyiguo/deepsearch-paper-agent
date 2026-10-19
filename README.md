@@ -1,5 +1,7 @@
 # DeepSearch Paper Agent
 
+面试与源码导读：[项目技术报告](docs/INTERVIEW_TECHNICAL_REPORT_20261019.md)，包含总体架构、模块设计、关键执行链路、可靠性机制与评测结果。
+
 本地单用户个人文献研究助手：导入自己的文字型 PDF，在指定文献范围内进行快速问答或迭代式 DeepSearch，所有回答都附带**可核验的证据**（论文、页码、原文片段）。FastAPI 后端 + React 前端，单机运行，开箱即用。
 
 可选小团队模式现已提供本地账号、登录会话、工作空间和 owner/editor/viewer 权限；文献、会话、附件、Wiki、检查点与轨迹按空间隔离，旧单用户数据不会自动共享。启用与边界见 [团队账号与工作空间](docs/TEAM_ACCESS.md)。仍维持单 API 进程部署。
@@ -255,5 +257,7 @@ Python 3.12 · FastAPI · LangGraph · numpy · jieba · pypdf · React 19 · Ty
 本轮实际完成度、任务分数、工具结果与成本见 [消融报告](docs/AGENTIC_ABLATION_RESULTS.md)，日志及原图抽查见 [Badcase 抽查](docs/AGENTIC_ABLATION_AUDIT.md)。
 
 ## 长任务恢复与 Wiki 检索
+
+持久会话任务已接入 [工具执行账本与幂等恢复](docs/TOOL_EXECUTION_LEDGER.md)，区分只读、付费和写入工具；结果不明的付费/写入调用保留 unknown 并阻止自动重试。14 组真实进程退出实验以模拟供应商分别验证请求、效果和计费次数，结果已保存。
 
 流式研究支持取消、重启后从 LangGraph 检查点恢复，以及 Wiki 页面参与原文片段检索。接口和边界见 [Research runs and Wiki retrieval](docs/RESEARCH_RUNS_AND_WIKI.md)。

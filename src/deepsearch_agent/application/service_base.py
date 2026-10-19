@@ -36,6 +36,7 @@ class AuditedAnswerService:
         mcp_settings=None,
         wiki_store=None,
         checkpointer=None,
+        tool_ledger=None,
     ):
         self.client = client
         self.knowledge_base = knowledge_base
@@ -54,6 +55,7 @@ class AuditedAnswerService:
         self.mcp_settings = mcp_settings
         self.wiki_store = wiki_store
         self.checkpointer = checkpointer
+        self.tool_ledger = tool_ledger
 
 
     def answer(self, question: str, top_k: int = 5,

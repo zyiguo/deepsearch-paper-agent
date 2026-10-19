@@ -14,6 +14,9 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 
 from deepsearch_tracing.context import notify, chunk_record
 from deepsearch_agent.core.tokens import estimate_tokens, truncate_text
+from deepsearch_agent.core.identity import fingerprint
+from deepsearch_agent.core.tool_execution import ToolExecutionBlocked, ToolKind
+from deepsearch_agent.core.cancellation import ResearchCancelled
 from deepsearch_agent.agents.subagent_contracts import SubagentTask, SubagentFinding, SubagentResult, ShortText
 
 
@@ -71,6 +74,8 @@ def _bounded(value, limit, preserve_structure=False):
 
 
 def _safe_tool_error(error: Exception) -> str:
+    if isinstance(error, (ToolExecutionBlocked, ResearchCancelled)):
+        raise error
     return '{"error":"tool_failed"}'
 
 
@@ -78,7 +83,7 @@ class AgenticResearcher:
     """Use structured JSON decisions; cloud-native function calling is not required."""
 
     def __init__(self, session, planner, max_steps=8, observer=None, external_tools=None,
-                 context_budget_tokens=6000, stop_check=None, tools_factory=None):
+                 context_budget_tokens=6000, stop_check=None, tools_factory=None, operation_scope='research:0'):
         if type(max_steps) is not int or not 1 <= max_steps <= 32:
             raise ValueError('max_steps must be an integer between 1 and 32')
         if type(context_budget_tokens) is not int or context_budget_tokens < 600:
@@ -95,6 +100,7 @@ class AgenticResearcher:
         self.final_findings = []
         self.final_unresolved = []
         self.steps = 0
+        self.operation_scope = operation_scope
 
     def run_task(self, task: SubagentTask, existing_evidence):
         """Return only a validated envelope; source chunks stay in the scoped service."""
@@ -252,8 +258,20 @@ class AgenticResearcher:
                 return {'route': 'end', 'stop_reason': 'context_budget'}
             updates = {'steps': state['steps'] + 1}
             try:
-                action = self.planner(instruction, ToolAction, data)
-                action = ToolAction.model_validate(action)
+                execution = getattr(self.session, 'execution', None)
+                if execution is None:
+                    action = ToolAction.model_validate(self.planner(instruction, ToolAction, data))
+                else:
+                    def choose(operation_id):
+                        try:
+                            return {'action': ToolAction.model_validate(self.planner(instruction, ToolAction, data)).model_dump()}
+                        except ValidationError:
+                            return {'invalid': True}
+                    decision = execution.execute(f'{self.operation_scope}:plan:{state["steps"]}',
+                        '__child_planner__', ToolKind.PAID, {'instruction': instruction, 'data': data}, choose)
+                    if decision.value.get('invalid'):
+                        return {**updates, **feedback(state, 'invalid_tool_action')}
+                    action = ToolAction.model_validate(decision.value['action'])
             except ValidationError:
                 return {**updates, **feedback(state, 'invalid_tool_action')}
             if not action.tool:
@@ -286,6 +304,10 @@ class AgenticResearcher:
                 return {**updates, **feedback(state, 'repeated_tool_call', action.tool)}
             seen[key] = seen.get(key, 0) + 1
             call_id = uuid4().hex
+            execution = getattr(self.session, 'execution', None)
+            if execution is not None:
+                self.session.operation_slot = f'{self.operation_scope}:tool:{state["steps"]}'
+                call_id = fingerprint(['tool-operation-v1', execution.run_id, self.session.operation_slot])
             notify(self.observer, 'rag.tool_request', {'call_id': call_id, 'tool': action.tool,
                                                        'arguments': action.arguments, 'step': updates['steps']})
             return {

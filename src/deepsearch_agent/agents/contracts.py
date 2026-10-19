@@ -152,3 +152,4 @@ class ResearchState(TypedDict, total=False):
     verification_gaps: dict
     verification_gap_scope: str
     selected_candidate: int | None
+    tool_session_state: dict

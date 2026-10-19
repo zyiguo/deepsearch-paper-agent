@@ -159,6 +159,11 @@ def cancel_run(session_id: str, run_id: str, request: Request):
     return run_service.cancel_run(session_id, run_id, request.app.state)
 
 
+@router.get('/{session_id}/runs/{run_id}/operations')
+def list_tool_operations(session_id: str, run_id: str, request: Request):
+    return run_service.list_tool_operations(session_id, run_id, request.app.state)
+
+
 @router.post('/{session_id}/runs/{run_id}/resume/stream')
 def resume_run(session_id: str, run_id: str, request: Request):
     return sse_response(run_service.resume_run(session_id, run_id, request.app.state))
