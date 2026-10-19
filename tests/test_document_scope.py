@@ -1,6 +1,6 @@
 import pytest
-from deepsearch_agent.knowledge_base import KnowledgeBase
-from deepsearch_agent.pdf import FakePdfReader
+from deepsearch_agent.knowledge.knowledge_base import KnowledgeBase
+from deepsearch_agent.core.pdf import FakePdfReader
 
 
 class Embeddings:
@@ -39,7 +39,7 @@ def test_lexical_cache_does_not_leak_between_scopes():
 
 def test_graph_receives_only_selected_evidence():
     import json
-    from deepsearch_agent.qa import AnswerService
+    from deepsearch_experiments.legacy.qa import AnswerService
     from test_supervisor import Script, decision
     kb = KnowledgeBase(FakePdfReader(['GPU white']), embedding_client=Embeddings())
     kb.ingest_pdf('demo://example.pdf')
@@ -77,8 +77,8 @@ def test_api_rejects_empty_or_unknown_scope_before_model(tmp_path, suffix):
 def test_real_api_resolves_pdf_scope_and_excludes_demo(tmp_path, ids):
     from fastapi.testclient import TestClient
     from test_streaming import app_for
-    from deepsearch_agent.chunking import TextChunk
-    from deepsearch_agent.qa import Answer
+    from deepsearch_agent.core.evidence import TextChunk
+    from deepsearch_agent.core.answers import Answer
     app = app_for(tmp_path)
     app.state.kb.chunks.append(TextChunk(text='GPU', source_path='demo://example.pdf', page_number=1, chunk_index=0))
     class CheckedService:

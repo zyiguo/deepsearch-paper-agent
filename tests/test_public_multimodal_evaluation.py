@@ -4,11 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from deepsearch_agent.benchmarks.metrics import relaxed_correctness, element_scores, ranking_scores
-from deepsearch_agent.benchmarks.datasets import chartqa_cases, pdfvqa_page_cases, primitive_pickle
-from deepsearch_agent.benchmarks.schema import load_manifest
-from deepsearch_agent.benchmarks.runner import run_cases, summarize
-from deepsearch_agent.benchmarks.runtime import answer_prompt
+from deepsearch_experiments.benchmarks.metrics import relaxed_correctness, element_scores, ranking_scores
+from deepsearch_experiments.benchmarks.datasets import chartqa_cases, pdfvqa_page_cases, primitive_pickle
+from deepsearch_experiments.benchmarks.schema import load_manifest
+from deepsearch_experiments.benchmarks.runner import run_cases, summarize
+from deepsearch_experiments.benchmarks.runtime import answer_prompt
 
 
 @pytest.mark.parametrize('gold,pred,expected', [
@@ -128,8 +128,8 @@ def test_summary_keeps_missing_predictions_in_denominator(tmp_path):
 
 def test_download_retries_transient_gateway_failure_without_changing_data(monkeypatch):
     import httpx
-    from deepsearch_agent.benchmarks.downloads import fetch
-    monkeypatch.setattr('deepsearch_agent.benchmarks.downloads.time.sleep', lambda seconds: None)
+    from deepsearch_experiments.benchmarks.downloads import fetch
+    monkeypatch.setattr('deepsearch_experiments.benchmarks.downloads.time.sleep', lambda seconds: None)
     calls = []
     def handler(request):
         calls.append(request)
@@ -154,7 +154,7 @@ def test_rerank_metrics_do_not_invent_answer_scores_and_missing_ranks_count_zero
 
 
 def test_original_pdf_task_c_preserves_full_document_scope_without_relations():
-    from deepsearch_agent.benchmarks.datasets import pdfvqa_document_cases
+    from deepsearch_experiments.benchmarks.datasets import pdfvqa_document_cases
     layout = {'doc': {'pages': {
         0: {'name': 'first.png', 'objects': {'0': {'global_id': 10, 'text': 'Intro', 'bbox': [0, 0, 2, 2], 'relations': ['SECRET']}}},
         1: {'name': 'second.png', 'objects': {'0': {'global_id': 11, 'text': 'Results', 'bbox': [0, 0, 2, 2]}}}}}}
@@ -168,7 +168,7 @@ def test_original_pdf_task_c_preserves_full_document_scope_without_relations():
 
 
 def test_bm25_index_is_isolated_and_roundtrips_without_vectors(tmp_path):
-    from deepsearch_agent.benchmarks.runtime import build_index, load_index, save_index
+    from deepsearch_experiments.benchmarks.runtime import build_index, load_index, save_index
     m = manifest(tmp_path)
     m['pages'][0]['text'] = 'scientific chart evidence'
     kb = build_index(m)
@@ -180,9 +180,9 @@ def test_bm25_index_is_isolated_and_roundtrips_without_vectors(tmp_path):
 
 
 def test_scalar_prediction_can_omit_inapplicable_element_ids(tmp_path):
-    from deepsearch_agent.benchmarks.runtime import BenchmarkPredictor
-    from deepsearch_agent.vision_config import VisionSettings
-    from deepsearch_agent.llm_config import LLMSettings
+    from deepsearch_experiments.benchmarks.runtime import BenchmarkPredictor
+    from deepsearch_agent.adapters.vision_config import VisionSettings
+    from deepsearch_agent.adapters.llm_config import LLMSettings
     class Client:
         def complete_images(self, prompt, images, **kwargs):
             return '{"answer":"1"}'
@@ -195,7 +195,7 @@ def test_scalar_prediction_can_omit_inapplicable_element_ids(tmp_path):
 @pytest.mark.parametrize('task,label', [('A', ''), ('A', None), ('A', '6'),
                                       ('B', None), ('B', ''), ('C', None), ('C', ' ')])
 def test_original_pdf_rejects_unlabelled_or_invalid_gold(task, label):
-    from deepsearch_agent.benchmarks.datasets import pdfvqa_document_cases
+    from deepsearch_experiments.benchmarks.datasets import pdfvqa_document_cases
     layout = {'doc': {'pages': {0: {'name': 'page.png', 'objects': {
         '0': {'global_id': 10, 'text': 'Intro', 'bbox': [0, 0, 2, 2]}}}}}}
     row = {'pmcid': 'doc', 'question': 'Sections?', 'page_index': 0}
@@ -205,7 +205,7 @@ def test_original_pdf_rejects_unlabelled_or_invalid_gold(task, label):
 
 
 def test_original_pdf_distinguishes_explicit_empty_gold_from_missing_label():
-    from deepsearch_agent.benchmarks.datasets import pdfvqa_document_cases
+    from deepsearch_experiments.benchmarks.datasets import pdfvqa_document_cases
     layout = {'doc': {'pages': {0: {'name': 'page.png', 'objects': {}}}}}
     _, cases = pdfvqa_document_cases([{'pmcid': 'doc', 'question': 'Sections?', 'global_id': []}], layout, 'C', 'val')
     assert cases[0]['gold_element_ids'] == []
@@ -244,9 +244,9 @@ def test_offline_scalar_scoring_requires_answer_and_ranking_lists(tmp_path):
 
 
 def test_pdf_rag_scopes_original_document_by_page_not_only_source(tmp_path):
-    from deepsearch_agent.benchmarks.runtime import BenchmarkPredictor, build_index
-    from deepsearch_agent.llm_config import LLMSettings
-    from deepsearch_agent.vision_config import VisionSettings
+    from deepsearch_experiments.benchmarks.runtime import BenchmarkPredictor, build_index
+    from deepsearch_agent.adapters.llm_config import LLMSettings
+    from deepsearch_agent.adapters.vision_config import VisionSettings
     m = manifest(tmp_path)
     m['pages'][0]['text'] = 'scientific first page'
     m['pages'].append({**m['pages'][0], 'id': 'p2', 'page_number': 2, 'text': 'scientific second page'})
@@ -264,10 +264,10 @@ def test_pdf_rag_scopes_original_document_by_page_not_only_source(tmp_path):
 
 
 def test_page_scope_preserves_text_and_image_vector_alignment(tmp_path):
-    from deepsearch_agent.benchmarks.runtime import scoped_index
-    from deepsearch_agent.chunking import TextChunk
-    from deepsearch_agent.image_index import ImageVectorIndex
-    from deepsearch_agent.knowledge_base import KnowledgeBase
+    from deepsearch_experiments.benchmarks.runtime import scoped_index
+    from deepsearch_agent.core.evidence import TextChunk
+    from deepsearch_agent.knowledge.image_index import ImageVectorIndex
+    from deepsearch_agent.knowledge.knowledge_base import KnowledgeBase
     m = manifest(tmp_path)
     source = m['pages'][0]['source']
     kb = KnowledgeBase(None, embedding_client=object(), embedding_id='unit')

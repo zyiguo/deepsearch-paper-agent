@@ -1,12 +1,12 @@
 import json
 import logging
 
-from deepsearch_agent.qa import AnswerService
+from deepsearch_experiments.legacy.qa import AnswerService
 from test_supervisor import Script, Library, decision
 
 
 def diagnostic(caplog):
-    records = [r for r in caplog.records if r.name == 'deepsearch_agent.research_graph']
+    records = [r for r in caplog.records if r.name == 'deepsearch_agent.agents.runtime']
     assert len(records) == 1
     return json.loads(records[0].getMessage().split(' ', 1)[1])
 
@@ -46,4 +46,4 @@ def test_success_does_not_emit_failure_record(caplog):
     with caplog.at_level(logging.WARNING):
         result = AnswerService(Script(steps), Library(), use_graph=True).answer('信号？')
     assert result.text == '白光 [1]'
-    assert not [r for r in caplog.records if r.name == 'deepsearch_agent.research_graph']
+    assert not [r for r in caplog.records if r.name == 'deepsearch_agent.agents.runtime']

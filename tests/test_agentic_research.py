@@ -5,8 +5,8 @@ import pytest
 from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, ConfigDict, Field
 
-from deepsearch_agent.chunking import TextChunk
-from deepsearch_agent.tokens import estimate_tokens
+from deepsearch_agent.core.evidence import TextChunk
+from deepsearch_agent.core.tokens import estimate_tokens
 
 
 class Query(BaseModel):
@@ -71,7 +71,7 @@ class Planner:
 
 
 def researcher(session, planner, **kwargs):
-    from deepsearch_agent.agentic_research import AgenticResearcher
+    from deepsearch_agent.agents.agentic_research import AgenticResearcher
     return AgenticResearcher(session, planner, **kwargs)
 
 

@@ -1,0 +1,11 @@
+*
+!pyproject.toml
+!constraints-security.txt
+!src/
+!src/**
+!skills/
+!skills/**
+!Dockerfile
+**/__pycache__
+**/*.pyc
+**/*.egg-info

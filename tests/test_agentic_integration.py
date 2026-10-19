@@ -3,13 +3,14 @@ import asyncio
 
 from fastapi.testclient import TestClient
 
-from deepsearch_agent.agent_config import AgentSettings
+from deepsearch_agent.agents.agent_config import AgentSettings
 from deepsearch_agent.api import create_app
-from deepsearch_agent.chunking import TextChunk
-from deepsearch_agent.embedding_runtime import EmbeddingSettings
-from deepsearch_agent.llm_config import LLMSettings
-from deepsearch_agent.qa import Answer, AnswerService
-from deepsearch_agent.tool_service import PaperToolSession
+from deepsearch_agent.core.evidence import TextChunk
+from deepsearch_agent.adapters.embedding_runtime import EmbeddingSettings
+from deepsearch_agent.adapters.llm_config import LLMSettings
+from deepsearch_agent.core.answers import Answer
+from deepsearch_agent.application.answer_service import AnswerService
+from deepsearch_agent.agents.tool_service import PaperToolSession
 
 
 class Library:
@@ -49,7 +50,7 @@ def test_agentic_answer_still_uses_verifier_and_original_ids():
 
 def test_answer_service_passes_bound_memory_to_tool_factory(tmp_path):
     from uuid import uuid4
-    from deepsearch_agent.working_memory import WorkingMemoryStore
+    from deepsearch_agent.workspace.working_memory import WorkingMemoryStore
     memory = WorkingMemoryStore(tmp_path).bind(str(uuid4()))
     seen = []
     def factory(kb, **kwargs):
@@ -66,7 +67,7 @@ def test_answer_service_passes_bound_memory_to_tool_factory(tmp_path):
 
 def test_recovered_notes_reach_answerer_but_not_verifier(tmp_path):
     from uuid import uuid4
-    from deepsearch_agent.working_memory import WorkingMemoryStore
+    from deepsearch_agent.workspace.working_memory import WorkingMemoryStore
     store, session_id = WorkingMemoryStore(tmp_path), str(uuid4())
     previous = store.bind(session_id)
     revision = previous.read('history')['revision']
@@ -135,8 +136,8 @@ def test_mounted_mcp_uses_app_lifespan_and_scoped_snapshot(tmp_path):
     mcp = pytest.importorskip('mcp')
     import httpx2
     from mcp.client.streamable_http import streamable_http_client
-    from deepsearch_agent.mcp_config import MCPSettings
-    from deepsearch_agent.demo import DEMO_SOURCE
+    from deepsearch_agent.adapters.mcp_config import MCPSettings
+    from deepsearch_agent.adapters.demo import DEMO_SOURCE
     app = create_app(tmp_path / 'demo.json', llm_settings=LLMSettings(backend='demo'),
         embedding_settings=EmbeddingSettings(backend='demo'),
         mcp_settings=MCPSettings(server_enabled=True, server_sources=(DEMO_SOURCE,)))
@@ -166,7 +167,7 @@ def test_mounted_mcp_uses_app_lifespan_and_scoped_snapshot(tmp_path):
 
 
 def test_snapshot_does_not_follow_later_index_mutation(tmp_path):
-    from deepsearch_agent.qa import snapshot_answer_service
+    from deepsearch_agent.application.snapshots import snapshot_answer_service
     app = create_app(tmp_path / 'demo.json', llm_settings=LLMSettings(backend='demo'),
                      embedding_settings=EmbeddingSettings(backend='demo'))
     with TestClient(app) as client:

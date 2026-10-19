@@ -4,11 +4,12 @@ import httpx
 import pytest
 from PIL import Image
 
-from deepsearch_agent.llm_config import LLMSettings
-from deepsearch_agent.llm_gateway import ModelServiceError, OpenAICompatibleClient
-from deepsearch_agent.vision import VisionReader
-from deepsearch_agent.vision_config import VisionSettings
-from deepsearch_agent.visual_evidence import VisualEvidence
+from deepsearch_agent.adapters.llm_config import LLMSettings
+from deepsearch_agent.core.models import ModelServiceError
+from deepsearch_agent.adapters.llm_gateway import OpenAICompatibleClient
+from deepsearch_agent.adapters.vision import VisionReader
+from deepsearch_agent.adapters.vision_config import VisionSettings
+from deepsearch_agent.adapters.visual_evidence import VisualEvidence
 
 
 def settings(**kwargs):

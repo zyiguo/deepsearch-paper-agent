@@ -3,11 +3,12 @@ import json
 from fastapi.testclient import TestClient
 
 from deepsearch_agent.api import create_app
-from deepsearch_agent.embedding_runtime import EmbeddingSettings, RemoteEmbeddingClient
-from deepsearch_agent.image_embeddings import ImageEmbeddingSettings, SiliconFlowImageEmbeddingClient
-from deepsearch_agent.llm_config import LLMSettings
-from deepsearch_agent.llm_gateway import ModelServiceError, OpenAICompatibleClient
-from deepsearch_agent.vision_config import VisionSettings
+from deepsearch_agent.adapters.embedding_runtime import EmbeddingSettings, RemoteEmbeddingClient
+from deepsearch_agent.adapters.image_embeddings import ImageEmbeddingSettings, SiliconFlowImageEmbeddingClient
+from deepsearch_agent.adapters.llm_config import LLMSettings
+from deepsearch_agent.core.models import ModelServiceError
+from deepsearch_agent.adapters.llm_gateway import OpenAICompatibleClient
+from deepsearch_agent.adapters.vision_config import VisionSettings
 from test_multimodal_api import pdf, finished, upload
 
 

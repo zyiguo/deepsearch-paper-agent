@@ -22,17 +22,23 @@ observations back to the planner. Authorized uploaded images and newly retrieved
 local visual pages are also sent to the Researcher through the existing visual
 adapter; image counts and the visual context budget still apply. `search_evidence` calls the existing hybrid
 retrieval and reranker, not another complete answer agent. Ordinary QA and the
-previous query-planning Researcher remain available.
+previous query-planning Researcher remain available only in `deepsearch_experiments.legacy`.
 The optional single-query search policy is used by that previous Researcher;
 the agentic path instead delegates each tool/query decision to its planner.
+
+The agentic path now uses explicit bounded task/result envelopes. The Researcher
+does not automatically inherit the parent conversation or its evidence dump;
+the Supervisor receives concise candidate findings and evidence references rather
+than tool observations. Original evidence still reaches the Answerer and Verifier.
+See [Subagent context boundaries](SUBAGENT_CONTEXT.md) and [ADR-0009](adr/0009-subagent-context-boundary.md).
 
 ## Configuration
 
 Live application startup loads `.env.agent`, falling back to the defaults in
-`.env.agent.example`. `AGENTIC_RAG_ENABLED=true` enables the new Researcher in
-live mode. Set it to `false` to use the earlier workflow. Demo mode stays offline.
-Explicitly injected test/application model settings do not implicitly enable the
-new agent; pass `agent_settings=AgentSettings(enabled=True)` when desired.
+`.env.agent.example`. `AGENTIC_RAG_ENABLED=true` is the live production path. Explicit `false` raises a
+migration error with the offline baseline entrypoint; it no longer selects the earlier
+workflow. Injected live settings also default to the production child agent. Demo
+mode stays offline. See [current architecture](ARCHITECTURE.md).
 
 Budgets are shared across all Researcher rounds of one answer: 18 tool calls,
 eight planner steps per round, two OCR attempts, 30 gathered evidence chunks,

@@ -3,8 +3,8 @@ import json
 
 import pytest
 
-from deepsearch_agent.chunking import TextChunk
-from deepsearch_agent.content_identity import image_content_id
+from deepsearch_agent.core.evidence import TextChunk
+from deepsearch_agent.core.identity import image_content_id
 
 
 def chunk(text='same', source='pdf://' + 'a' * 64 + '/one.pdf', **kwargs):
@@ -42,8 +42,8 @@ def test_snapshot_identity_validation_and_prompt_excerpt_preserve_identity():
 
 
 def test_source_reference_and_legacy_snapshot_upgrade(tmp_path):
-    from deepsearch_agent.knowledge_base import KnowledgeBase
-    from deepsearch_agent.qa import chunk_to_source_reference
+    from deepsearch_agent.knowledge.knowledge_base import KnowledgeBase
+    from deepsearch_agent.core.answers import chunk_to_source_reference
     class Embedding:
         def embed(self, texts):
             return [[1., 0.] for _ in texts]
@@ -65,7 +65,7 @@ def test_source_reference_and_legacy_snapshot_upgrade(tmp_path):
 
 
 def test_fusion_uses_occurrence_identity_without_merging_different_sources():
-    from deepsearch_agent.image_index import fuse_rankings
+    from deepsearch_agent.knowledge.image_index import fuse_rankings
     first = chunk()
     renamed = chunk(source='pdf://' + 'a' * 64 + '/renamed.pdf')
     other = chunk(source='pdf://' + 'b' * 64 + '/other.pdf')
@@ -74,7 +74,7 @@ def test_fusion_uses_occurrence_identity_without_merging_different_sources():
 
 
 def test_legacy_image_hydration_reuses_existing_vectors(tmp_path):
-    from deepsearch_agent.image_index import ImageVectorIndex
+    from deepsearch_agent.knowledge.image_index import ImageVectorIndex
     old = chunk(evidence_kind='image', visual_pages=[1])
     index = ImageVectorIndex('model')
     index.chunks, index.vectors = [old], [[1., 0.]]

@@ -2,13 +2,28 @@
 
 本地单用户个人文献研究助手：导入自己的文字型 PDF，在指定文献范围内进行快速问答或迭代式 DeepSearch，所有回答都附带**可核验的证据**（论文、页码、原文片段）。FastAPI 后端 + React 前端，单机运行，开箱即用。
 
+可选小团队模式现已提供本地账号、登录会话、工作空间和 owner/editor/viewer 权限；文献、会话、附件、Wiki、检查点与轨迹按空间隔离，旧单用户数据不会自动共享。启用与边界见 [团队账号与工作空间](docs/TEAM_ACCESS.md)。仍维持单 API 进程部署。
+
+可选 [PostgreSQL 业务数据库](docs/DATABASE.md) 保存账号权限、会话答案、记忆和研究运行元数据，提供连接池、版本升级、只读预检与显式 SQLite 导入。SQLite 保持默认；原文、索引、检查点和独立轨迹继续使用各自存储。
+
+[任务可靠性、数据恢复与质量闭环](docs/RELIABILITY_RECOVERY_QUALITY.md) 提供持久任务、可选幂等提交、恢复身份校验、离线完整备份与隔离还原演练，以及轨迹冻结、人工错例审核和匹配条件回归。执行完成、内部核验与人工正确性分别记录。
+
 可选多模态阅读：独立配置云端视觉模型后，可识别扫描文字、图、表和公式；另配置视觉 Embedding，可直接检索原页图像，与正文检索通过 RRF 融合，并在重排、回答与核验时读取原图。支持为旧文献单独补建图像索引。配置与使用见 [MULTIMODAL_SETUP.md](docs/MULTIMODAL_SETUP.md)。当前按页单向量定位，真实论文集的检索与识别精度仍需评测。
 
 ## 功能特性
 
+MiMo-V2.6-Pro 的模型切换、1M 上下文和输出预算说明见 [MIMO_V26_SETUP.md](docs/MIMO_V26_SETUP.md)。
+新模型接入、badcase 配对回归与状态转换修复结果见 [PAIRED_REGRESSION_20261006.md](docs/PAIRED_REGRESSION_20261006.md)。
+
 - **Agentic RAG 与 MCP**：Researcher 自主选择检索、读页和按需 OCR 工具，LangGraph 执行并反馈观察，保留回答与引用核验；共享工具服务支持对外 MCP 和受信任外部 MCP 扩展，见 [AGENTIC_RAG.md](docs/AGENTIC_RAG.md) 与 [MCP.md](docs/MCP.md)。MCP 默认关闭，云端端到端效果仍需独立验收。
+- **子 Agent 上下文隔离**：主 Agent 传递目标与必要约束，Researcher 独立执行并返回候选结论、证据 ID 和未解决项；调度上下文不携带完整工具轨迹，原文继续供独立核验，见 [SUBAGENT_CONTEXT.md](docs/SUBAGENT_CONTEXT.md)。
+- **父子通信轨迹与 badcase 分组**：可选本地记录任务下发、工具观察、结构化结果、裁剪后父输入与后续决策；按内部核验成功、失败和未知分组导出，保留证据和哈希链，见 [COMMUNICATION_TRACES.md](docs/COMMUNICATION_TRACES.md)。
+- **多候选证据路径（可选 v3）**：保留证据不足的候选，独立批量核验替代路径，对越界引用与不实引文执行可重放的路径剪枝；默认关闭，机制、误剪统计边界和对照评测见 [多候选证据路径](docs/MULTICANDIDATE_EVIDENCE_PATHS_20261019.md)。
+- **候选复用实验（可选 v4）**：稳定编号补证、保守去重及空路径/重复输入守卫；四题配对中正确率持平但总 Token 增加 16.95%，保持实验状态，见 [候选复用与成本评测](docs/CANDIDATE_REUSE_20261019.md)。
+- **缺口增量核验（可选 v5）**：保留未知、记录缺失要求、按新引文重开核验并约束诊断长度；本次四题配对正确率持平、总 Token 下降 9.37%，具体触发情况与局限见 [增量核验评测](docs/INCREMENTAL_GAPS_20261019.md)。
 - **统一证据 ID 与多模态重排**：内容指纹、来源片段 ID 和原页关联贯穿检索与引用；独立视觉重排器按图片与 Token 预算分批读取原图评分，失败回退原序，见 [CONTENT_IDS_RERANKING.md](docs/CONTENT_IDS_RERANKING.md)
 - **公开多模态评测**：ChartQA 与 PDFVQA 独立数据适配、阅读基线、受控重排与 RAG 评测，保留逐题输出、输入指纹及可续跑结果，见 [PUBLIC_MULTIMODAL_EVAL.md](docs/PUBLIC_MULTIMODAL_EVAL.md)
+- **DAG 任务评测**：用节点规则、AND/OR 依赖、权重和必达目标定义任务评分，区分失败、依赖阻塞与观测未知；支持对已有消融轨迹离线重评分，保留原始答案指标。自动迁移图属于阶段代理，题目级子任务仍需独立标注，见 [DAG_BENCHMARK.md](docs/DAG_BENCHMARK.md)。
 - **多查询混合检索**：LLM 查询扩展（含多轮对话指代消解）→ 多路召回按片段 ID 合并去重 → BM25（jieba 分词）与文本向量加权融合，可与图像向量通过 RRF 融合 → 文字或多模态重排 → Token 预算内贪心组装上下文
 - **自研 ANN**：少于 1024 个向量时精确扫描，达到阈值后切换 numpy 实现的 IVF 索引（k-means 聚类 + 探测），支持增量添加
 - **迭代式 DeepSearch**：LangGraph 编排的研究工作流（supervisor → researcher → answerer → verifier），多轮补充检索，只保留通过验证且可溯源的结论
@@ -19,24 +34,26 @@
 - **动态研究技能**：发现本地 `SKILL.md` 元信息，Supervisor 按需加载正文；支持热更新、手动指定与关闭，保留独立证据核验，见 [SKILLS.md](docs/SKILLS.md)
 - **PDF 与图片管理**：上传解析（后台任务）、按资料范围检索、原页预览；会话支持图片附件提问、粘贴图片及附件转入资料库
 - **流式输出**：SSE 推送处理阶段，核验完成后分段发送最终答案
-- **可选搜索决策模型**：独立模型提供首轮检索词；无效输出或服务失败回退原 Researcher，保留后续补检和引用核验
+- **独立父子 Agent**：父 Agent 分派目标和约束，子 Agent 使用独立消息历史执行并返回结构化结果，最终答案经过独立核验。
+- **独立轨迹与离线策略扩展**：轨迹按成功、失败、未知查询和导出；搜索决策模型、旧查询规划和训练管线仅作为离线扩展。
 - **可选后训练数据管线**：本地运行轨迹 → 人工审核 → 单步搜索决策 SFT 数据；独立标准库模块，默认关闭，见 [使用说明](docs/POLICY_DATA_PIPELINE.md)
 
 ## 当前架构边界
 
-实现为**本机单用户**路线（详见 [ADR-0006](docs/adr/0006-local-json-sqlite.md)）：
+实现为**本机单用户**路线（详见 [ADR-0006](docs/adr/0006-local-json-sqlite.md)）；增加了可选业务运行基础设施，见 [运行与部署](docs/INFRASTRUCTURE.md) 和 [ADR-0008](docs/adr/0008-optional-redis-infrastructure.md)：
 
 - 索引：内存知识库 + JSON 快照（`data/indexes/`）
 - 会话：SQLite
-- 进程：单进程 FastAPI + 线程池解析 PDF；无 Docker / Redis / Celery / PostgreSQL
+- 进程：单进程 FastAPI + 线程池解析 PDF；支持可选 Redis 缓存、限流和 Docker Compose 部署；尚无独立任务 Worker / PostgreSQL
+- 运行保障：请求 ID、访问日志、存活与就绪检查；Redis 故障时绕过缓存并回退本地限流
 - 限制：单 PDF ≤100 页且正文文本 ≤10 万字符；OCR 需要启用视觉模型；不支持加密 PDF
 - 嵌入：OpenAI 兼容云端 API（独立 `.env.embedding`），见 [EMBEDDING_SETUP.md](EMBEDDING_SETUP.md)
 
-早期设计中的 Compose/pgvector/任务队列等已标记 Superseded，不代表当前能力。
+早期设计中的 pgvector/任务队列等已标记 Superseded，不代表当前能力；新 Compose 配置以根目录 `compose.yaml` 为准。当前尚未具备多租户认证与资料权限隔离，不应直接作为公网多人服务部署。
 
 ## 检索管线
 
-基础问答路径的完整检索流程（`qa.py`）：
+检索与重排由 `knowledge` 统一提供。下面展示演示/离线快速 QA 的一次检索流程；生产子 Agent 按需调用其中的召回与重排，自行决定检索词和是否继续：
 
 ```
 用户问题 + 对话历史
@@ -61,7 +78,7 @@
 Token 预算 —— 按上下文窗口贪心填充，放不下的片段跳过
    │
    ▼
-生成 —— 带编号引用的上下文 → 答案 + 来源列表
+交付 —— 生产主线送入 Answerer / Verifier；演示或离线基线生成答案
 ```
 
 所有 LLM 增强环节（扩展、重排）失败时自动降级为原始行为，不阻断问答。
@@ -121,21 +138,18 @@ npm run dev
 
 打开 **http://127.0.0.1:5173**（Vite 已将 `/api` 代理到 8000 端口，无需关心跨域）。
 
-## 两种问答方式
+## 生产问答与离线基线
 
-| | 快速问答 | DeepSearch 迭代研究 |
-|---|---|---|
-| 路径 | 单轮检索 → 生成（`qa.py`） | LangGraph 工作流（`research_graph.py`） |
-| 行为 | 一次管线出答案 | supervisor 分解问题 → researcher 多轮补充检索 → answerer 起草 → verifier 逐条核验引用 |
-| 适用 | 事实型问题 | 需要综合多篇/多处的开放问题 |
+真实模型的 `/api/ask`、会话问答与 Wiki 编译统一走父子 Agent 主线。Supervisor 分派自包含任务，Researcher 在独立工具循环中执行，只返回有预算的结构化结果；Answerer / Verifier 读取授权原文，最终答案独立核验。工具日志进入子循环与轨迹，不回灌父调度器。
 
-当前 Web 服务在使用真实对话模型时为 `/api/ask` 和会话问答统一启用 DeepSearch 图流程；表中的基础问答是 `AnswerService(use_graph=False)` 的代码路径，并非两个 API 的固定分工。
+演示模式保持无网络。旧快速 QA、查询规划与搜索策略注入位于 `deepsearch_experiments.legacy.qa`，用于离线对照。`AGENTIC_RAG_ENABLED=false` 不再静默切回旧生产流程，会给出迁移错误；真实模型默认启用父子 Agent。
 
 ## API 一览
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/api/health` | 健康检查与当前模式 |
+| GET | `/api/health/live` / `/api/health/ready` | 存活检查 / Redis 与索引写保护状态 |
 | POST | `/api/ask` | 单次提问；真实对话模型走 DeepSearch（可指定 `document_ids`） |
 | POST | `/api/documents/upload` | 上传 PDF（后台解析，202） |
 | GET | `/api/documents` / `/api/documents/{id}` | 文献列表 / 详情 |
@@ -151,29 +165,25 @@ npm run dev
 
 ## 项目结构
 
-```
+```text
 src/deepsearch_agent/
-├── api.py / document_api.py / conversation_api.py   # FastAPI 接口层
-├── qa.py / research_graph.py                        # 问答服务与 LangGraph 研究工作流
-├── knowledge_base.py / retrieval_scope.py           # 知识库、按文献范围检索
-├── bm25.py / ann.py / embeddings.py                 # 词法检索、ANN、向量客户端
-├── query_expander.py / reranker.py / tokens.py      # 查询扩展、LLM 重排、Token 估算
-├── chunking.py / section_chunking.py                # 固定分块 / 章节感知分块
-├── pdf.py / pypdf_reader.py / pdf_worker.py         # PDF 读取与后台解析
-├── documents.py / conversations.py / storage.py     # 文献、会话、持久化
-├── llm.py / llm_gateway.py / llm_config.py           # LLM 客户端（Protocol + DI）
-├── search_intent.py / trajectory_adapter.py         # 策略兼容入口与可选轨迹桥接
-└── prompts.py / demo.py
-src/search_policy/                                  # 独立搜索协议、轨迹库、审核导出和训练 reader
-examples/policy_trace_demo.py                        # 无网络的完整数据管线演示
-frontend/                                            # React + TypeScript + Vite
-tests/                                               # 离线单元、API、轨迹与数据契约测试
-docs/
-├── POLICY_DATA_PIPELINE.md                           # 采集、审核、导出与训练对接手册
-├── adr/                                             # 架构决策记录
-├── plans/                                           # 总体设计与模块设计文档
-└── specs/
+  core/          标准库共享类型、协议、身份与取消信号
+  application/   问答、文献、会话运行、Wiki 编译与资源装配
+  agents/        父子任务契约、角色处理、图运行、预算与工具业务
+  knowledge/     分块、检索、重排、索引所有权与快照发布
+  workspace/     文献、附件、会话、记忆、Wiki 与技能
+  adapters/      模型 HTTP、PDF、存储、Redis、MCP
+  web/           HTTP 校验、响应、SSE 与中间件
+  api.py         保留的 ASGI 薄入口
+src/deepsearch_tracing/       标准库轨迹、分类、查询与分组导出
+src/deepsearch_experiments/   离线评测、旧基线和审计
+src/search_policy/           标准库审核、SFT 导出与训练 reader
+frontend/src/app/            视图协调
+frontend/src/features/       chat / library / evidence / wiki
+frontend/src/shared/         API、类型与共享组件
 ```
+
+架构图与依赖规则见 [当前架构](docs/ARCHITECTURE.md)，删除与移动明细见 [迁移清单](docs/ARCHITECTURE_MIGRATION.md)，验收证据见 [验证记录](docs/ARCHITECTURE_VALIDATION_20261018.md)。
 
 ## 测试
 
@@ -186,13 +196,13 @@ docs/
 ## 设计文档
 
 - 总体设计：[docs/plans/2026-08-24-deepsearch-paper-agent-design.md](docs/plans/2026-08-24-deepsearch-paper-agent-design.md)
-- 架构决策：[docs/adr/](docs/adr/)（以 ADR-0006 的本机架构为准）
+- 架构决策：[docs/adr/](docs/adr/)（当前依赖与主线以 ADR-0010 为准，持久化遵循 ADR-0006）
 - 模块设计：[docs/plans/](docs/plans/)（PDF 上传、LangGraph 工作流、章节分块、流式界面）
 - 验收记录：[docs/](docs/)（首次检索门槛、失败诊断、模型联调等）
 
 ## 搜索策略与后训练数据
 
-搜索模型和原 RAG 使用独立接口，当前只参与**首轮检索词生成**。后续研究调度、补查、回答及引用核验由原工作流负责。模型返回 `answer/UNKNOWN` 不会跳过首次取证，也不会直接发布为最终答案。
+离线搜索模型与 RAG 使用独立接口，在旧基线中只参与**首轮检索词生成**。后续研究调度、补查、回答及引用核验由原工作流负责。模型返回 `answer/UNKNOWN` 不会跳过首次取证，也不会直接发布为最终答案。
 
 ```text
 可选搜索策略模型 ──→ 首轮查询 ──→ 现有检索/重排 ──→ 原回答与核验
@@ -206,7 +216,7 @@ docs/
                  action-SFT train/val + SHA256 manifest
 ```
 
-`src/search_policy` 仅依赖 Python 标准库，可单独迁移到训练环境；RAG 通过可选 recorder/observer 接入。记录默认关闭，写入失败不阻断问答。实际模型输出与回退 Researcher 的查询分别标记来源，审核通过的已执行 search 动作才能进入训练数据。按问题与会话共同分组，避免同组样本跨 train/val。
+`src/search_policy` 与共享 `src/deepsearch_tracing` 仅依赖 Python 标准库，可一起迁移到训练环境；RAG 通过可选 recorder/observer 接入。记录默认关闭，写入失败不阻断问答。实际模型输出与回退 Researcher 的查询分别标记来源，审核通过的已执行 search 动作才能进入训练数据。按问题与会话共同分组，避免同组样本跨 train/val。
 
 先运行完全离线的虚构样例（输出目录须为新目录）：
 
@@ -220,7 +230,7 @@ docs/
 
 当前交付的是轨迹与**单步搜索决策 SFT** 管线，不是已部署模型或完整 GRPO 训练系统。原始轨迹、审核与最终数据分开保存，不把 RAG 验证器结论自动当作奖励。训练 reader、配置和全部命令见 [数据管线手册](docs/POLICY_DATA_PIPELINE.md)。
 
-本次离线验收：**245 项测试通过**；虚构演示的 12 条轨迹导出为 8 条训练、4 条验证样本，哈希校验通过。以上只证明软件数据契约，不表示模型效果提升。
+完整重构验收见 [验证记录](docs/ARCHITECTURE_VALIDATION_20261018.md)。历史虚构演示的 12 条轨迹导出为 8 条训练、4 条验证样本，仅证明数据契约，不表示模型效果提升。
 
 ## 技术栈
 
@@ -228,8 +238,22 @@ Python 3.12 · FastAPI · LangGraph · numpy · jieba · pypdf · React 19 · Ty
 
 ## 检索质量评测
 
+已完成缺口复用 v4/v5 的 20 题×3 次重复×2 版本真实对照：自然触发 9 条路径，但总 Token 增加 5.06%，尚未验证稳定降本；另复现同引文下正确主张修正被暂缓的安全反例。完整成本区间、独立审计和证据边界见 [重复对照评测](docs/REPEATED_GAP_EVALUATION_20261019.md)，v5 仍保留为实验选项。
+
+优先复用本地 ChartQA、PDFVQA、MuSiQue 和 2Wiki 数据及冻结的历史运行，统一离线重评分、按任务报告并导出成功/失败/未知待复核记录。清单、运行方式、实测分数和范围限制见 [现有数据集评测](docs/EXISTING_DATASETS.md)。该入口不下载数据或调用模型，自动分数不替代人工审核。
+
+已完成 MuSiQue、2Wiki 各新增 100 题的真实模型扩容评测，保留 200 份按自动评分分组的完整轨迹；结果、失败分类与运行方式见 [扩容评测](docs/EXPANDED_EVALUATION_20261018.md)。
+
+这轮失败的逐例证据见 [Badcase 归因](docs/BADCASE_ATTRIBUTION_20261018.md)。基于 HALT 与推理时预算控制论文新增了可选的证据覆盖策略、按角色修复额度和答案类型保护，原流程保留用于对照；实现、配置与验证边界见 [论文驱动改进](docs/EVIDENCE_CONTROLLED_RESEARCH_20261018.md)。
+
+针对 v1 暴露的重复修订与实体解释问题，新增了可执行核验动作、精确输入复用守卫和带证据的假设修正；配置、消融入口及回归边界见 [Badcase 优化 v2](docs/ACTIONABLE_REVIEW_V2_20261019.md)。
+
 已新增 40 条测试文档问题与原文页码标注、Recall@k/MRR@k 脚本及消融入口。数据尚待人工复核；运行方式和指标边界见 [eval/README.md](eval/README.md)。
 
 公开多模态数据集的 Agentic RAG 配对消融、逐阶段追踪与独立工具验收见 [实验手册](docs/AGENTIC_ABLATION.md)。Badcase 使用统一阶段标签、证据定位与独立人工复核记录，规则见 [归因标准](docs/BADCASE_TAXONOMY.md)；自动阶段标签不是已证实的因果根因。
 
 本轮实际完成度、任务分数、工具结果与成本见 [消融报告](docs/AGENTIC_ABLATION_RESULTS.md)，日志及原图抽查见 [Badcase 抽查](docs/AGENTIC_ABLATION_AUDIT.md)。
+
+## 长任务恢复与 Wiki 检索
+
+流式研究支持取消、重启后从 LangGraph 检查点恢复，以及 Wiki 页面参与原文片段检索。接口和边界见 [Research runs and Wiki retrieval](docs/RESEARCH_RUNS_AND_WIKI.md)。

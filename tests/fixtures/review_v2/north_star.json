@@ -1,0 +1,51 @@
+{
+  "kind": "saved-real-input-scripted-review-scenarios",
+  "source": "output/evidence-controlled-20261018/canary/runs/musique-mainline-evidence-controlled-v1/attempts.jsonl",
+  "source_sha256": "e91a376701febea5a0875bec5b74b3c1c9923220a967ecdba6c902e29a89bf52",
+  "event_index": 78,
+  "question": "Who married the publisher of abolitionist newspaper The North Star?",
+  "claims": [
+    {
+      "text": "The abolitionist newspaper The North Star was published by Frederick Douglass.",
+      "citations": [
+        1
+      ]
+    },
+    {
+      "text": "Frederick Douglass married Helen Pitts Douglass, who is identified as his second wife.",
+      "citations": [
+        6
+      ]
+    }
+  ],
+  "requirements": [
+    "Identify the publisher of the abolitionist newspaper The North Star (name).",
+    "Identify the spouse (who married that publisher), supported by a source documenting the marriage."
+  ],
+  "evidence": [
+    {
+      "id": 1,
+      "source": "doc_0a4ffede0dbc15a50c1821a9f0be70d553a769de8bb2c6e47ddf888edaa7393b",
+      "text": "The North Star (anti-slavery newspaper)\nThe North Star was a nineteenth - century anti-slavery newspaper published from the Talman Building in Rochester, New York by abolitionist Frederick Douglass. The paper commenced publication on December 3, 1847 and ceased as The North Star in June 1851 when it merged with Gerrit Smith's Liberty Party Paper (based in Syracuse, New York) to form Frederick Douglass' Paper. The North Star's slogan was ``Right is of no Sex -- Truth is of no Color -- God is the Father of us all, and we are all Brethren. ''",
+      "chunk_id": "chk_2327a145c3cdc23d7ec3470bce108643f2ee9333698f9bed64a5b1f2f537ea4a"
+    },
+    {
+      "id": 2,
+      "source": "doc_ac12d70af337b39b616a1bf437a658c3e27e7fd9a41de900d1e211bd5573ff2a",
+      "text": "William Cooper Nell\nWilliam Cooper Nell (December 16, 1816 – May 25, 1874) was an African-American abolitionist, journalist, publisher, author, and civil servant of Boston, Massachusetts, who worked for integration of schools and public facilities in the state. Writing for abolitionist newspapers \"The Liberator\" and \"The North Star\", he helped publicize the anti-slavery cause. He published the \"North Star\" from 1847 to 18xx, moving temporarily to Rochester, New York.",
+      "chunk_id": "chk_9ebf294e64bc804fea1fb3d2520dd0ceab006a6345301c976bfb82de142df53b"
+    },
+    {
+      "id": 6,
+      "source": "doc_6a0899f3e39e32e834a5dd4e20b65af9e0bb4a1e1cf9cde3b8b704681cdcbed5",
+      "text": "Helen Pitts Douglass\nHelen Pitts Douglass (1838–1903) was an American suffragist and abolitionist, known for being the second wife of Frederick Douglass. She also created the Frederick Douglass Memorial and Historical Association.",
+      "chunk_id": "chk_9ad9d842d51f41192a72708c40c812d8fa9df2c9abf4dac8894891033ee12a61"
+    }
+  ],
+  "legacy_issues": [
+    "Evidence 2 states William Cooper Nell 'published the North Star from 1847 to 18xx' in addition to writing for it, which is in tension with evidence 1, which explicitly identifies the newspaper as published by Frederick Douglass; the conclusion relies on evidence 1's direct statement, but the conflicting publisher claim in evidence 2 is unresolved in the corpus.",
+    "Evidence 6 supports Helen Pitts Douglass as the second wife of Frederick Douglass; no evidence in the corpus addresses any earlier spouse, so the answer names only the spouse documented in the provided sources."
+  ],
+  "human_verdict": null,
+  "interpretation": "Input evidence is copied from a saved real run; new typed reviews in tests are scripted counterfactuals, not new model or human judgments."
+}

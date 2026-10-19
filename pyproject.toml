@@ -19,16 +19,23 @@ dependencies = [
     "Pillow>=10,<13",
     "jieba>=0.42.1,<0.43",
     "langgraph>=1.0,<2",
+    "langgraph-checkpoint-sqlite>=3.1.1,<4",
     "langchain-core>=1.0,<2",
     "PyYAML>=6,<7",
 ]
 
 [project.optional-dependencies]
+infrastructure = ["redis>=5,<7"]
+database = ["psycopg[binary,pool]>=3.2,<4"]
 dev = ["pytest", "reportlab"]
+benchmarks = ["pysbd>=0.3.4,<0.4"]
 mcp = ["mcp>=2.3,<3", "jsonschema>=4.20,<5"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+deepsearch_agent = ["logging.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

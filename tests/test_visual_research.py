@@ -2,9 +2,9 @@ import json
 
 import pytest
 
-from deepsearch_agent.chunking import TextChunk
-from deepsearch_agent.llm_gateway import ModelServiceError
-from deepsearch_agent.qa import AnswerService
+from deepsearch_agent.core.evidence import TextChunk
+from deepsearch_agent.core.models import ModelServiceError
+from deepsearch_experiments.legacy.qa import AnswerService
 
 
 class TextClient:

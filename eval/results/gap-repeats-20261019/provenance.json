@@ -1,0 +1,35 @@
+{
+  "scope": "Sanitized statistics, identifiers, judgments and hashes only.",
+  "excluded": [
+    "private configuration",
+    "credentials",
+    "source corpora",
+    "full model prompts",
+    "raw model responses",
+    "natural evidence quotes",
+    "user workspace data",
+    "absolute local paths"
+  ],
+  "source_sha256": {
+    "summary.json": "0fbe3d9d831da9faa2ab995889d1d0ff428c216dc304fbcad626f516682f7982",
+    "paired.json": "fbb6193b223add9eaf7e6739c150e374677c55fbb7ab6ae2f55cb586b573d15a",
+    "cost-breakdown.json": "8184bf97bfae22661b30ef4e7462267e18ee2e05686c0dad342d9c6b7bd92f39",
+    "synthetic-safety-counterexample.json": "87513c0329500056f891394add3069dad2295e717a703a3935f75af44d661d0f",
+    "audit-validation-diagnostics.json": "7a4b2ccd9db586ec883b95fcb3c8c7b034dd0609d43b4fb5cb8e8603e952309a",
+    "plan.json": "dd38ea7735fa9c99dec88859299d31e2eb312501fd36647d4a57eea674add4aa",
+    "per-attempt.json": "cd85fffd0c88e752a2ba0386a74c8e28ad969995e09fa9b729d2b5323b9b9390",
+    "blinded-audit/summary.json": "f00c956fe8ef69fc625288519d28f5d654f94f2aee3a6eec952addba6dd9d5c6",
+    "blinded-audit\\0000.json": "dbfa314831f22c559266dea49958caf8a09f1bc9f13e40a27f98461cef6df4c7",
+    "blinded-audit\\0001.json": "b4e8120187313b2a284f3ba2a6712f9831416434c0ef82e461f8e90762ef8899",
+    "blinded-audit\\0002.json": "86b7a3f0a53c83c198553d023cca72cf4090696192190497fae4f306b68c8a14",
+    "blinded-audit\\0003.json": "443665e2edf17d6f5c57c3d018b8618952ab6cb7137cdd5e33626729a3a0dba2",
+    "blinded-audit\\0004.json": "2a47cc03dd260fe5062648fe896b0ff0ea078ff94ba3f9b8e276dbacab2feea5",
+    "blinded-audit\\0005.json": "87f25cc81e45ecec5110fd8e6b046ef9222ea1918d22fc7a3532d961d34ce3f8",
+    "blinded-audit\\0006.json": "5e507173fb629e7dfe47b59e8e0e68ad1db10825d9be3fd2dc989bddfc49b3cd",
+    "blinded-audit\\0007.json": "e17fece567cdd0ca725a1fe547614caa30074ae1cfd0025023705e403b89958f",
+    "blinded-audit\\0008.json": "37783c02c035ead701d4d7eef5b5d8764a5bcac19ee5e87d1a0ad96cde054b7e",
+    "rule-replay.json": "44d42b1f04499a96b021c49b477f33a9848ee75e08920e21557f760a5eb65b8c",
+    "validation-final.json": "c49ad312cff8ebbe7f204cf5924681026b743a6b43cb7316e883a674b10bdfde"
+  },
+  "limitation": "The public export supports statistical recalculation, not full evidence re-audit. Raw evidence remains local."
+}

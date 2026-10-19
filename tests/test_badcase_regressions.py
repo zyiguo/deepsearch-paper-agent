@@ -3,7 +3,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from deepsearch_agent.research_graph import Decision, ResearchWorkflow
+from deepsearch_agent.agents.contracts import Decision
+from deepsearch_agent.agents.runtime import ResearchWorkflow
 
 
 def test_supervisor_schema_failure_gets_one_strict_repair():
@@ -41,7 +42,7 @@ def test_schema_repair_budget_is_per_workflow_and_still_fails_closed():
 
 def test_invalid_citation_is_revised_without_retrieval_or_verifier_call():
     from test_research_graph import Client, Library
-    from deepsearch_agent.qa import AnswerService
+    from deepsearch_experiments.legacy.qa import AnswerService
     client = Client([
         {'queries': ['signal']},
         {'claims': [{'text': 'white light', 'citations': [1, 2, 3, 4, 5]}]},
@@ -54,9 +55,9 @@ def test_invalid_citation_is_revised_without_retrieval_or_verifier_call():
 
 
 def test_exhausted_ocr_is_not_advertised_to_next_planner():
-    from deepsearch_agent.agent_config import AgentSettings
-    from deepsearch_agent.agentic_research import AgenticResearcher
-    from deepsearch_agent.tool_service import PaperToolSession
+    from deepsearch_agent.agents.agent_config import AgentSettings
+    from deepsearch_agent.agents.agentic_research import AgenticResearcher
+    from deepsearch_agent.agents.tool_service import PaperToolSession
     kb = SimpleNamespace(chunks=[], image_index=None)
     session = PaperToolSession(kb, settings=AgentSettings(max_ocr_calls=1))
     session.ocr_calls = 1
@@ -68,7 +69,7 @@ def test_exhausted_ocr_is_not_advertised_to_next_planner():
 
 
 def test_benchmark_contract_covers_planner_scope_and_requested_elements_only():
-    from deepsearch_agent.benchmarks.ablation import format_instruction
+    from deepsearch_experiments.benchmarks.ablation import format_instruction
     contract = format_instruction('B')
     assert 'provided page' in contract
     assert 'ONLY' in contract
@@ -77,13 +78,18 @@ def test_benchmark_contract_covers_planner_scope_and_requested_elements_only():
 
 def test_ablation_output_budget_is_configurable(monkeypatch):
     from pathlib import Path
-    from deepsearch_agent.benchmarks.ablation import vision_settings
-    from deepsearch_agent.llm_config import LLMSettings
-    from deepsearch_agent.vision_config import VisionSettings
-    settings = VisionSettings(llm=LLMSettings(context_window=32768))
+    from deepsearch_experiments.benchmarks.ablation import vision_settings
+    from deepsearch_agent.adapters.llm_config import LLMSettings
+    from deepsearch_agent.adapters.vision_config import VisionSettings
+    settings = VisionSettings(llm=LLMSettings(context_window=32768, max_output_tokens=16384))
     monkeypatch.setattr(LLMSettings, 'load', lambda *args, **kwargs: settings.llm)
     monkeypatch.setattr(VisionSettings, 'load', lambda *args, **kwargs: settings)
     args = SimpleNamespace(vision_env=Path('unused'), llm_env=Path('unused'), max_output_tokens=8192)
     assert vision_settings(args).llm.max_output_tokens == 8192
     del args.max_output_tokens
-    assert vision_settings(args).llm.max_output_tokens == 4096
+    assert vision_settings(args).llm.max_output_tokens == 16384
+    args.max_output_tokens = None
+    assert vision_settings(args).llm.max_output_tokens == 16384
+    args.max_output_tokens = 0
+    with pytest.raises(ValueError):
+        vision_settings(args)

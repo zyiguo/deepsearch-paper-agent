@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from deepsearch_agent.skills import SkillRegistry, SkillError
+from deepsearch_agent.workspace.skills import SkillRegistry, SkillError
 
 
 def write_skill(root, name='compare', body='Compare the reported methods.', description='Compare papers.'):
@@ -68,7 +68,7 @@ def test_symlink_escape_is_not_discovered(tmp_path):
 
 
 def test_supervisor_loads_skill_without_making_it_evidence(tmp_path):
-    from deepsearch_agent.qa import AnswerService
+    from deepsearch_experiments.legacy.qa import AnswerService
     from test_research_graph import Client, Library
     write_skill(tmp_path, body='SKILL METHOD MARKER. Never invent evidence.')
     prompts = []
@@ -96,7 +96,7 @@ def test_supervisor_loads_skill_without_making_it_evidence(tmp_path):
 
 
 def test_explicit_skill_basic_qa_and_request_isolation(tmp_path):
-    from deepsearch_agent.qa import AnswerService
+    from deepsearch_experiments.legacy.qa import AnswerService
     from test_research_graph import Library
     write_skill(tmp_path, body='SKILL METHOD MARKER')
     class Client:
@@ -111,8 +111,8 @@ def test_explicit_skill_basic_qa_and_request_isolation(tmp_path):
 def test_skill_api_validation_and_hot_reload(tmp_path):
     from fastapi.testclient import TestClient
     from deepsearch_agent.api import create_app
-    from deepsearch_agent.llm_config import LLMSettings
-    from deepsearch_agent.demo import DEMO_QUESTIONS
+    from deepsearch_agent.adapters.llm_config import LLMSettings
+    from deepsearch_agent.adapters.demo import DEMO_QUESTIONS
     root = tmp_path / 'skills'
     app = create_app(index_path=tmp_path / 'index.json', llm_settings=LLMSettings(), skills_path=root)
     with TestClient(app) as client:

@@ -1,4 +1,4 @@
-from deepsearch_agent.pdf import FakePdfReader, PdfReader
+from deepsearch_agent.core.pdf import FakePdfReader, PdfReader
 
 
 def test_fake_pdf_reader_returns_configured_pages() -> None:

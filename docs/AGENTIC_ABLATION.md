@@ -2,6 +2,18 @@
 
 入口：`python -m deepsearch_agent.benchmarks.ablation`。实验仅写入指定的 benchmark/evaluation 目录，不修改应用资料库、对话或生产环境配置。归因标准见 [BADCASE_TAXONOMY.md](BADCASE_TAXONOMY.md)。
 
+如需按任务依赖评分，可用独立入口 `python -m deepsearch_agent.benchmarks.dag` 对同一批记录进行离线 DAG 评估，定义、口径和命令见 [DAG 任务评测](DAG_BENCHMARK.md)。原始分数不被替换，新增节点分数与阻塞诊断保存到新目录。
+
+报告生成支持按 `run.json` 冻结的子集，并可合并对应 DAG 输出；会核对预测/运行指纹和重新计算的节点结果，拒绝混用其他运行。示例：
+
+```powershell
+.venv\Scripts\python.exe -m deepsearch_agent.benchmarks.ablation_report --prepared data/benchmarks/ablation-20261005 --run data/evaluations/ablation-20261007-small --dag data/evaluations/dag-20261007-small --output docs/ABLATION_20261007_SMALL.md
+```
+
+2026-10-07 小批量实验的固定样本、预算与排除范围见 [预登记](plans/2026-10-07-small-ablation.md)。图像向量不在该轮评估范围，BM25/OCR 召回、多模态重排与角色原图阅读分别保留实际配置。
+
+该轮已完成 6 题 x 5 组共 30 条真实轨迹，见 [结论与 Badcase 复核](ABLATION_20261007_FINDINGS.md) 和 [完整阶段/DAG 报告](ABLATION_20261007_SMALL.md)。小样本结果用于开发诊断，不与旧模型或后训练实验指标混算。
+
 ## 实验单位与控制条件
 
 单位是 `(case_id, variant)`，固定 12 道题：ChartQA human/augmented 各 3；PDFVQA A counting 1、existence 2；B object recognition 1、structural understanding 2。按题型和种子抽样，不按模型历史表现选择。PDFVQA 的页级镜像不能支持 Task C 的跨页文档评价。
@@ -34,6 +46,10 @@ ChartQA 采用选中图表加 6 张随机干扰图的跨图召回诊断，原问
 2026-10-05 图像 embedding 服务返回 HTTP 402；本轮所有组明确改用 `--retrieval bm25`，复用已完成的 OCR 索引文本，运行记录设置 `--retrieval-fallback-reason image_embedding_http_402`。没有用模拟图像向量代替真实向量，没有声称完成直接图像向量检索验收。后续恢复服务应重建新实验，不与本轮混算。
 
 需要独立验证各工具是否可执行时运行 `probe --prepared ... --output .../tool-probes.jsonl --allow-remote --direct`。该过程人为指定页面并依次调用工具，和 agent 自主工具选择、自然调用成功率完全分开。
+
+定向回归可重复传入 `--case-id` 并通过 `--variants agent_no_ocr` 选择变体；完整计划写入 `run.json`，评分只使用计划内样本，不把未选择的题记为缺失。`--model`、`--context-window`、`--timeout-seconds` 只覆盖该次实验，不编辑应用环境文件。`--ocr-output-tokens` 独立控制在线 OCR 预算，用于复现旧配置。
+
+跨运行对照使用 `python -m deepsearch_agent.benchmarks.paired_regression --prepared ... --before ... --after ... --output .../comparison.json`。比较器拒绝数据或索引指纹不一致，显式列出代码与配置变化；胜负翻转是观察结果，不自动解释为已证实的因果收益。当前小批量计划见 [配对回归计划](plans/2026-10-06-paired-badcase-regression.md)。
 
 ## 可检查产物
 

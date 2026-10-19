@@ -1,10 +1,10 @@
 import json
-from deepsearch_agent.conversations import ConversationStore
-from deepsearch_agent.qa import Answer
+from deepsearch_agent.workspace.conversations import ConversationStore
+from deepsearch_agent.core.answers import Answer
 
 
 def setup(tmp_path):
-    from deepsearch_agent.memory import MemoryManager
+    from deepsearch_agent.workspace.memory import MemoryManager
     store = ConversationStore(tmp_path / 'chat.db')
     sid = store.create('research')['id']
     return store, sid, MemoryManager(store)

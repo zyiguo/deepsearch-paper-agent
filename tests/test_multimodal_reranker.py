@@ -3,8 +3,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from deepsearch_agent.chunking import TextChunk
-from deepsearch_agent.multimodal_reranker import MultimodalReranker
+from deepsearch_agent.core.evidence import TextChunk
+from deepsearch_agent.knowledge.multimodal_reranker import MultimodalReranker
 
 
 def candidates(count=3):

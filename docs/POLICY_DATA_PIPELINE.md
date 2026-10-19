@@ -5,21 +5,21 @@
 ## 1. 模块边界
 
 ```text
-src/search_policy/                   Python 标准库，可脱离 RAG 使用
+src/deepsearch_tracing/              标准库通用轨迹与分类、查询、导出
+src/search_policy/                  标准库离线训练扩展
   intent.py                         search/answer 协议、客户端接口、决策事件
-  events.py                         ContextVar 隔离每个运行的 observer
-  store.py                          SQLite 事件日志、哈希链、快照校验
+  events.py / store.py               转出公共轨迹接口，不保留第二套实现
   dataset.py                        候选、审核、去重、分组切分、清单校验
   training.py                       向训练器提供单步样本/编码函数适配
   __main__.py                       独立 CLI
-
-src/deepsearch_agent/
-  search_intent.py                   旧导入兼容层，转换 RAG 的服务异常类型
-  observability.py                  可选事件回调及片段序列化
-  trajectory_adapter.py             RAG 到独立轨迹库的唯一存储桥接层
+src/deepsearch_experiments/
+  search_intent.py                   离线模型异常适配
+  legacy/qa.py                      旧快速 QA / 查询规划基线
+src/deepsearch_agent/adapters/
+  tracing.py                        应用模型安全诊断到通用记录器的桥接
 ```
 
-独立包不导入 `deepsearch_agent`、LangGraph、FastAPI、HTTP 客户端或 Torch。RAG 的 AnswerService/ResearchWorkflow 只接收可选 recorder/observer；没有 recorder 时不会创建数据库。旧 `deepsearch_agent.search_intent.SearchIntent` 入口继续可用。
+`search_policy` 与 `deepsearch_tracing` 可以一起迁到训练环境，不导入应用、LangGraph、FastAPI、HTTP 客户端或 Torch。生产问答只接收可选 recorder/observer；旧 `deepsearch_agent.search_intent` 内部导入已移除。
 
 `MessageClient.complete_messages(messages) -> str` 是推理接口；独立实现应将网络失败转换为 `PolicyServiceError`。既有 RAG 兼容入口另外接受 `ModelServiceError`。配置模型身份时明确传 `model_id` 与 `model_revision`，后者应填写部署检查点/adapter 的版本或哈希，而非只写基座名称。
 
@@ -52,24 +52,28 @@ $env:RAG_TRACE_DB = Join-Path (Get-Location) 'data\policy-traces\runs.sqlite3'
 Remove-Item Env:RAG_TRACE_DB -ErrorAction SilentlyContinue
 ```
 
-这只启用事件记录，不启用新的模型。当前没有策略模型时，RAG 运行仍会记录，但 policy 候选样本数量为 0，这是预期行为。基础非图问答仅记录请求配置和最终答案；完整角色/检索事件来自 DeepSearch 图路径。
+这只启用事件记录，不启用新的模型。当前没有策略模型时，RAG 运行仍会记录，但 policy 候选样本数量为 0，这是预期行为。演示或显式离线快速 QA 只记录其实际事件；完整角色/检索/父子交接来自生产图路径。
 
-程序化接入（可以使用本地 mock）：
+程序化接入仅用于显式离线基线（可以使用本地 mock）：
 
 ```python
 from pathlib import Path
-from deepsearch_agent.api import create_app
-from deepsearch_agent.search_intent import SearchIntent
+from deepsearch_experiments.search_intent import SearchIntent
+from deepsearch_experiments.legacy.qa import AnswerService
+from deepsearch_agent.adapters.tracing import RAGTraceRecorder
 
 class LocalStub:
     def complete_messages(self, messages):
         return '{"search":"检索器训练方法"}'
 
 policy = SearchIntent(LocalStub(), model_id="local-fixture", model_revision="fixture-v1")
-app = create_app(search_intent=policy, trace_path=Path("data/policy-traces/runs.sqlite3"))
+# main_client 和 knowledge_base 由离线运行器注入；复用当前模型和检索适配器。
+service = AnswerService(main_client, knowledge_base, use_graph=True,
+    search_intent=policy, run_recorder=RAGTraceRecorder(Path("data/policy-traces/runs.sqlite3")))
+service.answer("问题", trace_context={"conversation_id": "稳定的离线会话ID"})
 ```
 
-若直接使用服务类：`AnswerService(..., search_intent=policy, run_recorder=RAGTraceRecorder(path))`，调用时传 `trace_context={"conversation_id": "稳定的会话ID"}`。Web 会话接口自动传会话 ID；无会话的 `/api/ask` 按规范化问题分组。
+`create_app(search_intent=...)` 现在给出离线迁移错误。生产 Web 会话仍自动传会话 ID 并记录真实父子交接，但不会把普通子 Agent 输出自动转换为策略训练样本。
 
 ## 4. 记录内容与状态
 

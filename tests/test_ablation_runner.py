@@ -1,15 +1,16 @@
+from deepsearch_agent.adapters.tool_adapters import langgraph_tools
 from dataclasses import asdict
 import json
 
 import pytest
 
-from deepsearch_agent.benchmarks import ablation as a
-from deepsearch_agent.benchmarks.badcases import attribute_case
-from deepsearch_agent.chunking import TextChunk
-from deepsearch_agent.knowledge_base import KnowledgeBase
-from deepsearch_agent.llm_config import LLMSettings
-from deepsearch_agent.qa import Answer, chunk_to_source_reference
-from deepsearch_agent.vision_config import VisionSettings
+from deepsearch_experiments.benchmarks import ablation as a
+from deepsearch_experiments.benchmarks.badcases import attribute_case
+from deepsearch_agent.core.evidence import TextChunk
+from deepsearch_agent.knowledge.knowledge_base import KnowledgeBase
+from deepsearch_agent.adapters.llm_config import LLMSettings
+from deepsearch_agent.core.answers import Answer, chunk_to_source_reference
+from deepsearch_agent.adapters.vision_config import VisionSettings
 
 
 def case(task='chartqa'):
@@ -90,11 +91,11 @@ def test_production_rerank_status_attribution():
 
 
 def test_ablation_tool_reader_and_ocr_catalog():
-    from deepsearch_agent.benchmarks.instrumentation import RunTrace
+    from deepsearch_experiments.benchmarks.instrumentation import RunTrace
     kb = KnowledgeBase(None, retrieval_mode='bm25')
     kb.ingest_chunks([TextChunk('text', 'paper', 1, 0)])
     session = a.AblationSession(kb, trace=RunTrace({('paper', 1): 'p1'}),
         page_reader=lambda source, page: {'text': 'full page'}, ocr_enabled=False)
     assert session.invoke('read_page', {'source': 'paper', 'page': 1}).chunks[0].text == 'full page'
     assert 'ocr_page' not in {s['name'] for s in session.specs()}
-    assert 'ocr_page' not in {t.name for t in session.tools()}
+    assert 'ocr_page' not in {t.name for t in langgraph_tools(session)}

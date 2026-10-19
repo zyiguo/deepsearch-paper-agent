@@ -1,0 +1,31 @@
+# Explicit overlay: docker compose --env-file .env.database.compose -f compose.yaml -f compose.database.yaml ...
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: deepsearch
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Set a private POSTGRES_ADMIN_PASSWORD}
+      POSTGRES_APP_USER: deepsearch
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?Set a private POSTGRES_APP_PASSWORD}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./deploy/postgres/001-role.sql:/docker-entrypoint-initdb.d/001-role.sql:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "postgres", "-d", "deepsearch"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  api:
+    environment:
+      DATABASE_BACKEND: postgresql
+      DATABASE_URL: ${DATABASE_URL:?Set the application-role DATABASE_URL}
+      DATABASE_SCHEMA: deepsearch
+    depends_on:
+      postgres:
+        condition: service_healthy
+volumes:
+  postgres-data:

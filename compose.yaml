@@ -1,0 +1,26 @@
+services:
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction", "--save", "", "--appendonly", "no"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+  api:
+    build: .
+    profiles: ["app"]
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      INFRA_NAMESPACE: deepsearch
+      API_RATE_LIMIT: "30"
+    volumes:
+      - application-data:/app/data
+    restart: unless-stopped
+volumes:
+  application-data:

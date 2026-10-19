@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from deepsearch_agent.benchmarks.badcases import attribute_case, attribute_cases
+from deepsearch_experiments.benchmarks.badcases import attribute_case, attribute_cases
 
 
 def case(**changes):

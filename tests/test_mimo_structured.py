@@ -1,8 +1,9 @@
 import json
 import httpx
 import pytest
-from deepsearch_agent.llm_config import LLMSettings
-from deepsearch_agent.llm_gateway import OpenAICompatibleClient, ModelServiceError
+from deepsearch_agent.adapters.llm_config import LLMSettings
+from deepsearch_agent.adapters.llm_gateway import OpenAICompatibleClient
+from deepsearch_agent.core.models import ModelServiceError
 
 
 def test_mimo_structured_request_disables_thinking_and_requests_json():

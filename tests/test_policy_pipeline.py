@@ -10,11 +10,11 @@ import pytest
 
 from search_policy.dataset import (candidates, export_dataset, group_keys, read_jsonl,
                                    review_template, verify_dataset, write_new_jsonl)
-from search_policy.events import bind, emit
+from deepsearch_tracing.events import bind, emit
 from search_policy.intent import SearchIntent
-from search_policy.store import TraceStore, validate_run
-from deepsearch_agent.trajectory_adapter import RAGTraceRecorder
-from deepsearch_agent.qa import AnswerService
+from deepsearch_tracing.store import TraceStore, validate_run
+from deepsearch_agent.adapters.tracing import RAGTraceRecorder
+from deepsearch_experiments.legacy.qa import AnswerService
 from test_research_graph import Client, Library
 
 
@@ -243,16 +243,16 @@ print('standalone-ok')
 def test_web_session_records_conversation_without_credentials(tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
     from deepsearch_agent.api import create_app
-    from deepsearch_agent.llm_config import LLMSettings
+    from deepsearch_agent.adapters.llm_config import LLMSettings
 
-    outputs = [{'claims': [{'text': '对比学习', 'citations': [1]}]}, {'supported': [0], 'queries': []}]
-    monkeypatch.setattr('deepsearch_agent.api.build_llm', lambda _: Client(outputs))
+    outputs = [{'tool':'search_evidence','arguments':{'query':'模型怎么训练？'}}, {'tool':'','arguments':{}}, {'claims': [{'text': '对比学习', 'citations': [1]}]}, {'supported': [0], 'queries': []}]
+    monkeypatch.setattr('deepsearch_agent.application.bootstrap.build_llm', lambda _: Client(outputs))
     settings = LLMSettings(backend='openai_compatible', api_key='secret-do-not-record',
                            base_url='https://example.com/v1', model='main-fixture')
     path = tmp_path / 't.db'
     policy = SearchIntent(Model('{"search":"模型怎么训练？"}'), model_id='fixture', model_revision='v1')
     with TestClient(create_app(index_path=tmp_path / 'index.json', llm_settings=settings,
-                              trace_path=path, search_intent=policy)) as client:
+                              trace_path=path)) as client:
         client.post('/api/demo/ingest').raise_for_status()
         session_id = client.post('/api/sessions', json={'title': 'trace'}).json()['id']
         result = client.post(f'/api/sessions/{session_id}/turns',
@@ -262,12 +262,22 @@ def test_web_session_records_conversation_without_credentials(tmp_path, monkeypa
     assert runs[0]['metadata']['conversation_id'] == session_id
     assert runs[0]['metadata']['main_model'] == 'main-fixture'
     assert 'secret-do-not-record' not in json.dumps(runs)
-    assert candidates(runs)[0]['eligible']
+    assert not candidates(runs)  # Production traces do not become policy training labels.
 
+
+
+def test_production_rejects_legacy_search_policy(tmp_path):
+    from fastapi.testclient import TestClient
+    from deepsearch_agent.api import create_app
+    from deepsearch_agent.adapters.llm_config import LLMSettings
+    with pytest.raises(ValueError, match='offline'):
+        with TestClient(create_app(tmp_path / 'index.json', llm_settings=LLMSettings(),
+                                  search_intent=SearchIntent(Model()))):
+            pass
 
 def test_scope_is_enforced_before_recording_evidence(tmp_path):
-    from deepsearch_agent.knowledge_base import KnowledgeBase
-    from deepsearch_agent.chunking import TextChunk
+    from deepsearch_agent.knowledge.knowledge_base import KnowledgeBase
+    from deepsearch_agent.core.evidence import TextChunk
 
     kb = KnowledgeBase(None, retrieval_mode='bm25')
     kb.chunks = [TextChunk('灯塔 白光', 'allowed.pdf', 1, 0),

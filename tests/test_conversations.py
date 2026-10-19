@@ -1,8 +1,8 @@
 from fastapi.testclient import TestClient
 
 from deepsearch_agent.api import create_app
-from deepsearch_agent.embedding_runtime import EmbeddingSettings
-from deepsearch_agent.llm_config import LLMSettings
+from deepsearch_agent.adapters.embedding_runtime import EmbeddingSettings
+from deepsearch_agent.adapters.llm_config import LLMSettings
 
 # 显式注入演示配置，避免测试继承开发者本机的 live .env。
 DEMO_SETTINGS = dict(

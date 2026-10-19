@@ -1,0 +1,444 @@
+{
+  "implementation": {
+    "sha256": "ec5cb218c70c2ffe2970c263f5574be4fcd9a02b0ce1a3022cf364f1d510e407",
+    "dependencies": {
+      "pydantic": "2.13.5",
+      "httpx": "0.28.1",
+      "jieba": "0.42.1",
+      "pysbd": "0.3.4",
+      "langgraph": "1.2.11",
+      "langchain-core": "1.6.2",
+      "langsmith": "0.12.4"
+    }
+  },
+  "limits": {
+    "context_window": 131072,
+    "deadline_seconds": 600.0,
+    "k": 5,
+    "max_output_tokens": 8192,
+    "model_calls": 24,
+    "search_calls": 8,
+    "token_budget": 256000
+  },
+  "model": {
+    "backend": "openai_compatible",
+    "base_url": "https://token-plan-cn.xiaomimimo.com/v1",
+    "context_window": 131072,
+    "max_output_tokens": 8192,
+    "model": "mimo-v2.6-pro",
+    "proxy_policy": "direct",
+    "timeout_seconds": 300.0
+  },
+  "repeats": 3,
+  "max_workers": 4,
+  "gold_exclusions": {
+    "2hop__128342_375952": "Gold bridge conflates Los Alamos New Mexico and California; quarantine, not a human correctness label."
+  },
+  "selection_rule": "Four retained development canaries plus 8 stable-SHA-selected cases per dataset; no current outcome selection.",
+  "sampling": "Provider defaults, no controlled provider seed; stochastic repeats not independent new questions.",
+  "retry_errors": false,
+  "selection": {
+    "musique": {
+      "ids": [
+        "2hop__128342_375952",
+        "2hop__50910_177869",
+        "2hop__351045_47134",
+        "3hop1__699507_792411_51423",
+        "3hop2__89854_38738_76291",
+        "2hop__794999_113442",
+        "2hop__235471_565925",
+        "2hop__668407_683671",
+        "2hop__207476_625987",
+        "3hop1__106313_443779_52195"
+      ],
+      "anchors": [
+        "2hop__128342_375952",
+        "2hop__50910_177869"
+      ],
+      "source_sha256": "94649f1d35c0070f58c33d952a80ffe8295de61860679ba34718e2845fe6b97e",
+      "corpus_documents": 11656
+    },
+    "2wikimultihopqa": {
+      "ids": [
+        "00f34c7e088311ebbd6dac1f6bf848b6",
+        "1d77753308bf11ebbd8aac1f6bf848b6",
+        "480d6482089211ebbd73ac1f6bf848b6",
+        "0d27b3c20bda11eba7f7acde48001122",
+        "b1a94a9a0bdb11eba7f7acde48001122",
+        "35b18b54084911ebbd55ac1f6bf848b6",
+        "efdee68e0bdc11eba7f7acde48001122",
+        "c35c917e085f11ebbd5dac1f6bf848b6",
+        "421d07aa0bb011ebab90acde48001122",
+        "9f2a95bd08b211ebbd85ac1f6bf848b6"
+      ],
+      "anchors": [
+        "00f34c7e088311ebbd6dac1f6bf848b6",
+        "1d77753308bf11ebbd8aac1f6bf848b6"
+      ],
+      "source_sha256": "5b73e1828d2480fc4a274cf9a3af05ba119eced6ab03019e2bad0d6febeaf988",
+      "corpus_documents": 6119
+    }
+  },
+  "jobs": [
+    {
+      "repeat": 1,
+      "shard": "musique-2",
+      "version": "v5",
+      "name": "r1-musique-2-v5"
+    },
+    {
+      "repeat": 0,
+      "shard": "2wikimultihopqa-4",
+      "version": "v5",
+      "name": "r0-2wikimultihopqa-4-v5"
+    },
+    {
+      "repeat": 2,
+      "shard": "2wikimultihopqa-2",
+      "version": "v5",
+      "name": "r2-2wikimultihopqa-2-v5"
+    },
+    {
+      "repeat": 0,
+      "shard": "2wikimultihopqa-2",
+      "version": "v5",
+      "name": "r0-2wikimultihopqa-2-v5"
+    },
+    {
+      "repeat": 1,
+      "shard": "musique-1",
+      "version": "v5",
+      "name": "r1-musique-1-v5"
+    },
+    {
+      "repeat": 0,
+      "shard": "musique-3",
+      "version": "v4",
+      "name": "r0-musique-3-v4"
+    },
+    {
+      "repeat": 0,
+      "shard": "musique-1",
+      "version": "v4",
+      "name": "r0-musique-1-v4"
+    },
+    {
+      "repeat": 2,
+      "shard": "musique-4",
+      "version": "v4",
+      "name": "r2-musique-4-v4"
+    },
+    {
+      "repeat": 1,
+      "shard": "2wikimultihopqa-4",
+      "version": "v4",
+      "name": "r1-2wikimultihopqa-4-v4"
+    },
+    {
+      "repeat": 0,
+      "shard": "musique-4",
+      "version": "v5",
+      "name": "r0-musique-4-v5"
+    },
+    {
+      "repeat": 2,
+      "shard": "2wikimultihopqa-3",
+      "version": "v4",
+      "name": "r2-2wikimultihopqa-3-v4"
+    },
+    {
+      "repeat": 2,
+      "shard": "2wikimultihopqa-0",
+      "version": "v4",
+      "name": "r2-2wikimultihopqa-0-v4"
+    },
+    {
+      "repeat": 1,
+      "shard": "2wikimultihopqa-3",
+      "version": "v4",
+      "name": "r1-2wikimultihopqa-3-v4"
+    },
+    {
+      "repeat": 1,
+      "shard": "2wikimultihopqa-4",
+      "version": "v5",
+      "name": "r1-2wikimultihopqa-4-v5"
+    },
+    {
+      "repeat": 2,
+      "shard": "musique-0",
+      "version": "v4",
+      "name": "r2-musique-0-v4"
+    },
+    {
+      "repeat": 1,
+      "shard": "musique-3",
+      "version": "v4",
+      "name": "r1-musique-3-v4"
+    },
+    {
+      "repeat": 2,
+      "shard": "2wikimultihopqa-2",
+      "version": "v4",
+      "name": "r2-2wikimultihopqa-2-v4"
+    },
+    {
+      "repeat": 2,
+      "shard": "musique-4",
+      "version": "v5",
+      "name": "r2-musique-4-v5"
+    },
+    {
+      "repeat": 1,
+      "shard": "2wikimultihopqa-0",
+      "version": "v5",
+      "name": "r1-2wikimultihopqa-0-v5"
+    },
+    {
+      "repeat": 0,
+      "shard": "musique-1",
+      "version": "v5",
+      "name": "r0-musique-1-v5"
+    },
+    {
+      "repeat": 2,
+      "shard": "musique-2",
+      "version": "v4",
+      "name": "r2-musique-2-v4"
+    },
+    {
+      "repeat": 1,
+      "shard": "2wikimultihopqa-1",
+      "version": "v4",
+      "name": "r1-2wikimultihopqa-1-v4"
+    },
+    {
+      "repeat": 2,
+      "shard": "musique-3",
+      "version": "v5",
+      "name": "r2-musique-3-v5"
+    },
+    {
+      "repeat": 1,
+      "shard": "2wikimultihopqa-1",
+      "version": "v5",
+      "name": "r1-2wikimultihopqa-1-v5"
+    },
+    {
+      "repeat": 1,
+      "shard": "musique-0",
+      "version": "v5",
+      "name": "r1-musique-0-v5"
+    },
+    {
+      "repeat": 2,
+      "shard": "musique-1",
+      "version": "v4",
+      "name": "r2-musique-1-v4"
+    },
+    {
+      "repeat": 2,
+      "shard": "2wikimultihopqa-3",
+      "version": "v5",
+      "name": "r2-2wikimultihopqa-3-v5"
+    },
+    {
+      "repeat": 0,
+      "shard": "2wikimultihopqa-0",
+      "version": "v4",
+      "name": "r0-2wikimultihopqa-0-v4"
+    },
+    {
+      "repeat": 1,
+      "shard": "musique-3",
+      "version": "v5",
+      "name": "r1-musique-3-v5"
+    },
+    {
+      "repeat": 1,
+      "shard": "musique-4",
+      "version": "v5",
+      "name": "r1-musique-4-v5"
+    },
+    {
+      "repeat": 0,
+      "shard": "2wikimultihopqa-1",
+      "version": "v4",
+      "name": "r0-2wikimultihopqa-1-v4"
+    },
+    {
+      "repeat": 0,
+      "shard": "2wikimultihopqa-0",
+      "version": "v5",
+      "name": "r0-2wikimultihopqa-0-v5"
+    },
+    {
+      "repeat": 2,
+      "shard": "2wikimultihopqa-4",
+      "version": "v5",
+      "name": "r2-2wikimultihopqa-4-v5"
+    },
+    {
+      "repeat": 2,
+      "shard": "musique-1",
+      "version": "v5",
+      "name": "r2-musique-1-v5"
+    },
+    {
+      "repeat": 0,
+      "shard": "2wikimultihopqa-2",
+      "version": "v4",
+      "name": "r0-2wikimultihopqa-2-v4"
+    },
+    {
+      "repeat": 0,
+      "shard": "2wikimultihopqa-3",
+      "version": "v4",
+      "name": "r0-2wikimultihopqa-3-v4"
+    },
+    {
+      "repeat": 1,
+      "shard": "musique-2",
+      "version": "v4",
+      "name": "r1-musique-2-v4"
+    },
+    {
+      "repeat": 0,
+      "shard": "musique-2",
+      "version": "v5",
+      "name": "r0-musique-2-v5"
+    },
+    {
+      "repeat": 0,
+      "shard": "musique-2",
+      "version": "v4",
+      "name": "r0-musique-2-v4"
+    },
+    {
+      "repeat": 2,
+      "shard": "2wikimultihopqa-4",
+      "version": "v4",
+      "name": "r2-2wikimultihopqa-4-v4"
+    },
+    {
+      "repeat": 1,
+      "shard": "2wikimultihopqa-2",
+      "version": "v5",
+      "name": "r1-2wikimultihopqa-2-v5"
+    },
+    {
+      "repeat": 2,
+      "shard": "2wikimultihopqa-0",
+      "version": "v5",
+      "name": "r2-2wikimultihopqa-0-v5"
+    },
+    {
+      "repeat": 2,
+      "shard": "musique-0",
+      "version": "v5",
+      "name": "r2-musique-0-v5"
+    },
+    {
+      "repeat": 1,
+      "shard": "musique-4",
+      "version": "v4",
+      "name": "r1-musique-4-v4"
+    },
+    {
+      "repeat": 2,
+      "shard": "2wikimultihopqa-1",
+      "version": "v4",
+      "name": "r2-2wikimultihopqa-1-v4"
+    },
+    {
+      "repeat": 2,
+      "shard": "2wikimultihopqa-1",
+      "version": "v5",
+      "name": "r2-2wikimultihopqa-1-v5"
+    },
+    {
+      "repeat": 0,
+      "shard": "musique-0",
+      "version": "v4",
+      "name": "r0-musique-0-v4"
+    },
+    {
+      "repeat": 0,
+      "shard": "musique-4",
+      "version": "v4",
+      "name": "r0-musique-4-v4"
+    },
+    {
+      "repeat": 1,
+      "shard": "musique-1",
+      "version": "v4",
+      "name": "r1-musique-1-v4"
+    },
+    {
+      "repeat": 0,
+      "shard": "musique-0",
+      "version": "v5",
+      "name": "r0-musique-0-v5"
+    },
+    {
+      "repeat": 2,
+      "shard": "musique-2",
+      "version": "v5",
+      "name": "r2-musique-2-v5"
+    },
+    {
+      "repeat": 0,
+      "shard": "2wikimultihopqa-3",
+      "version": "v5",
+      "name": "r0-2wikimultihopqa-3-v5"
+    },
+    {
+      "repeat": 0,
+      "shard": "2wikimultihopqa-4",
+      "version": "v4",
+      "name": "r0-2wikimultihopqa-4-v4"
+    },
+    {
+      "repeat": 1,
+      "shard": "2wikimultihopqa-2",
+      "version": "v4",
+      "name": "r1-2wikimultihopqa-2-v4"
+    },
+    {
+      "repeat": 1,
+      "shard": "2wikimultihopqa-0",
+      "version": "v4",
+      "name": "r1-2wikimultihopqa-0-v4"
+    },
+    {
+      "repeat": 0,
+      "shard": "2wikimultihopqa-1",
+      "version": "v5",
+      "name": "r0-2wikimultihopqa-1-v5"
+    },
+    {
+      "repeat": 0,
+      "shard": "musique-3",
+      "version": "v5",
+      "name": "r0-musique-3-v5"
+    },
+    {
+      "repeat": 2,
+      "shard": "musique-3",
+      "version": "v4",
+      "name": "r2-musique-3-v4"
+    },
+    {
+      "repeat": 1,
+      "shard": "musique-0",
+      "version": "v4",
+      "name": "r1-musique-0-v4"
+    },
+    {
+      "repeat": 1,
+      "shard": "2wikimultihopqa-3",
+      "version": "v5",
+      "name": "r1-2wikimultihopqa-3-v5"
+    }
+  ]
+}

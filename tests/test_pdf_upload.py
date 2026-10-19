@@ -6,9 +6,9 @@ from fastapi.testclient import TestClient
 from reportlab.pdfgen import canvas
 
 from deepsearch_agent.api import create_app
-from deepsearch_agent.embedding_runtime import EmbeddingSettings, RemoteEmbeddingClient
-from deepsearch_agent.llm_config import LLMSettings
-from deepsearch_agent.llm_gateway import ModelServiceError
+from deepsearch_agent.adapters.embedding_runtime import EmbeddingSettings, RemoteEmbeddingClient
+from deepsearch_agent.adapters.llm_config import LLMSettings
+from deepsearch_agent.core.models import ModelServiceError
 
 
 def pdf_bytes(blank=False):

@@ -1,6 +1,6 @@
-from deepsearch_agent.chunking import TextChunk
-from deepsearch_agent.knowledge_base import KnowledgeBase
-from deepsearch_agent.pdf import FakePdfReader
+from deepsearch_agent.core.evidence import TextChunk
+from deepsearch_agent.knowledge.knowledge_base import KnowledgeBase
+from deepsearch_agent.core.pdf import FakePdfReader
 
 
 def test_knowledge_base_ingests_pdf_pages_into_chunks() -> None:

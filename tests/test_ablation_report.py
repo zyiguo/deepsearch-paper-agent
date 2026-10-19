@@ -3,9 +3,9 @@ import json
 
 import pytest
 
-from deepsearch_agent.benchmarks.ablation_metrics import summarize_ablation
-from deepsearch_agent.benchmarks.ablation_report import write_report
-from deepsearch_agent.benchmarks.badcases import attribute_cases
+from deepsearch_experiments.benchmarks.ablation_metrics import summarize_ablation
+from deepsearch_experiments.benchmarks.ablation_report import write_report
+from deepsearch_experiments.benchmarks.badcases import attribute_cases
 
 
 def write_json(path, value):
@@ -85,6 +85,7 @@ def test_report_uses_actual_denominators_separates_oracle_and_links_traces(tmp_p
     assert '最后回答上下文金页覆盖' in text
     assert 'PDFVQA A 金标分布' in text
     assert 'ChartQA human' in text
+    assert '(&lt;' not in text
 
 
 def test_report_rejects_changed_manifest_and_stale_scores(tmp_path):
@@ -118,3 +119,64 @@ def test_stale_badcase_annotations_rejected(tmp_path):
     path.write_text(''.join(json.dumps(r) + '\n' for r in rows), encoding='utf-8')
     with pytest.raises(ValueError, match='attribution'):
         write_report(prepared, output, tmp_path / 'report.md')
+
+
+def test_report_supports_frozen_subset_and_does_not_claim_fresh_402(tmp_path):
+    prepared, output = fixture_run(tmp_path)
+    run = json.loads((output / 'run.json').read_text(encoding='utf-8'))
+    run['case_ids'] = ['pdf-a']
+    run['variants'] = ['agent_full']
+    run['configuration'].update(retrieval={'pdfvqa': 'bm25'},
+                                retrieval_fallback_reason='image_embedding_http_402')
+    write_json(output / 'run.json', run)
+    cases = json.loads((prepared / 'pdfvqa' / 'manifest.json').read_text(encoding='utf-8'))['cases'][:1]
+    rows = [json.loads(line) for line in (output / 'predictions.jsonl').read_text(encoding='utf-8').splitlines()]
+    rows = [r for r in rows if r['id'] == 'pdf-a' and r['variant'] == 'agent_full']
+    (output / 'predictions.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in rows), encoding='utf-8')
+    write_json(output / 'summary.json', summarize_ablation(cases, rows, variants=run['variants']))
+    badcases = attribute_cases(cases, rows)
+    (output / 'badcases.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in badcases), encoding='utf-8')
+    target = tmp_path / 'report.md'
+    write_report(prepared, output, target)
+    text = target.read_text(encoding='utf-8')
+    assert '1/1' in text and '这 1 道题' in text
+    assert 'Wilson 95%' in text
+    assert '本轮图像 embedding 服务 HTTP 402' not in text
+    assert '本轮未包含 oracle' in text
+    assert 'chart |' not in text
+    run['case_ids'] = ['pdf-a', 'pdf-a']
+    write_json(output / 'run.json', run)
+    with pytest.raises(ValueError, match='case IDs'):
+        write_report(prepared, output, target)
+
+
+def test_report_links_matching_dag_and_rejects_stale_nodes(tmp_path):
+    from deepsearch_experiments.benchmarks.dag import default_task, score_rows
+    from deepsearch_experiments.benchmarks.dag_schema import DAGSuite
+
+    prepared, output = fixture_run(tmp_path)
+    run = json.loads((output / 'run.json').read_text(encoding='utf-8'))
+    cases = [c for dataset in ('chartqa', 'pdfvqa')
+             for c in json.loads((prepared / dataset / 'manifest.json').read_text(encoding='utf-8'))['cases']]
+    rows = [json.loads(line) for line in (output / 'predictions.jsonl').read_text(encoding='utf-8').splitlines()]
+    suite = DAGSuite(name='fixture', manifests=run['manifests'], tasks=[default_task(c) for c in cases])
+    summary, results = score_rows(suite, cases, rows, run['variants'])
+    summary['provenance'] = {key: hashlib.sha256((output / filename).read_bytes()).hexdigest()
+                             for key, filename in [('predictions_sha256', 'predictions.jsonl'), ('run_sha256', 'run.json')]}
+    dag_output = tmp_path / 'dag'
+    write_json(dag_output / 'summary.json', summary)
+    write_json(dag_output / 'suite.json', suite.model_dump())
+    nodes = dag_output / 'node-results.jsonl'
+    nodes.write_text(''.join(json.dumps(r) + '\n' for r in results), encoding='utf-8')
+    target = tmp_path / 'report.md'
+    write_report(prepared, output, target, dag_output=dag_output)
+    text = target.read_text(encoding='utf-8')
+    assert 'DAG 依赖' in text and 'stage_proxy' in text and 'node-results.jsonl' in text
+    results[0]['score'] = 99
+    nodes.write_text(''.join(json.dumps(r) + '\n' for r in results), encoding='utf-8')
+    with pytest.raises(ValueError, match='DAG report scores'):
+        write_report(prepared, output, target, dag_output=dag_output)
+    summary['provenance']['predictions_sha256'] = 'wrong'
+    write_json(dag_output / 'summary.json', summary)
+    with pytest.raises(ValueError, match='DAG report provenance'):
+        write_report(prepared, output, target, dag_output=dag_output)

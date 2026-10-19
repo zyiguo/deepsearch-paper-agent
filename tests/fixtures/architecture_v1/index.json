@@ -1,0 +1,59 @@
+{
+  "schema_version": 4,
+  "embedding_id": "demo-v1",
+  "dimension": 2,
+  "chunk_size": 100,
+  "overlap": 0,
+  "chunking_strategy": "fixed-v1",
+  "max_chunk_size": 900,
+  "entries": [
+    {
+      "chunk": {
+        "text": "实验使用两张显卡。",
+        "source_path": "demo://papers/example.pdf",
+        "page_number": 1,
+        "chunk_index": 0,
+        "section_path": [],
+        "page_end": null,
+        "page_spans": [],
+        "chunking": {},
+        "evidence_kind": "text",
+        "visual_pages": [],
+        "content_id": "cnt_c18b57d24981b458a7640bbd25f1d782f6d02178ba59ed734817f3509667b57f",
+        "chunk_id": "chk_98bb3fd0969d03e0004afebd452d71a59c614c4399b35de430cc16db2830199e",
+        "asset_ids": [
+          "ast_879d77f1db325487c136a41c7998908646fd653dbf5acacf025811f5708f5932"
+        ],
+        "identity_version": 1
+      },
+      "vector": [
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "chunk": {
+        "text": "模型使用对比学习训练。",
+        "source_path": "demo://papers/example.pdf",
+        "page_number": 2,
+        "chunk_index": 0,
+        "section_path": [],
+        "page_end": null,
+        "page_spans": [],
+        "chunking": {},
+        "evidence_kind": "text",
+        "visual_pages": [],
+        "content_id": "cnt_38139a473b5eab049bdabb465c5fd3891463b44949144b2322e4fed237546f85",
+        "chunk_id": "chk_b8186e680cafaff02bb39deb192c7cba0747ec6d1b4a09177cd6dbcc78a442e5",
+        "asset_ids": [
+          "ast_6269eff7c68822547d620bbea7b6b5f3cdcc0ef66bae7d071452681b67f9c070"
+        ],
+        "identity_version": 1
+      },
+      "vector": [
+        1.0,
+        0.0
+      ]
+    }
+  ]
+}

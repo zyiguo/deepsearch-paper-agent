@@ -1,0 +1,742 @@
+[
+  {
+    "dataset": "musique",
+    "id": "3hop2__89854_38738_76291",
+    "repeat": 1,
+    "version": "v5",
+    "anchor": false,
+    "gold_excluded": false,
+    "score": {
+      "id": "3hop2__89854_38738_76291",
+      "case_sha256": "f2203298c5f85907467db8581d7306e83651ed589c56a4335f650c9b6a87c5fe",
+      "status": "error",
+      "answer_em": 0.0,
+      "answer_f1": 0.0,
+      "document_support_recall_proxy": 0.3333333333333333,
+      "retrieved_documents": 10,
+      "diagnostic_tag": "error"
+    },
+    "group": "failure",
+    "usage": {
+      "model_calls": 4,
+      "search_calls": 2,
+      "accounted_tokens": 21026,
+      "reported_total_tokens": 21026,
+      "known_reported_tokens": 21026,
+      "usage_missing_calls": 0,
+      "latency_ms": 207703.00000000044,
+      "limits": {
+        "k": 5,
+        "model_calls": 24,
+        "search_calls": 8,
+        "token_budget": 256000,
+        "max_output_tokens": 8192,
+        "context_window": 131072,
+        "deadline_seconds": 600.0
+      },
+      "token_budget_policy": "utf8-byte-preflight-with-provider-reconciliation"
+    },
+    "role_cost": {
+      "Supervisor": {
+        "calls": 1,
+        "known_tokens": 2819,
+        "usage_missing_calls": 0
+      },
+      "Researcher": {
+        "calls": 2,
+        "known_tokens": 4772,
+        "usage_missing_calls": 0
+      },
+      "Answerer": {
+        "calls": 1,
+        "known_tokens": 13435,
+        "usage_missing_calls": 0
+      }
+    },
+    "gap_deferred_paths": 0,
+    "verification_skips": {},
+    "schema_repairs": 0,
+    "source_sha256": "d4b98dd335e03a5496d693240c1a50eb4794e9c152f6f339dc76d24aec1ce966",
+    "prediction_status": "error"
+  },
+  {
+    "dataset": "2wikimultihopqa",
+    "id": "b1a94a9a0bdb11eba7f7acde48001122",
+    "repeat": 2,
+    "version": "v5",
+    "anchor": false,
+    "gold_excluded": false,
+    "score": {
+      "id": "b1a94a9a0bdb11eba7f7acde48001122",
+      "case_sha256": "0dc5f07323a9615bba8793e98ecb8fc97dea0abc93b1960b56eebc2f0ee573f4",
+      "status": "ok",
+      "answer_em": 0.0,
+      "answer_f1": 0.0,
+      "document_support_recall_proxy": 1.0,
+      "retrieved_documents": 8,
+      "diagnostic_tag": "retrieved_support_answer_incorrect"
+    },
+    "group": "failure",
+    "usage": {
+      "model_calls": 6,
+      "search_calls": 2,
+      "accounted_tokens": 17415,
+      "reported_total_tokens": 17415,
+      "known_reported_tokens": 17415,
+      "usage_missing_calls": 0,
+      "latency_ms": 57344.00000000005,
+      "limits": {
+        "k": 5,
+        "model_calls": 24,
+        "search_calls": 8,
+        "token_budget": 256000,
+        "max_output_tokens": 8192,
+        "context_window": 131072,
+        "deadline_seconds": 600.0
+      },
+      "token_budget_policy": "utf8-byte-preflight-with-provider-reconciliation"
+    },
+    "role_cost": {
+      "Supervisor": {
+        "calls": 1,
+        "known_tokens": 1388,
+        "usage_missing_calls": 0
+      },
+      "Researcher": {
+        "calls": 2,
+        "known_tokens": 4860,
+        "usage_missing_calls": 0
+      },
+      "Answerer": {
+        "calls": 1,
+        "known_tokens": 5656,
+        "usage_missing_calls": 0
+      },
+      "Verifier": {
+        "calls": 1,
+        "known_tokens": 5139,
+        "usage_missing_calls": 0
+      },
+      "Projection": {
+        "calls": 1,
+        "known_tokens": 372,
+        "usage_missing_calls": 0
+      }
+    },
+    "gap_deferred_paths": 0,
+    "verification_skips": {},
+    "schema_repairs": 0,
+    "source_sha256": "6a0ff253c53d227e4983304916a64d56914a186952386a0518b689799c08c816",
+    "prediction_status": "ok"
+  },
+  {
+    "dataset": "2wikimultihopqa",
+    "id": "b1a94a9a0bdb11eba7f7acde48001122",
+    "repeat": 0,
+    "version": "v5",
+    "anchor": false,
+    "gold_excluded": false,
+    "score": {
+      "id": "b1a94a9a0bdb11eba7f7acde48001122",
+      "case_sha256": "0dc5f07323a9615bba8793e98ecb8fc97dea0abc93b1960b56eebc2f0ee573f4",
+      "status": "ok",
+      "answer_em": 0.0,
+      "answer_f1": 0.0,
+      "document_support_recall_proxy": 1.0,
+      "retrieved_documents": 5,
+      "diagnostic_tag": "retrieved_support_answer_incorrect"
+    },
+    "group": "failure",
+    "usage": {
+      "model_calls": 7,
+      "search_calls": 1,
+      "accounted_tokens": 18705,
+      "reported_total_tokens": 18705,
+      "known_reported_tokens": 18705,
+      "usage_missing_calls": 0,
+      "latency_ms": 55609.00000000038,
+      "limits": {
+        "k": 5,
+        "model_calls": 24,
+        "search_calls": 8,
+        "token_budget": 256000,
+        "max_output_tokens": 8192,
+        "context_window": 131072,
+        "deadline_seconds": 600.0
+      },
+      "token_budget_policy": "utf8-byte-preflight-with-provider-reconciliation"
+    },
+    "role_cost": {
+      "Supervisor": {
+        "calls": 1,
+        "known_tokens": 1461,
+        "usage_missing_calls": 0
+      },
+      "Researcher": {
+        "calls": 3,
+        "known_tokens": 8718,
+        "usage_missing_calls": 0
+      },
+      "Answerer": {
+        "calls": 1,
+        "known_tokens": 4144,
+        "usage_missing_calls": 0
+      },
+      "Verifier": {
+        "calls": 1,
+        "known_tokens": 4074,
+        "usage_missing_calls": 0
+      },
+      "Projection": {
+        "calls": 1,
+        "known_tokens": 308,
+        "usage_missing_calls": 0
+      }
+    },
+    "gap_deferred_paths": 0,
+    "verification_skips": {},
+    "schema_repairs": 1,
+    "source_sha256": "cf55b0bd4f57668519e9e031cc21d253daa188426c06c352acfaf15489bac763",
+    "prediction_status": "ok"
+  },
+  {
+    "dataset": "musique",
+    "id": "3hop2__89854_38738_76291",
+    "repeat": 2,
+    "version": "v4",
+    "anchor": false,
+    "gold_excluded": false,
+    "score": {
+      "id": "3hop2__89854_38738_76291",
+      "case_sha256": "f2203298c5f85907467db8581d7306e83651ed589c56a4335f650c9b6a87c5fe",
+      "status": "error",
+      "answer_em": 0.0,
+      "answer_f1": 0.0,
+      "document_support_recall_proxy": 0.3333333333333333,
+      "retrieved_documents": 10,
+      "diagnostic_tag": "error"
+    },
+    "group": "failure",
+    "usage": {
+      "model_calls": 5,
+      "search_calls": 2,
+      "accounted_tokens": 21863,
+      "reported_total_tokens": 21863,
+      "known_reported_tokens": 21863,
+      "usage_missing_calls": 0,
+      "latency_ms": 218422.00000000047,
+      "limits": {
+        "k": 5,
+        "model_calls": 24,
+        "search_calls": 8,
+        "token_budget": 256000,
+        "max_output_tokens": 8192,
+        "context_window": 131072,
+        "deadline_seconds": 600.0
+      },
+      "token_budget_policy": "utf8-byte-preflight-with-provider-reconciliation"
+    },
+    "role_cost": {
+      "Supervisor": {
+        "calls": 1,
+        "known_tokens": 2070,
+        "usage_missing_calls": 0
+      },
+      "Researcher": {
+        "calls": 3,
+        "known_tokens": 6284,
+        "usage_missing_calls": 0
+      },
+      "Answerer": {
+        "calls": 1,
+        "known_tokens": 13509,
+        "usage_missing_calls": 0
+      }
+    },
+    "gap_deferred_paths": 0,
+    "verification_skips": {},
+    "schema_repairs": 1,
+    "source_sha256": "a87a60144f515c84f51211c3ca643530b63fac1f82c89684501f9743b7b369d5",
+    "prediction_status": "error"
+  },
+  {
+    "dataset": "2wikimultihopqa",
+    "id": "b1a94a9a0bdb11eba7f7acde48001122",
+    "repeat": 0,
+    "version": "v4",
+    "anchor": false,
+    "gold_excluded": false,
+    "score": {
+      "id": "b1a94a9a0bdb11eba7f7acde48001122",
+      "case_sha256": "0dc5f07323a9615bba8793e98ecb8fc97dea0abc93b1960b56eebc2f0ee573f4",
+      "status": "ok",
+      "answer_em": 0.0,
+      "answer_f1": 0.0,
+      "document_support_recall_proxy": 1.0,
+      "retrieved_documents": 6,
+      "diagnostic_tag": "retrieved_support_answer_incorrect"
+    },
+    "group": "failure",
+    "usage": {
+      "model_calls": 6,
+      "search_calls": 2,
+      "accounted_tokens": 14673,
+      "reported_total_tokens": 14673,
+      "known_reported_tokens": 14673,
+      "usage_missing_calls": 0,
+      "latency_ms": 54531.00000000086,
+      "limits": {
+        "k": 5,
+        "model_calls": 24,
+        "search_calls": 8,
+        "token_budget": 256000,
+        "max_output_tokens": 8192,
+        "context_window": 131072,
+        "deadline_seconds": 600.0
+      },
+      "token_budget_policy": "utf8-byte-preflight-with-provider-reconciliation"
+    },
+    "role_cost": {
+      "Supervisor": {
+        "calls": 1,
+        "known_tokens": 1495,
+        "usage_missing_calls": 0
+      },
+      "Researcher": {
+        "calls": 2,
+        "known_tokens": 4798,
+        "usage_missing_calls": 0
+      },
+      "Answerer": {
+        "calls": 1,
+        "known_tokens": 3862,
+        "usage_missing_calls": 0
+      },
+      "Verifier": {
+        "calls": 1,
+        "known_tokens": 4119,
+        "usage_missing_calls": 0
+      },
+      "Projection": {
+        "calls": 1,
+        "known_tokens": 399,
+        "usage_missing_calls": 0
+      }
+    },
+    "gap_deferred_paths": 0,
+    "verification_skips": {},
+    "schema_repairs": 0,
+    "source_sha256": "5cb32fa2175756fcb56395b573e995da13e74d5d866d52508f0be802280dd798",
+    "prediction_status": "ok"
+  },
+  {
+    "dataset": "musique",
+    "id": "3hop2__89854_38738_76291",
+    "repeat": 0,
+    "version": "v5",
+    "anchor": false,
+    "gold_excluded": false,
+    "score": {
+      "id": "3hop2__89854_38738_76291",
+      "case_sha256": "f2203298c5f85907467db8581d7306e83651ed589c56a4335f650c9b6a87c5fe",
+      "status": "ok",
+      "answer_em": 0.0,
+      "answer_f1": 0.0,
+      "document_support_recall_proxy": 0.6666666666666666,
+      "retrieved_documents": 16,
+      "diagnostic_tag": "annotated_support_gap"
+    },
+    "group": "failure",
+    "usage": {
+      "model_calls": 10,
+      "search_calls": 4,
+      "accounted_tokens": 56047,
+      "reported_total_tokens": 56047,
+      "known_reported_tokens": 56047,
+      "usage_missing_calls": 0,
+      "latency_ms": 367202.99999999953,
+      "limits": {
+        "k": 5,
+        "model_calls": 24,
+        "search_calls": 8,
+        "token_budget": 256000,
+        "max_output_tokens": 8192,
+        "context_window": 131072,
+        "deadline_seconds": 600.0
+      },
+      "token_budget_policy": "utf8-byte-preflight-with-provider-reconciliation"
+    },
+    "role_cost": {
+      "Supervisor": {
+        "calls": 1,
+        "known_tokens": 2203,
+        "usage_missing_calls": 0
+      },
+      "Researcher": {
+        "calls": 4,
+        "known_tokens": 9438,
+        "usage_missing_calls": 0
+      },
+      "Answerer": {
+        "calls": 2,
+        "known_tokens": 21194,
+        "usage_missing_calls": 0
+      },
+      "Verifier": {
+        "calls": 2,
+        "known_tokens": 22673,
+        "usage_missing_calls": 0
+      },
+      "Projection": {
+        "calls": 1,
+        "known_tokens": 539,
+        "usage_missing_calls": 0
+      }
+    },
+    "gap_deferred_paths": 0,
+    "verification_skips": {},
+    "schema_repairs": 0,
+    "source_sha256": "0e5bface3eb797d0451f40c58daab494f157431783004c3426fd47c21a0c5107",
+    "prediction_status": "ok"
+  },
+  {
+    "dataset": "musique",
+    "id": "3hop2__89854_38738_76291",
+    "repeat": 0,
+    "version": "v4",
+    "anchor": false,
+    "gold_excluded": false,
+    "score": {
+      "id": "3hop2__89854_38738_76291",
+      "case_sha256": "f2203298c5f85907467db8581d7306e83651ed589c56a4335f650c9b6a87c5fe",
+      "status": "ok",
+      "answer_em": 0.0,
+      "answer_f1": 0.8,
+      "document_support_recall_proxy": 0.6666666666666666,
+      "retrieved_documents": 10,
+      "diagnostic_tag": "annotated_support_gap"
+    },
+    "group": "failure",
+    "usage": {
+      "model_calls": 8,
+      "search_calls": 2,
+      "accounted_tokens": 40969,
+      "reported_total_tokens": 40969,
+      "known_reported_tokens": 40969,
+      "usage_missing_calls": 0,
+      "latency_ms": 366563.0000000001,
+      "limits": {
+        "k": 5,
+        "model_calls": 24,
+        "search_calls": 8,
+        "token_budget": 256000,
+        "max_output_tokens": 8192,
+        "context_window": 131072,
+        "deadline_seconds": 600.0
+      },
+      "token_budget_policy": "utf8-byte-preflight-with-provider-reconciliation"
+    },
+    "role_cost": {
+      "Supervisor": {
+        "calls": 1,
+        "known_tokens": 2168,
+        "usage_missing_calls": 0
+      },
+      "Researcher": {
+        "calls": 3,
+        "known_tokens": 6614,
+        "usage_missing_calls": 0
+      },
+      "Answerer": {
+        "calls": 1,
+        "known_tokens": 10631,
+        "usage_missing_calls": 0
+      },
+      "Verifier": {
+        "calls": 2,
+        "known_tokens": 21237,
+        "usage_missing_calls": 0
+      },
+      "Projection": {
+        "calls": 1,
+        "known_tokens": 319,
+        "usage_missing_calls": 0
+      }
+    },
+    "gap_deferred_paths": 0,
+    "verification_skips": {},
+    "schema_repairs": 2,
+    "source_sha256": "6ed88e48803cd211ae9e66fb8cfe8e2e09d43cd5f4f2fa0373b6679877024aa1",
+    "prediction_status": "ok"
+  },
+  {
+    "dataset": "2wikimultihopqa",
+    "id": "35b18b54084911ebbd55ac1f6bf848b6",
+    "repeat": 1,
+    "version": "v5",
+    "anchor": false,
+    "gold_excluded": false,
+    "score": {
+      "id": "35b18b54084911ebbd55ac1f6bf848b6",
+      "case_sha256": "d7dc10db58971892bce8eebc07500a35d7b4f93034d02d9901ee93d1e532f69b",
+      "status": "ok",
+      "answer_em": 0.0,
+      "answer_f1": 0.0,
+      "document_support_recall_proxy": 1.0,
+      "retrieved_documents": 7,
+      "diagnostic_tag": "retrieved_support_answer_incorrect"
+    },
+    "group": "failure",
+    "usage": {
+      "model_calls": 6,
+      "search_calls": 2,
+      "accounted_tokens": 15497,
+      "reported_total_tokens": 15497,
+      "known_reported_tokens": 15497,
+      "usage_missing_calls": 0,
+      "latency_ms": 41234.00000000038,
+      "limits": {
+        "k": 5,
+        "model_calls": 24,
+        "search_calls": 8,
+        "token_budget": 256000,
+        "max_output_tokens": 8192,
+        "context_window": 131072,
+        "deadline_seconds": 600.0
+      },
+      "token_budget_policy": "utf8-byte-preflight-with-provider-reconciliation"
+    },
+    "role_cost": {
+      "Supervisor": {
+        "calls": 1,
+        "known_tokens": 1470,
+        "usage_missing_calls": 0
+      },
+      "Researcher": {
+        "calls": 2,
+        "known_tokens": 4514,
+        "usage_missing_calls": 0
+      },
+      "Answerer": {
+        "calls": 1,
+        "known_tokens": 4646,
+        "usage_missing_calls": 0
+      },
+      "Verifier": {
+        "calls": 1,
+        "known_tokens": 4512,
+        "usage_missing_calls": 0
+      },
+      "Projection": {
+        "calls": 1,
+        "known_tokens": 355,
+        "usage_missing_calls": 0
+      }
+    },
+    "gap_deferred_paths": 0,
+    "verification_skips": {},
+    "schema_repairs": 0,
+    "source_sha256": "99b111ffa2ec883b11084d28f00195622c777f98ca258e088b3f384402ed35dd",
+    "prediction_status": "ok"
+  },
+  {
+    "dataset": "2wikimultihopqa",
+    "id": "b1a94a9a0bdb11eba7f7acde48001122",
+    "repeat": 1,
+    "version": "v5",
+    "anchor": false,
+    "gold_excluded": false,
+    "score": {
+      "id": "b1a94a9a0bdb11eba7f7acde48001122",
+      "case_sha256": "0dc5f07323a9615bba8793e98ecb8fc97dea0abc93b1960b56eebc2f0ee573f4",
+      "status": "ok",
+      "answer_em": 0.0,
+      "answer_f1": 0.0,
+      "document_support_recall_proxy": 1.0,
+      "retrieved_documents": 8,
+      "diagnostic_tag": "retrieved_support_answer_incorrect"
+    },
+    "group": "failure",
+    "usage": {
+      "model_calls": 7,
+      "search_calls": 2,
+      "accounted_tokens": 19380,
+      "reported_total_tokens": 19380,
+      "known_reported_tokens": 19380,
+      "usage_missing_calls": 0,
+      "latency_ms": 36531.99999999924,
+      "limits": {
+        "k": 5,
+        "model_calls": 24,
+        "search_calls": 8,
+        "token_budget": 256000,
+        "max_output_tokens": 8192,
+        "context_window": 131072,
+        "deadline_seconds": 600.0
+      },
+      "token_budget_policy": "utf8-byte-preflight-with-provider-reconciliation"
+    },
+    "role_cost": {
+      "Supervisor": {
+        "calls": 1,
+        "known_tokens": 1417,
+        "usage_missing_calls": 0
+      },
+      "Researcher": {
+        "calls": 3,
+        "known_tokens": 8142,
+        "usage_missing_calls": 0
+      },
+      "Answerer": {
+        "calls": 1,
+        "known_tokens": 4879,
+        "usage_missing_calls": 0
+      },
+      "Verifier": {
+        "calls": 1,
+        "known_tokens": 4697,
+        "usage_missing_calls": 0
+      },
+      "Projection": {
+        "calls": 1,
+        "known_tokens": 245,
+        "usage_missing_calls": 0
+      }
+    },
+    "gap_deferred_paths": 0,
+    "verification_skips": {},
+    "schema_repairs": 1,
+    "source_sha256": "99b111ffa2ec883b11084d28f00195622c777f98ca258e088b3f384402ed35dd",
+    "prediction_status": "ok"
+  },
+  {
+    "dataset": "musique",
+    "id": "2hop__207476_625987",
+    "repeat": 1,
+    "version": "v4",
+    "anchor": false,
+    "gold_excluded": false,
+    "score": {
+      "id": "2hop__207476_625987",
+      "case_sha256": "8d649489743fc8e6c7ace203d4ca9af827ae29d4edd05d048f45f43f839409ab",
+      "status": "error",
+      "answer_em": 0.0,
+      "answer_f1": 0.0,
+      "document_support_recall_proxy": 0.5,
+      "retrieved_documents": 10,
+      "diagnostic_tag": "error"
+    },
+    "group": "failure",
+    "usage": {
+      "model_calls": 4,
+      "search_calls": 2,
+      "accounted_tokens": 20591,
+      "reported_total_tokens": 20591,
+      "known_reported_tokens": 20591,
+      "usage_missing_calls": 0,
+      "latency_ms": 202640.00000000122,
+      "limits": {
+        "k": 5,
+        "model_calls": 24,
+        "search_calls": 8,
+        "token_budget": 256000,
+        "max_output_tokens": 8192,
+        "context_window": 131072,
+        "deadline_seconds": 600.0
+      },
+      "token_budget_policy": "utf8-byte-preflight-with-provider-reconciliation"
+    },
+    "role_cost": {
+      "Supervisor": {
+        "calls": 1,
+        "known_tokens": 1836,
+        "usage_missing_calls": 0
+      },
+      "Researcher": {
+        "calls": 2,
+        "known_tokens": 5058,
+        "usage_missing_calls": 0
+      },
+      "Answerer": {
+        "calls": 1,
+        "known_tokens": 13697,
+        "usage_missing_calls": 0
+      }
+    },
+    "gap_deferred_paths": 0,
+    "verification_skips": {},
+    "schema_repairs": 0,
+    "source_sha256": "dcac54abae240e71cd5453975701bb84a5e8fe5719d6a832e1727f358b224a91",
+    "prediction_status": "error"
+  },
+  {
+    "dataset": "2wikimultihopqa",
+    "id": "b1a94a9a0bdb11eba7f7acde48001122",
+    "repeat": 1,
+    "version": "v4",
+    "anchor": false,
+    "gold_excluded": false,
+    "score": {
+      "id": "b1a94a9a0bdb11eba7f7acde48001122",
+      "case_sha256": "0dc5f07323a9615bba8793e98ecb8fc97dea0abc93b1960b56eebc2f0ee573f4",
+      "status": "ok",
+      "answer_em": 0.0,
+      "answer_f1": 0.0,
+      "document_support_recall_proxy": 1.0,
+      "retrieved_documents": 8,
+      "diagnostic_tag": "retrieved_support_answer_incorrect"
+    },
+    "group": "failure",
+    "usage": {
+      "model_calls": 6,
+      "search_calls": 2,
+      "accounted_tokens": 16537,
+      "reported_total_tokens": 16537,
+      "known_reported_tokens": 16537,
+      "usage_missing_calls": 0,
+      "latency_ms": 40438.0000000001,
+      "limits": {
+        "k": 5,
+        "model_calls": 24,
+        "search_calls": 8,
+        "token_budget": 256000,
+        "max_output_tokens": 8192,
+        "context_window": 131072,
+        "deadline_seconds": 600.0
+      },
+      "token_budget_policy": "utf8-byte-preflight-with-provider-reconciliation"
+    },
+    "role_cost": {
+      "Supervisor": {
+        "calls": 1,
+        "known_tokens": 1504,
+        "usage_missing_calls": 0
+      },
+      "Researcher": {
+        "calls": 2,
+        "known_tokens": 4835,
+        "usage_missing_calls": 0
+      },
+      "Answerer": {
+        "calls": 1,
+        "known_tokens": 5101,
+        "usage_missing_calls": 0
+      },
+      "Verifier": {
+        "calls": 1,
+        "known_tokens": 4814,
+        "usage_missing_calls": 0
+      },
+      "Projection": {
+        "calls": 1,
+        "known_tokens": 283,
+        "usage_missing_calls": 0
+      }
+    },
+    "gap_deferred_paths": 0,
+    "verification_skips": {},
+    "schema_repairs": 0,
+    "source_sha256": "737206997f6a8ca8b623a7e1dc59e22decf0a6fb9c83e51bed3ae5f37a57e0c4",
+    "prediction_status": "ok"
+  }
+]

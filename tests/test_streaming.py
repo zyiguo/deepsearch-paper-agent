@@ -4,9 +4,10 @@ from threading import RLock
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from deepsearch_agent.conversation_api import router
-from deepsearch_agent.conversations import ConversationStore
-from deepsearch_agent.qa import Answer, AnswerService
+from deepsearch_agent.web.conversation_api import router
+from deepsearch_agent.workspace.conversations import ConversationStore
+from deepsearch_agent.core.answers import Answer
+from deepsearch_experiments.legacy.qa import AnswerService
 from test_supervisor import Script, Library, decision
 
 
@@ -22,11 +23,13 @@ def test_graph_progress_emits_stages_without_draft_contents():
 
 def app_for(tmp_path, broken=False):
     app = FastAPI()
+    from deepsearch_agent.web.errors import register_error_handlers
+    register_error_handlers(app)
     app.include_router(router)
     app.state.lock = RLock()
     app.state.demo_retrieval = False
     from types import SimpleNamespace
-    from deepsearch_agent.chunking import TextChunk
+    from deepsearch_agent.core.evidence import TextChunk
     app.state.kb = SimpleNamespace(chunks=[TextChunk(text='fixture', source_path='pdf://' + 'a' * 64 + '/fixture.pdf', page_number=1, chunk_index=0)])
     app.state.conversations = ConversationStore(tmp_path / 'sessions.sqlite')
     class Service:
@@ -74,7 +77,7 @@ def test_progress_arrives_while_answer_is_still_blocked(tmp_path):
     import asyncio
     from threading import Event
     from types import SimpleNamespace
-    from deepsearch_agent.conversation_api import stream_turn, SendTurnRequest
+    from deepsearch_agent.web.conversation_api import stream_turn, SendTurnRequest
 
     release = Event()
     app = app_for(tmp_path)
@@ -87,7 +90,7 @@ def test_progress_arrives_while_answer_is_still_blocked(tmp_path):
     app.state.answer_service = BlockingService()
 
     async def consume():
-        response = stream_turn(sid, SendTurnRequest(question='问题'), SimpleNamespace(app=app))
+        response = stream_turn(sid, SendTurnRequest(question='问题'), SimpleNamespace(app=app, headers={}))
         iterator = response.body_iterator
         try:
             queued = await anext(iterator)

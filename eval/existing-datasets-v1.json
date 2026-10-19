@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "purpose": "Reuse pinned local data and historical outputs before adding datasets or paid runs.",
+  "entries": [
+    {
+      "id": "chartqa-oracle100",
+      "kind": "multimodal",
+      "manifest": "data/benchmarks/chartqa-val100/manifest.json",
+      "manifest_sha256": "6930e54edb03bdb949389b4ce3bc5e133d38041bf71d9e7970515b3f37423798",
+      "run": "output/benchmarks/chartqa-val100-oracle",
+      "run_sha256": "d35f66fa363bc74d389f6b002041ca80c20b181cb1db274c7ab72c615ebab008",
+      "records_sha256": "048dc39ddad361a083cbcd4531778570be600ea033fb0b44ca9ab5c1e40955c4",
+      "scope": "given-context-component",
+      "limitations": [
+        "Historical mimo-v2.5 output; not a new MiMo-V2.6-Pro measurement.",
+        "ChartQA human50/augmented50; PDFVQA A50/B50 from a filtered public mirror.",
+        "Gold page context; no parent-child workflow or image embedding evaluation."
+      ]
+    },
+    {
+      "id": "pdfvqa-oracle100",
+      "kind": "multimodal",
+      "manifest": "data/benchmarks/pdfvqa-val100/manifest.json",
+      "manifest_sha256": "538b7bcb06b5cf2a74a4e604024f13d2002cd7410e16a217673fafedfb022048",
+      "run": "output/benchmarks/pdfvqa-val100-oracle",
+      "run_sha256": "513bd55f7366e5dccb83f4f4a6f96d5972ea11b7d49018c106b43f52ab243549",
+      "records_sha256": "380696edbfad944c9fac6530e836868ee346bef102d7da47f93c241b10f49ee1",
+      "scope": "given-context-component",
+      "limitations": [
+        "Historical mimo-v2.5 output; not a new MiMo-V2.6-Pro measurement.",
+        "ChartQA human50/augmented50; PDFVQA A50/B50 from a filtered public mirror.",
+        "Gold page context; no parent-child workflow or image embedding evaluation."
+      ]
+    },
+    {
+      "id": "chartqa-rerank10",
+      "kind": "multimodal",
+      "manifest": "data/benchmarks/chartqa-val100/manifest.json",
+      "manifest_sha256": "6930e54edb03bdb949389b4ce3bc5e133d38041bf71d9e7970515b3f37423798",
+      "run": "output/benchmarks/chartqa-rerank10",
+      "run_sha256": "eefd0ebd2733f43fb669fcb7680309c946cee690ced1b3c086dccc10157316f2",
+      "records_sha256": "30d5c28b80e781ba93bbb6e3f29ee823b719b2c58e931feb0555bce67ab90425",
+      "scope": "controlled-rerank-diagnostic",
+      "limitations": [
+        "10 historical cases; gold plus 7 distractors, not natural retrieval or full100.",
+        "Primary success metric is complete gold-page recall@3, not answer correctness."
+      ]
+    },
+    {
+      "id": "pdfvqa-rag5",
+      "kind": "multimodal",
+      "manifest": "data/benchmarks/pdfvqa-val100/manifest.json",
+      "manifest_sha256": "538b7bcb06b5cf2a74a4e604024f13d2002cd7410e16a217673fafedfb022048",
+      "run": "output/benchmarks/pdfvqa-rag-smoke5",
+      "run_sha256": "aeec81ebbae79a6378f6bdd572be7c9f8c439e84f4b41d66cfd1e3940e6522e7",
+      "records_sha256": "49259f2787ecf780ef3f61b8732d52ffa57959167b6213188f9dbdbd54dbea35",
+      "scope": "scoped-retrieval-diagnostic",
+      "limitations": [
+        "5 historical cases (A4/B1) with given page scope; not full-document retrieval.",
+        "PDFVQA B includes OCR and element catalog, not image-only understanding."
+      ]
+    },
+    {
+      "id": "musique-mainline",
+      "kind": "multihop",
+      "manifest": "data/benchmarks/multihop/prepared/musique/pilot-10.json",
+      "manifest_sha256": "1cf297b1816f5b988f40bb0458d33e227d8449a1d77b881a16190be0f7d5e335",
+      "run": "data/benchmarks/multihop/runs/cloud-20261015-budget-pilot10/musique-mainline",
+      "run_sha256": "bdc8c3f48914d91f9339364d9be6a83b98dc85456cc96c67bff0b1999d9a835c",
+      "records_sha256": "5c359432ac7946ec889d500b4d1d94c44c33067dc2b065c18662e1c4d79613e9",
+      "scope": "agent-graph-pilot",
+      "limitations": [
+        "10 fixed pilot questions; sampled_pool, not full official corpus or leaderboard.",
+        "Historical mimo-v2.6-pro Agent graph; fixed BM25, images/memory/wiki/skills/MCP disabled.",
+        "Answer EM/F1 and document-support proxy only; no official joint/sentence-support score.",
+        "Not an HTTP, database recovery, image embedding, or human correctness evaluation.",
+        "All attempts remain in cost accounting; missing provider usage stays unknown."
+      ]
+    },
+    {
+      "id": "musique-mainline-budget-visible",
+      "kind": "multihop",
+      "manifest": "data/benchmarks/multihop/prepared/musique/pilot-10.json",
+      "manifest_sha256": "1cf297b1816f5b988f40bb0458d33e227d8449a1d77b881a16190be0f7d5e335",
+      "run": "data/benchmarks/multihop/runs/cloud-20261015-budget-pilot10/musique-mainline-budget-visible",
+      "run_sha256": "ce6242aa081c7279a72c9ff2fcd7fe6e06048e8a8b533f70d9cd3a9cf2065010",
+      "records_sha256": "034af21f63caa08b01d9d3e6c4dbc105d81f05d19a7ab41644ca8fa4913fadeb",
+      "scope": "agent-graph-pilot",
+      "limitations": [
+        "10 fixed pilot questions; sampled_pool, not full official corpus or leaderboard.",
+        "Historical mimo-v2.6-pro Agent graph; fixed BM25, images/memory/wiki/skills/MCP disabled.",
+        "Answer EM/F1 and document-support proxy only; no official joint/sentence-support score.",
+        "Not an HTTP, database recovery, image embedding, or human correctness evaluation.",
+        "All attempts remain in cost accounting; missing provider usage stays unknown."
+      ]
+    },
+    {
+      "id": "musique-mainline-budget-bounded",
+      "kind": "multihop",
+      "manifest": "data/benchmarks/multihop/prepared/musique/pilot-10.json",
+      "manifest_sha256": "1cf297b1816f5b988f40bb0458d33e227d8449a1d77b881a16190be0f7d5e335",
+      "run": "data/benchmarks/multihop/runs/cloud-20261015-budget-pilot10/musique-mainline-budget-bounded",
+      "run_sha256": "6cb268152c9c625d39ce90908c913fd72754ab784b65c3736684cdea227faed5",
+      "records_sha256": "7d6f9cfa1b697bdb113efa81132927ab77bec05498af94aadd2cfa3b52d09d8c",
+      "scope": "agent-graph-pilot",
+      "limitations": [
+        "10 fixed pilot questions; sampled_pool, not full official corpus or leaderboard.",
+        "Historical mimo-v2.6-pro Agent graph; fixed BM25, images/memory/wiki/skills/MCP disabled.",
+        "Answer EM/F1 and document-support proxy only; no official joint/sentence-support score.",
+        "Not an HTTP, database recovery, image embedding, or human correctness evaluation.",
+        "All attempts remain in cost accounting; missing provider usage stays unknown."
+      ]
+    },
+    {
+      "id": "2wikimultihopqa-mainline",
+      "kind": "multihop",
+      "manifest": "data/benchmarks/multihop/prepared/2wikimultihopqa/pilot-10.json",
+      "manifest_sha256": "20278b4c2ea8292fd2522c5e4c929d65f832411642e9529a21af2670c4d152e8",
+      "run": "data/benchmarks/multihop/runs/cloud-20261015-budget-pilot10/2wikimultihopqa-mainline",
+      "run_sha256": "020792c1870887c94864964a662d3317c32a66058c6e23e21fdcaf04de008287",
+      "records_sha256": "1b72fb5420818dd29d78157eaa2818a9490bde410a9b08827799a2268ff55157",
+      "scope": "agent-graph-pilot",
+      "limitations": [
+        "10 fixed pilot questions; sampled_pool, not full official corpus or leaderboard.",
+        "Historical mimo-v2.6-pro Agent graph; fixed BM25, images/memory/wiki/skills/MCP disabled.",
+        "Answer EM/F1 and document-support proxy only; no official joint/sentence-support score.",
+        "Not an HTTP, database recovery, image embedding, or human correctness evaluation.",
+        "All attempts remain in cost accounting; missing provider usage stays unknown."
+      ]
+    },
+    {
+      "id": "2wikimultihopqa-mainline-budget-visible",
+      "kind": "multihop",
+      "manifest": "data/benchmarks/multihop/prepared/2wikimultihopqa/pilot-10.json",
+      "manifest_sha256": "20278b4c2ea8292fd2522c5e4c929d65f832411642e9529a21af2670c4d152e8",
+      "run": "data/benchmarks/multihop/runs/cloud-20261015-budget-pilot10/2wikimultihopqa-mainline-budget-visible",
+      "run_sha256": "db5ecb06728341a7b6c9b87167464db8f6aa605ef6cb80b67b511b96c5f1ce85",
+      "records_sha256": "144693c6cc652bfe75afa4c171ba73eac084e1f61a5df82a873c138f79dc1592",
+      "scope": "agent-graph-pilot",
+      "limitations": [
+        "10 fixed pilot questions; sampled_pool, not full official corpus or leaderboard.",
+        "Historical mimo-v2.6-pro Agent graph; fixed BM25, images/memory/wiki/skills/MCP disabled.",
+        "Answer EM/F1 and document-support proxy only; no official joint/sentence-support score.",
+        "Not an HTTP, database recovery, image embedding, or human correctness evaluation.",
+        "All attempts remain in cost accounting; missing provider usage stays unknown."
+      ]
+    },
+    {
+      "id": "2wikimultihopqa-mainline-budget-bounded",
+      "kind": "multihop",
+      "manifest": "data/benchmarks/multihop/prepared/2wikimultihopqa/pilot-10.json",
+      "manifest_sha256": "20278b4c2ea8292fd2522c5e4c929d65f832411642e9529a21af2670c4d152e8",
+      "run": "data/benchmarks/multihop/runs/cloud-20261015-budget-pilot10/2wikimultihopqa-mainline-budget-bounded",
+      "run_sha256": "7d3d2b3ac22a2fa8dfe25180b721a1f608a234bcfaca72c96ccd23b8f5ef1f85",
+      "records_sha256": "a0837282bf1b26e9bf42b6ff360eac15b65cd57fefbf2588a9bbbee64594c2d0",
+      "scope": "agent-graph-pilot",
+      "limitations": [
+        "10 fixed pilot questions; sampled_pool, not full official corpus or leaderboard.",
+        "Historical mimo-v2.6-pro Agent graph; fixed BM25, images/memory/wiki/skills/MCP disabled.",
+        "Answer EM/F1 and document-support proxy only; no official joint/sentence-support score.",
+        "Not an HTTP, database recovery, image embedding, or human correctness evaluation.",
+        "All attempts remain in cost accounting; missing provider usage stays unknown."
+      ]
+    }
+  ]
+}

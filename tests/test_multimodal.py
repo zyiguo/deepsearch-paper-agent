@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from deepsearch_agent.multimodal import MultimodalDocumentProcessor, PageAnalysis, PageAnalysisCache, VisualItem
+from deepsearch_agent.workspace.multimodal import MultimodalDocumentProcessor, PageAnalysis, PageAnalysisCache, VisualItem
 
 
 class Analyzer:

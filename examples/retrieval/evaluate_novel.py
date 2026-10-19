@@ -7,8 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from pypdf import PdfReader
-from deepsearch_agent.embedding_runtime import EmbeddingSettings, RemoteEmbeddingClient
-from deepsearch_agent.knowledge_base import KnowledgeBase
+from deepsearch_agent.adapters.embedding_runtime import EmbeddingSettings, RemoteEmbeddingClient
+from deepsearch_agent.knowledge.knowledge_base import KnowledgeBase
 
 ROOT = Path(__file__).resolve().parents[2]
 parser = argparse.ArgumentParser()

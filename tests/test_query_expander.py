@@ -1,5 +1,5 @@
 """Tests for the LLM-based query expander."""
-from deepsearch_agent.query_expander import LLMQueryExpander
+from deepsearch_agent.knowledge.query_expander import LLMQueryExpander
 
 
 class FakeClient:

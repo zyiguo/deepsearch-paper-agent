@@ -1,3 +1,4 @@
+from deepsearch_agent.adapters.tool_adapters import langgraph_tools
 import asyncio
 import json
 from concurrent.futures import ThreadPoolExecutor
@@ -9,14 +10,14 @@ from langchain_core.messages import AIMessage
 from langgraph.prebuilt import ToolNode
 from langgraph.graph import END, START, StateGraph
 
-from deepsearch_agent.agent_config import AgentSettings
-from deepsearch_agent.benchmarks.instrumentation import (
+from deepsearch_agent.agents.agent_config import AgentSettings
+from deepsearch_experiments.benchmarks.instrumentation import (
     MeasuredClient, RunTrace, TracedKnowledgeBase, TracedReranker, TracedToolSession,
 )
-from deepsearch_agent.chunking import TextChunk
-from deepsearch_agent.llm_config import LLMSettings
-from deepsearch_agent.llm_gateway import ModelServiceError
-from deepsearch_agent.tool_service import ToolError
+from deepsearch_agent.core.evidence import TextChunk
+from deepsearch_agent.adapters.llm_config import LLMSettings
+from deepsearch_agent.core.models import ModelServiceError
+from deepsearch_agent.agents.tool_service import ToolError
 
 
 SOURCE = 'pdf://' + 'a' * 64 + '/paper.pdf'
@@ -156,7 +157,7 @@ def test_toolnode_context_and_new_evidence_without_double_execution():
     async def run():
         with trace.stage('research'):
             builder = StateGraph(State)
-            builder.add_node('tools', ToolNode(session.tools()))
+            builder.add_node('tools', ToolNode(langgraph_tools(session)))
             builder.add_edge(START, 'tools')
             builder.add_edge('tools', END)
             graph = builder.compile()

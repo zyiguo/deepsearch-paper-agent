@@ -1,5 +1,5 @@
-from deepsearch_agent.knowledge_base import KnowledgeBase
-from deepsearch_agent.pdf import FakePdfReader
+from deepsearch_agent.knowledge.knowledge_base import KnowledgeBase
+from deepsearch_agent.core.pdf import FakePdfReader
 
 
 class StubEmbeddingClient:

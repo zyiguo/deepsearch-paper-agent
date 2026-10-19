@@ -1,0 +1,12 @@
+[
+  {
+    "queue_index": 1,
+    "status": "invalid_judgment",
+    "reason": "Invalid quoted witness"
+  },
+  {
+    "queue_index": 8,
+    "status": "invalid_judgment",
+    "reason": "Invalid quoted witness"
+  }
+]

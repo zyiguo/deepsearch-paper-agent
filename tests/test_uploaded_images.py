@@ -5,9 +5,9 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from deepsearch_agent.image_assets import normalize_image
-from deepsearch_agent.image_embeddings import SiliconFlowImageEmbeddingClient
-from deepsearch_agent.llm_gateway import OpenAICompatibleClient
+from deepsearch_agent.workspace.image_assets import normalize_image
+from deepsearch_agent.adapters.image_embeddings import SiliconFlowImageEmbeddingClient
+from deepsearch_agent.adapters.llm_gateway import OpenAICompatibleClient
 from test_image_retrieval_api import app, fake_vision
 from test_multimodal_api import finished
 
@@ -31,7 +31,7 @@ def test_non_raster_or_disallowed_formats_rejected(content):
 
 
 def test_image_pixel_limit_orientation_and_metadata(monkeypatch):
-    import deepsearch_agent.image_assets as assets
+    import deepsearch_agent.workspace.image_assets as assets
     image = Image.new('RGB', (80, 60), 'blue')
     exif = image.getexif()
     exif[274] = 6
@@ -130,8 +130,8 @@ def test_attachment_limits_invalid_files_and_preflight(tmp_path, monkeypatch):
 
 
 def test_attachment_drives_visual_search_queries_and_combines_scoped_evidence():
-    from deepsearch_agent.chunking import TextChunk
-    from deepsearch_agent.qa import AnswerService
+    from deepsearch_agent.core.evidence import TextChunk
+    from deepsearch_experiments.legacy.qa import AnswerService
     from test_visual_research import TextClient
     calls = []
     class Library:

@@ -1,0 +1,393 @@
+[
+  {
+    "queue_index": 0,
+    "id": "3hop1__699507_792411_51423",
+    "job": "r1-musique-1-v5",
+    "source_sha256": "0924a0a5fc4b972dd121441bbfe52da8667f58e3343cd67428c7244d77be12ff",
+    "event_index": 129,
+    "decision": {
+      "candidate_id": "d74d05332ca6a20fd92e2f922a3971e2001a5c8a74845ca0206764df42a77c44",
+      "candidate_index": 0,
+      "path_index": 0,
+      "missing_requirements": [
+        1,
+        2
+      ],
+      "review_id": "8f3c63536d4598337f0f861a999272b022cac1621f4b444efadcf066c478d8dd",
+      "reason": "no_new_witness_after_unknown_review",
+      "path_id": "886b3c9a13e8b763ccd7c5f39c2691a2b4ea790d81ccc67a66b898f7ac0688f8",
+      "status": "unknown",
+      "pruned": false
+    },
+    "judge_kind": "independent-call-same-model-not-human",
+    "reported_total_tokens": 6166,
+    "status": "ok",
+    "retries": 0,
+    "judgment": {
+      "candidate_supported": "unknown",
+      "path_sufficient": false,
+      "missing_requirements": [
+        1,
+        2
+      ]
+    },
+    "counterfactual": {
+      "status": "ok",
+      "gap_state_removed": true,
+      "regeneration": false,
+      "selected_candidate": null,
+      "accepts_deferred_candidate": false,
+      "deferred_path_status": "unknown",
+      "reported_total_tokens": 6433,
+      "known_reported_tokens": 6433,
+      "calls": 1
+    }
+  },
+  {
+    "queue_index": 1,
+    "id": "2hop__207476_625987",
+    "job": "r2-musique-4-v5",
+    "source_sha256": "16260b6d959d64e2bb70d0a3540d714c63a56b7ddff48196531eccfa51395b1e",
+    "event_index": 80,
+    "decision": {
+      "candidate_id": "10b9abc022263d123b87643e9135136583bf740e571ec482c20a9a9094e595c6",
+      "candidate_index": 1,
+      "path_index": 0,
+      "missing_requirements": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "review_id": "a0fd502e9fbaf60dff35b4b17ab2c5b80a6df9fb219821b6f71fa1e11e9e91c9",
+      "reason": "no_new_witness_after_unknown_review",
+      "path_id": "83051bb106d6235f8875f0822e640924c3478fe2f4d2d4b046c2009f5d9fedd7",
+      "status": "unknown",
+      "pruned": false
+    },
+    "judge_kind": "independent-call-same-model-not-human",
+    "reported_total_tokens": 4363,
+    "status": "invalid_judgment",
+    "retries": 0,
+    "judgment": null,
+    "counterfactual": {
+      "status": "ok",
+      "gap_state_removed": true,
+      "regeneration": false,
+      "selected_candidate": null,
+      "accepts_deferred_candidate": false,
+      "deferred_path_status": "unknown",
+      "reported_total_tokens": 5095,
+      "known_reported_tokens": 5095,
+      "calls": 1
+    }
+  },
+  {
+    "queue_index": 2,
+    "id": "efdee68e0bdc11eba7f7acde48001122",
+    "job": "r2-2wikimultihopqa-3-v5",
+    "source_sha256": "12d2f4930cc1ee90e6ecc124030d8c93466fea6e53ec8fc1e2bd1e62b901a097",
+    "event_index": 130,
+    "decision": {
+      "candidate_id": "3cc87d7620017882acfba4a3b676da6cbe02e97cb58244f2fa3cdb52864dc7b0",
+      "candidate_index": 0,
+      "path_index": 0,
+      "missing_requirements": [
+        2,
+        3
+      ],
+      "review_id": "365b5b6adfb928e343e6b090cc00b2a352176caa3994daeb9bab537a6818807a",
+      "reason": "no_new_witness_after_unknown_review",
+      "path_id": "3ff8f3282d6c8116444d201e01a9e2f5cc75c0079700d2c1aae5337b17092461",
+      "status": "unknown",
+      "pruned": false
+    },
+    "judge_kind": "independent-call-same-model-not-human",
+    "reported_total_tokens": 7752,
+    "status": "ok",
+    "retries": 0,
+    "judgment": {
+      "candidate_supported": "unknown",
+      "path_sufficient": false,
+      "missing_requirements": [
+        2,
+        3
+      ]
+    },
+    "counterfactual": {
+      "status": "ok",
+      "gap_state_removed": true,
+      "regeneration": false,
+      "selected_candidate": null,
+      "accepts_deferred_candidate": false,
+      "deferred_path_status": "unknown",
+      "reported_total_tokens": 8179,
+      "known_reported_tokens": 8179,
+      "calls": 1
+    }
+  },
+  {
+    "queue_index": 3,
+    "id": "3hop1__106313_443779_52195",
+    "job": "r1-musique-4-v5",
+    "source_sha256": "3c2260b674fe0da3939e1df52779555315fb61e0d079cebb9b6ccb9a30b1b145",
+    "event_index": 125,
+    "decision": {
+      "candidate_id": "4a1026d4e551a8e17eed7fd23643dff1ca50cb057b3c8344b0f63ba001a567d1",
+      "candidate_index": 0,
+      "path_index": 0,
+      "missing_requirements": [
+        2,
+        3
+      ],
+      "review_id": "cb8d380909144ff9c564680ae1e7246e9aeda7b4c26409938484b3f4cd382806",
+      "reason": "no_new_witness_after_unknown_review",
+      "path_id": "9f294f49a8402fad8d036125fec23297ea2bc2ec7efd2881212d5d344166b1f5",
+      "status": "unknown",
+      "pruned": false
+    },
+    "judge_kind": "independent-call-same-model-not-human",
+    "reported_total_tokens": 8696,
+    "status": "ok",
+    "retries": 0,
+    "judgment": {
+      "candidate_supported": "unknown",
+      "path_sufficient": false,
+      "missing_requirements": [
+        2,
+        3
+      ]
+    },
+    "counterfactual": {
+      "status": "ok",
+      "gap_state_removed": true,
+      "regeneration": false,
+      "selected_candidate": null,
+      "accepts_deferred_candidate": false,
+      "deferred_path_status": "unknown",
+      "reported_total_tokens": 9396,
+      "known_reported_tokens": 9396,
+      "calls": 1
+    }
+  },
+  {
+    "queue_index": 4,
+    "id": "480d6482089211ebbd73ac1f6bf848b6",
+    "job": "r0-2wikimultihopqa-1-v5",
+    "source_sha256": "ec4f090bfcc3f51e081ce6d062c9551d85d934f2cd9a98417ce695d1b2432b0c",
+    "event_index": 81,
+    "decision": {
+      "candidate_id": "1496777ff429fcfde7f5ae4b52cf96025b7db7918a8e8e79bdb9fc1bbe2acf2b",
+      "candidate_index": 0,
+      "path_index": 0,
+      "missing_requirements": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "review_id": "bdae321bc230c80d477fd3e18a0bb9f79520fc8fc64f556555a0b7091b6761e5",
+      "reason": "no_new_witness_after_unknown_review",
+      "path_id": "80ff0481421fd2c6e8e79e4ba7e10d21521d2f8c95474e7affde02bd7a877747",
+      "status": "unknown",
+      "pruned": false
+    },
+    "judge_kind": "independent-call-same-model-not-human",
+    "reported_total_tokens": 5440,
+    "status": "ok",
+    "retries": 0,
+    "judgment": {
+      "candidate_supported": "unknown",
+      "path_sufficient": false,
+      "missing_requirements": [
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "counterfactual": {
+      "status": "ok",
+      "gap_state_removed": true,
+      "regeneration": false,
+      "selected_candidate": null,
+      "accepts_deferred_candidate": false,
+      "deferred_path_status": "unknown",
+      "reported_total_tokens": 5357,
+      "known_reported_tokens": 5357,
+      "calls": 1
+    }
+  },
+  {
+    "queue_index": 5,
+    "id": "480d6482089211ebbd73ac1f6bf848b6",
+    "job": "r0-2wikimultihopqa-1-v5",
+    "source_sha256": "ec4f090bfcc3f51e081ce6d062c9551d85d934f2cd9a98417ce695d1b2432b0c",
+    "event_index": 81,
+    "decision": {
+      "candidate_id": "9c5cadf2a636bcc0704253f85d251ed50a7a984f97f2cab10a28027dcccf0840",
+      "candidate_index": 1,
+      "path_index": 0,
+      "missing_requirements": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "review_id": "bdae321bc230c80d477fd3e18a0bb9f79520fc8fc64f556555a0b7091b6761e5",
+      "reason": "no_new_witness_after_unknown_review",
+      "path_id": "7a5073e5d1e0249f652dc9a58872ca6c0df750c7f0c2215938dce19c8b4ec224",
+      "status": "unknown",
+      "pruned": false
+    },
+    "judge_kind": "independent-call-same-model-not-human",
+    "reported_total_tokens": 5266,
+    "status": "ok",
+    "retries": 0,
+    "judgment": {
+      "candidate_supported": "unknown",
+      "path_sufficient": false,
+      "missing_requirements": [
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "counterfactual": {
+      "status": "ok",
+      "gap_state_removed": true,
+      "regeneration": false,
+      "selected_candidate": null,
+      "accepts_deferred_candidate": false,
+      "deferred_path_status": "unknown",
+      "reported_total_tokens": 10743,
+      "known_reported_tokens": 10743,
+      "calls": 2
+    }
+  },
+  {
+    "queue_index": 6,
+    "id": "2hop__235471_565925",
+    "job": "r0-musique-3-v5",
+    "source_sha256": "43c0de84d24fddb80d85745f3c4eaebb513d636fd2805a22c2cc961040576820",
+    "event_index": 86,
+    "decision": {
+      "candidate_id": "7dbc31940e08bf262d63abd34f13dce9ffbb2ffe58058ce6c70d43e3be6bc486",
+      "candidate_index": 1,
+      "path_index": 0,
+      "missing_requirements": [
+        2
+      ],
+      "review_id": "f279aa7187a699a286ff140c06aade52c528bf7a06abcbff2cfadf4a3ce68762",
+      "reason": "no_new_witness_after_unknown_review",
+      "path_id": "a46a233f18a411b324d7470e6c2cea20a92c4828790b80093fc7c553eb566648",
+      "status": "unknown",
+      "pruned": false
+    },
+    "judge_kind": "independent-call-same-model-not-human",
+    "reported_total_tokens": 6770,
+    "status": "ok",
+    "retries": 0,
+    "judgment": {
+      "candidate_supported": "unknown",
+      "path_sufficient": false,
+      "missing_requirements": [
+        1,
+        2
+      ]
+    },
+    "counterfactual": {
+      "status": "ok",
+      "gap_state_removed": true,
+      "regeneration": false,
+      "selected_candidate": null,
+      "accepts_deferred_candidate": false,
+      "deferred_path_status": "supported",
+      "reported_total_tokens": 8188,
+      "known_reported_tokens": 8188,
+      "calls": 1
+    }
+  },
+  {
+    "queue_index": 7,
+    "id": "2hop__235471_565925",
+    "job": "r0-musique-3-v5",
+    "source_sha256": "43c0de84d24fddb80d85745f3c4eaebb513d636fd2805a22c2cc961040576820",
+    "event_index": 130,
+    "decision": {
+      "candidate_id": "7dbc31940e08bf262d63abd34f13dce9ffbb2ffe58058ce6c70d43e3be6bc486",
+      "candidate_index": 1,
+      "path_index": 0,
+      "missing_requirements": [
+        2
+      ],
+      "review_id": "f279aa7187a699a286ff140c06aade52c528bf7a06abcbff2cfadf4a3ce68762",
+      "reason": "no_new_witness_after_unknown_review",
+      "path_id": "10d54f44eeb756f3f12f5ce6c6c4e2f935799c4d21172c2b9db0f1bcfb635917",
+      "status": "unknown",
+      "pruned": false
+    },
+    "judge_kind": "independent-call-same-model-not-human",
+    "reported_total_tokens": 8119,
+    "status": "ok",
+    "retries": 0,
+    "judgment": {
+      "candidate_supported": "unknown",
+      "path_sufficient": false,
+      "missing_requirements": [
+        1,
+        2
+      ]
+    },
+    "counterfactual": {
+      "status": "invalid_output",
+      "gap_state_removed": true,
+      "regeneration": false,
+      "selected_candidate": null,
+      "accepts_deferred_candidate": null,
+      "deferred_path_status": null,
+      "reported_total_tokens": 17960,
+      "known_reported_tokens": 17960,
+      "calls": 2
+    }
+  },
+  {
+    "queue_index": 8,
+    "id": "efdee68e0bdc11eba7f7acde48001122",
+    "job": "r1-2wikimultihopqa-3-v5",
+    "source_sha256": "230a248da7ce6d9fd48c1e6d97ec30d50a5ce2be72198847e7e162cd04dc964c",
+    "event_index": 125,
+    "decision": {
+      "candidate_id": "79420807a5ddee58e100c26310ec7c675ce761671ed493648d4424450b9713e7",
+      "candidate_index": 0,
+      "path_index": 0,
+      "missing_requirements": [
+        1
+      ],
+      "review_id": "061db0a8dd0b22a1e5bb50013651fd3cf2fa606e9a10df7ae5007f4ee9ef57cf",
+      "reason": "no_new_witness_after_unknown_review",
+      "path_id": "89cf404a06c391a991edeffd0062655414ec40d45d54127aa4dd3d1bd604eb65",
+      "status": "unknown",
+      "pruned": false
+    },
+    "judge_kind": "independent-call-same-model-not-human",
+    "reported_total_tokens": 7590,
+    "status": "invalid_judgment",
+    "retries": 0,
+    "judgment": null,
+    "counterfactual": {
+      "status": "ok",
+      "gap_state_removed": true,
+      "regeneration": false,
+      "selected_candidate": null,
+      "accepts_deferred_candidate": false,
+      "deferred_path_status": "unknown",
+      "reported_total_tokens": 8041,
+      "known_reported_tokens": 8041,
+      "calls": 1
+    }
+  }
+]

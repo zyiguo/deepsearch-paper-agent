@@ -7,6 +7,12 @@
 !.env.image_embedding.example
 !.env.agent.example
 !.env.mcp.example
+!.env.infrastructure.example
+!.env.access.example
+!.env.database.example
+!.env.database.compose.example
+!.env.tracing.example
+compose.override.yaml
 
 # Runtime data
 *.working-memory/

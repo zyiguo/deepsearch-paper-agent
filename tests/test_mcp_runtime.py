@@ -9,8 +9,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from deepsearch_agent.mcp_config import MCPServerConfig, MCPSettings
-from deepsearch_agent.mcp_runtime import MCPRuntimeError, create_mcp_server, external_tools
+from deepsearch_agent.adapters.mcp_config import MCPServerConfig, MCPSettings
+from deepsearch_agent.adapters.mcp_runtime import MCPRuntimeError, create_mcp_server, external_tools
 
 
 def test_mcp_defaults_do_not_enable_connections():
@@ -298,7 +298,7 @@ def test_server_denies_ocr_by_default_and_sanitizes_failures():
 
 def test_server_generated_evidence_can_be_resolved_without_widening_scope():
     mcp = pytest.importorskip("mcp")
-    from deepsearch_agent.chunking import TextChunk
+    from deepsearch_agent.core.evidence import TextChunk
     chunk = TextChunk("recognized figure", "pdf://known", 1, 0)
     sources = {"pdf://known"}
 
@@ -332,7 +332,7 @@ def test_real_stdio_transport(tmp_path):
     mcp = pytest.importorskip("mcp")
     program = tmp_path / "stdio_server.py"
     program.write_text('''from types import SimpleNamespace
-from deepsearch_agent.mcp_runtime import create_mcp_server
+from deepsearch_agent.adapters.mcp_runtime import create_mcp_server
 class Session:
     def invoke(self, name, arguments):
         return SimpleNamespace(content="stdio evidence", data={"ok": True}, chunks=[])
@@ -351,7 +351,7 @@ create_mcp_server(Session).run(transport="stdio")
 
 def test_real_module_cli_supports_nonempty_default_source_scope_in_demo_mode(tmp_path):
     mcp = pytest.importorskip("mcp")
-    from deepsearch_agent.demo import build_demo_knowledge_base
+    from deepsearch_agent.adapters.demo import build_demo_knowledge_base
     index = tmp_path / "demo.json"
     build_demo_knowledge_base().save(index)
     env = tmp_path / ".env.mcp"

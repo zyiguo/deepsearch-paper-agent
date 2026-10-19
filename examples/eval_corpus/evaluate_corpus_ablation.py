@@ -12,8 +12,8 @@ from pathlib import Path
 
 from pypdf import PdfReader
 
-from deepsearch_agent.evaluation import evaluate
-from deepsearch_agent.knowledge_base import KnowledgeBase
+from deepsearch_experiments.retrieval import evaluate
+from deepsearch_agent.knowledge.knowledge_base import KnowledgeBase
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
@@ -130,7 +130,7 @@ def main() -> int:
     if need_remote:
         if not args.allow_remote:
             raise SystemExit("Non-BM25 configs require --allow-remote (paid embedding/LLM calls).")
-        from deepsearch_agent.embedding_runtime import EmbeddingSettings, RemoteEmbeddingClient
+        from deepsearch_agent.adapters.embedding_runtime import EmbeddingSettings, RemoteEmbeddingClient
         settings = EmbeddingSettings.load(ROOT / ".env.embedding")
         if settings.backend != "openai_compatible":
             raise SystemExit("EMBEDDING_BACKEND must be openai_compatible")
@@ -149,8 +149,8 @@ def main() -> int:
     llm = None
     llm_settings = None
     if any(c in {"hybrid-rerank", "hybrid-expand", "hybrid-both"} for c in args.configs):
-        from deepsearch_agent.llm_config import LLMSettings
-        from deepsearch_agent.llm_factory import build_llm
+        from deepsearch_agent.adapters.llm_config import LLMSettings
+        from deepsearch_agent.adapters.llm_factory import build_llm
         llm_settings = LLMSettings.load(ROOT / ".env")
         if llm_settings.backend != "openai_compatible":
             raise SystemExit("LLM ablations require openai_compatible chat model")
@@ -167,10 +167,10 @@ def main() -> int:
             view._bm25_index, view._bm25_count = None, 0
             expander = reranker = None
             if name in {"hybrid-expand", "hybrid-both"}:
-                from deepsearch_agent.query_expander import LLMQueryExpander
+                from deepsearch_agent.knowledge.query_expander import LLMQueryExpander
                 expander = LLMQueryExpander(llm)
             if name in {"hybrid-rerank", "hybrid-both"}:
-                from deepsearch_agent.reranker import LLMReranker
+                from deepsearch_agent.knowledge.reranker import LLMReranker
                 reranker = LLMReranker(llm, llm_settings.context_window, llm_settings.max_output_tokens)
             report = evaluate(view, cases, k=args.k, expander=expander, reranker=reranker)
             report["semantic_weight"] = view.semantic_weight

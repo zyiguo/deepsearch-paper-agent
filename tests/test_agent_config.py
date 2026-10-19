@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from deepsearch_agent.agent_config import AgentSettings
+from deepsearch_agent.agents.agent_config import AgentSettings
 
 
 def test_load_defaults_and_disable_without_environment_mutation(tmp_path):

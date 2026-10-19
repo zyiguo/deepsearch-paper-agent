@@ -4,9 +4,9 @@ import json
 from pathlib import Path
 
 from search_policy.dataset import candidates, export_dataset, review_template, write_new_jsonl
-from search_policy.events import bind, emit
+from deepsearch_tracing.events import bind, emit
 from search_policy.intent import SearchIntent
-from search_policy.store import TraceStore
+from deepsearch_tracing.store import TraceStore
 
 
 class FixtureModel:

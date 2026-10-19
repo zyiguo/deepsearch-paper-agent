@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from deepsearch_agent.benchmarks.ablation_metrics import summarize_ablation
+from deepsearch_experiments.benchmarks.ablation_metrics import summarize_ablation
 
 
 def case(ident='q1', task='chartqa', gold=None):

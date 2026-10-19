@@ -1,0 +1,514 @@
+{
+  "totals": {
+    "v4": {
+      "predictions": 60,
+      "eligible": 57,
+      "eligible_em": 0.38596491228070173,
+      "normal_abstentions": 33,
+      "quarantined_gold_predictions": 3,
+      "groups": {
+        "unknown": 33,
+        "success": 22,
+        "failure": 5
+      },
+      "statuses": {
+        "ok": 58,
+        "error": 2
+      },
+      "reported_total_tokens": 1683298,
+      "known_reported_tokens": 1683298,
+      "usage_missing_calls": 0,
+      "model_calls": 457,
+      "schema_repairs": 24,
+      "gap_deferred_paths": 0,
+      "cases_with_gap_defer": 0,
+      "runs_with_gap_defer": 0
+    },
+    "v5": {
+      "predictions": 60,
+      "eligible": 57,
+      "eligible_em": 0.43859649122807015,
+      "normal_abstentions": 29,
+      "quarantined_gold_predictions": 3,
+      "groups": {
+        "success": 25,
+        "failure": 6,
+        "unknown": 29
+      },
+      "statuses": {
+        "ok": 59,
+        "error": 1
+      },
+      "reported_total_tokens": 1768512,
+      "known_reported_tokens": 1768512,
+      "usage_missing_calls": 0,
+      "model_calls": 479,
+      "schema_repairs": 18,
+      "gap_deferred_paths": 9,
+      "cases_with_gap_defer": 6,
+      "runs_with_gap_defer": 7
+    }
+  },
+  "stability": {
+    "paired_count": 60,
+    "known_usage_pairs": 60,
+    "complete_question_clusters": 20,
+    "question_mean_costs": [
+      {
+        "dataset": "2wikimultihopqa",
+        "id": "00f34c7e088311ebbd6dac1f6bf848b6",
+        "v4_mean_tokens": 16803.333333333332,
+        "v5_mean_tokens": 17358.0,
+        "mean_delta_tokens": 554.6666666666666
+      },
+      {
+        "dataset": "2wikimultihopqa",
+        "id": "0d27b3c20bda11eba7f7acde48001122",
+        "v4_mean_tokens": 16302.0,
+        "v5_mean_tokens": 15396.0,
+        "mean_delta_tokens": -906.0
+      },
+      {
+        "dataset": "2wikimultihopqa",
+        "id": "1d77753308bf11ebbd8aac1f6bf848b6",
+        "v4_mean_tokens": 20992.666666666668,
+        "v5_mean_tokens": 19653.0,
+        "mean_delta_tokens": -1339.6666666666667
+      },
+      {
+        "dataset": "2wikimultihopqa",
+        "id": "35b18b54084911ebbd55ac1f6bf848b6",
+        "v4_mean_tokens": 17168.666666666668,
+        "v5_mean_tokens": 15979.0,
+        "mean_delta_tokens": -1189.6666666666667
+      },
+      {
+        "dataset": "2wikimultihopqa",
+        "id": "421d07aa0bb011ebab90acde48001122",
+        "v4_mean_tokens": 21302.666666666668,
+        "v5_mean_tokens": 22361.0,
+        "mean_delta_tokens": 1058.3333333333333
+      },
+      {
+        "dataset": "2wikimultihopqa",
+        "id": "480d6482089211ebbd73ac1f6bf848b6",
+        "v4_mean_tokens": 32907.666666666664,
+        "v5_mean_tokens": 27047.333333333332,
+        "mean_delta_tokens": -5860.333333333333
+      },
+      {
+        "dataset": "2wikimultihopqa",
+        "id": "9f2a95bd08b211ebbd85ac1f6bf848b6",
+        "v4_mean_tokens": 31436.333333333332,
+        "v5_mean_tokens": 47455.0,
+        "mean_delta_tokens": 16018.666666666666
+      },
+      {
+        "dataset": "2wikimultihopqa",
+        "id": "b1a94a9a0bdb11eba7f7acde48001122",
+        "v4_mean_tokens": 16304.666666666666,
+        "v5_mean_tokens": 18500.0,
+        "mean_delta_tokens": 2195.3333333333335
+      },
+      {
+        "dataset": "2wikimultihopqa",
+        "id": "c35c917e085f11ebbd5dac1f6bf848b6",
+        "v4_mean_tokens": 19581.333333333332,
+        "v5_mean_tokens": 23752.0,
+        "mean_delta_tokens": 4170.666666666667
+      },
+      {
+        "dataset": "2wikimultihopqa",
+        "id": "efdee68e0bdc11eba7f7acde48001122",
+        "v4_mean_tokens": 64357.666666666664,
+        "v5_mean_tokens": 40026.333333333336,
+        "mean_delta_tokens": -24331.333333333332
+      },
+      {
+        "dataset": "musique",
+        "id": "2hop__128342_375952",
+        "v4_mean_tokens": 36439.666666666664,
+        "v5_mean_tokens": 38396.333333333336,
+        "mean_delta_tokens": 1956.6666666666667
+      },
+      {
+        "dataset": "musique",
+        "id": "2hop__207476_625987",
+        "v4_mean_tokens": 24906.333333333332,
+        "v5_mean_tokens": 28516.666666666668,
+        "mean_delta_tokens": 3610.3333333333335
+      },
+      {
+        "dataset": "musique",
+        "id": "2hop__235471_565925",
+        "v4_mean_tokens": 39950.666666666664,
+        "v5_mean_tokens": 51626.0,
+        "mean_delta_tokens": 11675.333333333334
+      },
+      {
+        "dataset": "musique",
+        "id": "2hop__351045_47134",
+        "v4_mean_tokens": 17822.0,
+        "v5_mean_tokens": 18153.666666666668,
+        "mean_delta_tokens": 331.6666666666667
+      },
+      {
+        "dataset": "musique",
+        "id": "2hop__50910_177869",
+        "v4_mean_tokens": 20154.0,
+        "v5_mean_tokens": 18043.666666666668,
+        "mean_delta_tokens": -2110.3333333333335
+      },
+      {
+        "dataset": "musique",
+        "id": "2hop__668407_683671",
+        "v4_mean_tokens": 31546.666666666668,
+        "v5_mean_tokens": 36197.333333333336,
+        "mean_delta_tokens": 4650.666666666667
+      },
+      {
+        "dataset": "musique",
+        "id": "2hop__794999_113442",
+        "v4_mean_tokens": 16685.0,
+        "v5_mean_tokens": 14904.333333333334,
+        "mean_delta_tokens": -1780.6666666666667
+      },
+      {
+        "dataset": "musique",
+        "id": "3hop1__106313_443779_52195",
+        "v4_mean_tokens": 47505.333333333336,
+        "v5_mean_tokens": 40141.666666666664,
+        "mean_delta_tokens": -7363.666666666667
+      },
+      {
+        "dataset": "musique",
+        "id": "3hop1__699507_792411_51423",
+        "v4_mean_tokens": 25958.333333333332,
+        "v5_mean_tokens": 43072.0,
+        "mean_delta_tokens": 17113.666666666668
+      },
+      {
+        "dataset": "musique",
+        "id": "3hop2__89854_38738_76291",
+        "v4_mean_tokens": 42974.333333333336,
+        "v5_mean_tokens": 52924.666666666664,
+        "mean_delta_tokens": 9950.333333333334
+      }
+    ],
+    "question_mean_cost_win_fraction": 0.4,
+    "median_paired_delta_tokens": 471.0,
+    "paired_cost_win_fraction": 0.45,
+    "question_cluster_bootstrap_95_interval": [
+      -0.1878273611411818,
+      0.08294567877393205
+    ],
+    "bootstrap_resamples": 10000,
+    "per_repeat": [
+      {
+        "repeat": 0,
+        "paired_count": 20,
+        "v4_tokens": 538795,
+        "v5_tokens": 660748,
+        "reduction_fraction": -0.22634397126922112
+      },
+      {
+        "repeat": 1,
+        "paired_count": 20,
+        "v4_tokens": 601025,
+        "v5_tokens": 582234,
+        "reduction_fraction": 0.03126492242419201
+      },
+      {
+        "repeat": 2,
+        "paired_count": 20,
+        "v4_tokens": 543478,
+        "v5_tokens": 525530,
+        "reduction_fraction": 0.03302433585168121
+      }
+    ],
+    "interval_scope": "Conditional on complete three-repeat question clusters; selected development cases, not population generalization."
+  },
+  "new_cases_stability": {
+    "paired_count": 48,
+    "known_usage_pairs": 48,
+    "complete_question_clusters": 16,
+    "question_mean_costs": [
+      {
+        "dataset": "2wikimultihopqa",
+        "id": "0d27b3c20bda11eba7f7acde48001122",
+        "v4_mean_tokens": 16302.0,
+        "v5_mean_tokens": 15396.0,
+        "mean_delta_tokens": -906.0
+      },
+      {
+        "dataset": "2wikimultihopqa",
+        "id": "35b18b54084911ebbd55ac1f6bf848b6",
+        "v4_mean_tokens": 17168.666666666668,
+        "v5_mean_tokens": 15979.0,
+        "mean_delta_tokens": -1189.6666666666667
+      },
+      {
+        "dataset": "2wikimultihopqa",
+        "id": "421d07aa0bb011ebab90acde48001122",
+        "v4_mean_tokens": 21302.666666666668,
+        "v5_mean_tokens": 22361.0,
+        "mean_delta_tokens": 1058.3333333333333
+      },
+      {
+        "dataset": "2wikimultihopqa",
+        "id": "480d6482089211ebbd73ac1f6bf848b6",
+        "v4_mean_tokens": 32907.666666666664,
+        "v5_mean_tokens": 27047.333333333332,
+        "mean_delta_tokens": -5860.333333333333
+      },
+      {
+        "dataset": "2wikimultihopqa",
+        "id": "9f2a95bd08b211ebbd85ac1f6bf848b6",
+        "v4_mean_tokens": 31436.333333333332,
+        "v5_mean_tokens": 47455.0,
+        "mean_delta_tokens": 16018.666666666666
+      },
+      {
+        "dataset": "2wikimultihopqa",
+        "id": "b1a94a9a0bdb11eba7f7acde48001122",
+        "v4_mean_tokens": 16304.666666666666,
+        "v5_mean_tokens": 18500.0,
+        "mean_delta_tokens": 2195.3333333333335
+      },
+      {
+        "dataset": "2wikimultihopqa",
+        "id": "c35c917e085f11ebbd5dac1f6bf848b6",
+        "v4_mean_tokens": 19581.333333333332,
+        "v5_mean_tokens": 23752.0,
+        "mean_delta_tokens": 4170.666666666667
+      },
+      {
+        "dataset": "2wikimultihopqa",
+        "id": "efdee68e0bdc11eba7f7acde48001122",
+        "v4_mean_tokens": 64357.666666666664,
+        "v5_mean_tokens": 40026.333333333336,
+        "mean_delta_tokens": -24331.333333333332
+      },
+      {
+        "dataset": "musique",
+        "id": "2hop__207476_625987",
+        "v4_mean_tokens": 24906.333333333332,
+        "v5_mean_tokens": 28516.666666666668,
+        "mean_delta_tokens": 3610.3333333333335
+      },
+      {
+        "dataset": "musique",
+        "id": "2hop__235471_565925",
+        "v4_mean_tokens": 39950.666666666664,
+        "v5_mean_tokens": 51626.0,
+        "mean_delta_tokens": 11675.333333333334
+      },
+      {
+        "dataset": "musique",
+        "id": "2hop__351045_47134",
+        "v4_mean_tokens": 17822.0,
+        "v5_mean_tokens": 18153.666666666668,
+        "mean_delta_tokens": 331.6666666666667
+      },
+      {
+        "dataset": "musique",
+        "id": "2hop__668407_683671",
+        "v4_mean_tokens": 31546.666666666668,
+        "v5_mean_tokens": 36197.333333333336,
+        "mean_delta_tokens": 4650.666666666667
+      },
+      {
+        "dataset": "musique",
+        "id": "2hop__794999_113442",
+        "v4_mean_tokens": 16685.0,
+        "v5_mean_tokens": 14904.333333333334,
+        "mean_delta_tokens": -1780.6666666666667
+      },
+      {
+        "dataset": "musique",
+        "id": "3hop1__106313_443779_52195",
+        "v4_mean_tokens": 47505.333333333336,
+        "v5_mean_tokens": 40141.666666666664,
+        "mean_delta_tokens": -7363.666666666667
+      },
+      {
+        "dataset": "musique",
+        "id": "3hop1__699507_792411_51423",
+        "v4_mean_tokens": 25958.333333333332,
+        "v5_mean_tokens": 43072.0,
+        "mean_delta_tokens": 17113.666666666668
+      },
+      {
+        "dataset": "musique",
+        "id": "3hop2__89854_38738_76291",
+        "v4_mean_tokens": 42974.333333333336,
+        "v5_mean_tokens": 52924.666666666664,
+        "mean_delta_tokens": 9950.333333333334
+      }
+    ],
+    "question_mean_cost_win_fraction": 0.375,
+    "median_paired_delta_tokens": 699.5,
+    "paired_cost_win_fraction": 0.4583333333333333,
+    "question_cluster_bootstrap_95_interval": [
+      -0.22671635682772495,
+      0.09407567544805387
+    ],
+    "bootstrap_resamples": 10000,
+    "per_repeat": [
+      {
+        "repeat": 0,
+        "paired_count": 16,
+        "v4_tokens": 466955,
+        "v5_tokens": 569387,
+        "reduction_fraction": -0.21936160872032637
+      },
+      {
+        "repeat": 1,
+        "paired_count": 16,
+        "v4_tokens": 507959,
+        "v5_tokens": 479536,
+        "reduction_fraction": 0.05595530347921781
+      },
+      {
+        "repeat": 2,
+        "paired_count": 16,
+        "v4_tokens": 425215,
+        "v5_tokens": 439236,
+        "reduction_fraction": -0.03297390731747469
+      }
+    ],
+    "interval_scope": "Conditional on complete three-repeat question clusters; selected development cases, not population generalization."
+  },
+  "quality": {
+    "eligible_pairs": 57,
+    "question_clusters": 19,
+    "v4_em": 0.38596491228070173,
+    "v5_em": 0.43859649122807015,
+    "accuracy_delta_cluster_bootstrap_95_interval": [
+      -0.07017543859649122,
+      0.17543859649122806
+    ],
+    "correct_to_wrong": 4,
+    "wrong_to_correct": 7,
+    "correct_to_wrong_with_defer": 0,
+    "causal_warning": "Separate stochastic runs; a paired regression with deferral is a risk signal, not proof deferral caused it."
+  },
+  "new_cases_quality": {
+    "eligible_pairs": 48,
+    "question_clusters": 16,
+    "v4_em": 0.3541666666666667,
+    "v5_em": 0.375,
+    "accuracy_delta_cluster_bootstrap_95_interval": [
+      -0.125,
+      0.14583333333333334
+    ],
+    "correct_to_wrong": 4,
+    "wrong_to_correct": 5,
+    "correct_to_wrong_with_defer": 0,
+    "causal_warning": "Separate stochastic runs; a paired regression with deferral is a risk signal, not proof deferral caused it."
+  },
+  "per_repeat_quality": {
+    "0": {
+      "eligible_pairs": 19,
+      "question_clusters": 19,
+      "v4_em": 0.42105263157894735,
+      "v5_em": 0.42105263157894735,
+      "accuracy_delta_cluster_bootstrap_95_interval": [
+        -0.15789473684210525,
+        0.15789473684210525
+      ],
+      "correct_to_wrong": 1,
+      "wrong_to_correct": 1,
+      "correct_to_wrong_with_defer": 0,
+      "causal_warning": "Separate stochastic runs; a paired regression with deferral is a risk signal, not proof deferral caused it."
+    },
+    "1": {
+      "eligible_pairs": 19,
+      "question_clusters": 19,
+      "v4_em": 0.42105263157894735,
+      "v5_em": 0.47368421052631576,
+      "accuracy_delta_cluster_bootstrap_95_interval": [
+        -0.10526315789473684,
+        0.21052631578947367
+      ],
+      "correct_to_wrong": 1,
+      "wrong_to_correct": 2,
+      "correct_to_wrong_with_defer": 0,
+      "causal_warning": "Separate stochastic runs; a paired regression with deferral is a risk signal, not proof deferral caused it."
+    },
+    "2": {
+      "eligible_pairs": 19,
+      "question_clusters": 19,
+      "v4_em": 0.3157894736842105,
+      "v5_em": 0.42105263157894735,
+      "accuracy_delta_cluster_bootstrap_95_interval": [
+        -0.15789473684210525,
+        0.3684210526315789
+      ],
+      "correct_to_wrong": 2,
+      "wrong_to_correct": 4,
+      "correct_to_wrong_with_defer": 0,
+      "causal_warning": "Separate stochastic runs; a paired regression with deferral is a risk signal, not proof deferral caused it."
+    }
+  },
+  "true_false_defer_rate": null,
+  "human_labels_assigned": 0,
+  "correct_to_wrong_pairs": [
+    {
+      "dataset": "2wikimultihopqa",
+      "id": "35b18b54084911ebbd55ac1f6bf848b6",
+      "repeat": 1,
+      "anchor": false,
+      "gold_excluded": false,
+      "v4_tokens": 17015,
+      "v5_tokens": 15497,
+      "v4_em": 1.0,
+      "v5_em": 0.0,
+      "v4_status": "ok",
+      "v5_status": "ok",
+      "v5_deferred_paths": 0
+    },
+    {
+      "dataset": "2wikimultihopqa",
+      "id": "35b18b54084911ebbd55ac1f6bf848b6",
+      "repeat": 2,
+      "anchor": false,
+      "gold_excluded": false,
+      "v4_tokens": 16157,
+      "v5_tokens": 16797,
+      "v4_em": 1.0,
+      "v5_em": 0.0,
+      "v4_status": "ok",
+      "v5_status": "ok",
+      "v5_deferred_paths": 0
+    },
+    {
+      "dataset": "2wikimultihopqa",
+      "id": "421d07aa0bb011ebab90acde48001122",
+      "repeat": 0,
+      "anchor": false,
+      "gold_excluded": false,
+      "v4_tokens": 21176,
+      "v5_tokens": 20527,
+      "v4_em": 1.0,
+      "v5_em": 0.0,
+      "v4_status": "ok",
+      "v5_status": "ok",
+      "v5_deferred_paths": 0
+    },
+    {
+      "dataset": "musique",
+      "id": "2hop__351045_47134",
+      "repeat": 2,
+      "anchor": false,
+      "gold_excluded": false,
+      "v4_tokens": 18026,
+      "v5_tokens": 17267,
+      "v4_em": 1.0,
+      "v5_em": 0.0,
+      "v4_status": "ok",
+      "v5_status": "ok",
+      "v5_deferred_paths": 0
+    }
+  ]
+}

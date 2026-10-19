@@ -1,0 +1,80 @@
+{
+  "kind": "synthetic-constructive-counterexample-not-natural-evaluation",
+  "question": "Where was Alice born?",
+  "requirement": "Establish Alice birthplace",
+  "evidence": [
+    {
+      "id": 1,
+      "source": "synthetic-fixture",
+      "text": "Alice was born in Paris."
+    }
+  ],
+  "previous_candidate": {
+    "answer": "Paris",
+    "interpretation": "The birthplace of Alice",
+    "paths": [
+      {
+        "steps": [
+          {
+            "requirement_index": 0,
+            "claim": "Alice traveled to Paris.",
+            "citation": 1,
+            "quote": "Alice was born in Paris."
+          }
+        ]
+      }
+    ]
+  },
+  "previous_review": {
+    "paths": [
+      {
+        "candidate_index": 0,
+        "path_index": 0,
+        "verdict": "unknown",
+        "supported_requirements": [],
+        "reason": "The quote establishes birth, not the claimed travel event."
+      }
+    ],
+    "selected_candidate": null,
+    "answer_resolved": false,
+    "issues": [
+      "Path does not state the required birth relation."
+    ],
+    "queries": []
+  },
+  "corrected_candidate": {
+    "answer": "Paris",
+    "interpretation": "The birthplace of Alice",
+    "paths": [
+      {
+        "steps": [
+          {
+            "requirement_index": 0,
+            "claim": "Alice was born in Paris.",
+            "citation": 1,
+            "quote": "Alice was born in Paris."
+          }
+        ]
+      }
+    ]
+  },
+  "deferred": [
+    {
+      "candidate_id": "f054ff886e82063ef3b24d16ad2b9b70fcf4c4a8b3e26b2c19cc311caeb05f04",
+      "candidate_index": 0,
+      "path_index": 0,
+      "missing_requirements": [
+        0
+      ],
+      "review_id": "14c4ada37b1a8ce14408059aa3368f0a93c4165c504c155174d67e27d7e9d86b",
+      "reason": "no_new_witness_after_unknown_review",
+      "path_id": "da231167676c9b088cb11ef5cc1ce198ba422fc0ee89b278a3ae451b62cdd6c4",
+      "status": "unknown",
+      "pruned": false
+    }
+  ],
+  "false_defer_demonstrated": true,
+  "candidate_deleted": false,
+  "cause": "Witness identity excludes claim text; corrected reasoning with identical quote is deferred.",
+  "scope": "Demonstrates a possible false deferral, not its prevalence in real benchmarks. No model calls or human labels assigned."
+}

@@ -1,7 +1,7 @@
 """Tests for BM25 tokenization, incremental indexing, and score normalization."""
 import pytest
 
-from deepsearch_agent.bm25 import (
+from deepsearch_agent.knowledge.bm25 import (
     BM25Index,
     normalize_scores,
     tokenize,

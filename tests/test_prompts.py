@@ -1,5 +1,5 @@
 #context后续即为RAG内容
-from deepsearch_agent.prompts import SYSTEM_PROMPT, build_qa_prompt
+from deepsearch_agent.core.prompts import SYSTEM_PROMPT, build_qa_prompt
 
 
 def test_build_qa_prompt_includes_system_prefix_and_question() -> None:

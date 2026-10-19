@@ -1,8 +1,9 @@
+from deepsearch_agent.adapters.tool_adapters import langgraph_tools
 from uuid import uuid4
 
 import pytest
 
-from deepsearch_agent.working_memory import WorkingMemoryError, WorkingMemoryStore
+from deepsearch_agent.workspace.working_memory import WorkingMemoryError, WorkingMemoryStore
 
 
 def test_two_markdown_files_persist_and_isolate(tmp_path):
@@ -92,7 +93,7 @@ def test_concurrent_writers_have_one_winner(tmp_path):
 
 
 def test_chinese_memory_fits_tool_action_budget():
-    from deepsearch_agent.agentic_research import ToolAction
+    from deepsearch_agent.agents.agentic_research import ToolAction
     action = ToolAction(tool='working_memory', arguments={
         'action': 'replace', 'document': 'history', 'content': '中文' * 1000,
         'expected_revision': 'a' * 64})
@@ -100,8 +101,8 @@ def test_chinese_memory_fits_tool_action_budget():
 
 
 def test_tool_is_bound_optional_and_never_evidence(tmp_path):
-    from deepsearch_agent.agent_config import AgentSettings
-    from deepsearch_agent.tool_service import PaperToolSession, ToolError
+    from deepsearch_agent.agents.agent_config import AgentSettings
+    from deepsearch_agent.agents.tool_service import PaperToolSession, ToolError
     from types import SimpleNamespace
 
     kb = SimpleNamespace(chunks=[], image_index=None)
@@ -111,7 +112,7 @@ def test_tool_is_bound_optional_and_never_evidence(tmp_path):
         unbound.invoke('working_memory', {'action': 'read', 'document': 'plan'})
     memory = WorkingMemoryStore(tmp_path).bind(str(uuid4()))
     session = PaperToolSession(kb, working_memory=memory, settings=AgentSettings(max_tool_calls=8))
-    assert 'working_memory' in {t.name for t in session.tools()}
+    assert 'working_memory' in {t.name for t in langgraph_tools(session)}
     old = session.invoke('working_memory', {'action': 'read', 'document': 'history'})
     session.invoke('working_memory', {'action': 'replace', 'document': 'history',
         'content': '# Completed\n- Read chart\n# Preferences\n- User requested Chinese',
@@ -125,7 +126,7 @@ def test_tool_is_bound_optional_and_never_evidence(tmp_path):
 
 
 def test_atomic_write_failure_preserves_previous_file(tmp_path, monkeypatch):
-    import deepsearch_agent.working_memory as module
+    import deepsearch_agent.workspace.working_memory as module
     memory = WorkingMemoryStore(tmp_path).bind(str(uuid4()))
     before = memory.read('plan')
     def fail(*args):
@@ -157,9 +158,9 @@ def test_symlink_document_is_rejected(tmp_path):
 def test_model_chosen_memory_tools_roundtrip_through_langgraph(tmp_path):
     import json
     from types import SimpleNamespace
-    from deepsearch_agent.agent_config import AgentSettings
-    from deepsearch_agent.agentic_research import AgenticResearcher
-    from deepsearch_agent.tool_service import PaperToolSession
+    from deepsearch_agent.agents.agent_config import AgentSettings
+    from deepsearch_agent.agents.agentic_research import AgenticResearcher
+    from deepsearch_agent.agents.tool_service import PaperToolSession
 
     kb = SimpleNamespace(chunks=[], image_index=None, search=lambda *args, **kwargs: [])
     session_id = str(uuid4())
@@ -177,7 +178,7 @@ def test_model_chosen_memory_tools_roundtrip_through_langgraph(tmp_path):
             return {'tool': 'working_memory', 'arguments': {'action': 'replace', 'document': 'history',
                 'expected_revision': previous['revision'], 'content': '# User Preferences\n- Answer in Chinese'}}
         return {'tool': '', 'arguments': {}}
-    result = AgenticResearcher(session, planner).run('Continue', {}, [])
+    result = AgenticResearcher(session, planner, tools_factory=langgraph_tools).run('Continue', {}, [])
     assert result == []
     assert session.calls == 3  # Two memory calls and the mandatory evidence search.
     assert 'Answer in Chinese' in store.bind(session_id).read('history')['content']
@@ -186,8 +187,8 @@ def test_model_chosen_memory_tools_roundtrip_through_langgraph(tmp_path):
 def test_api_binds_next_turn_and_cleans_up(tmp_path):
     from fastapi.testclient import TestClient
     from deepsearch_agent.api import create_app
-    from deepsearch_agent.llm_config import LLMSettings
-    from deepsearch_agent.qa import Answer
+    from deepsearch_agent.adapters.llm_config import LLMSettings
+    from deepsearch_agent.core.answers import Answer
 
     app = create_app(tmp_path / 'index.json', llm_settings=LLMSettings(backend='demo'))
     with TestClient(app) as client:

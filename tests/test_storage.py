@@ -1,5 +1,5 @@
-from deepsearch_agent.qa import Answer, SourceReference
-from deepsearch_agent.storage import JsonlAnswerStore
+from deepsearch_agent.core.answers import Answer, SourceReference
+from deepsearch_agent.adapters.persistence.storage import JsonlAnswerStore
 
 
 def test_store_can_append_and_load_answer(tmp_path):

@@ -1,10 +1,10 @@
 from pathlib import Path
 
-from deepsearch_agent.storage import JsonlAnswerStore
-from deepsearch_agent.qa import AnswerService
-from deepsearch_agent.knowledge_base import KnowledgeBase
-from deepsearch_agent.pdf import FakePdfReader
-from deepsearch_agent.qa import Answer, SourceReference
+from deepsearch_agent.adapters.persistence.storage import JsonlAnswerStore
+from deepsearch_experiments.legacy.qa import AnswerService
+from deepsearch_agent.knowledge.knowledge_base import KnowledgeBase
+from deepsearch_agent.core.pdf import FakePdfReader
+from deepsearch_agent.core.answers import Answer, SourceReference
 class RecordingLLMClient:
     def __init__(self, response: str) -> None:
         self.response = response

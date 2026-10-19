@@ -2,7 +2,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from deepsearch_agent.llm_wiki import WikiError, WikiPage, WikiSource, WikiStore, WikiView, WikiCompiler
+from deepsearch_agent.workspace.llm_wiki import WikiError, WikiPage, WikiSource, WikiStore, WikiView
+from deepsearch_agent.application.wiki import WikiCompiler
 
 
 def page(identifier='wiki_' + 'a' * 32, chunk='chk_' + 'a' * 64, source='a.pdf'):
@@ -44,6 +45,23 @@ def test_wiki_search_reuses_chinese_bm25_tokenization(tmp_path):
     assert WikiView(store, {'a.pdf'}, registry).search('如何理解对比学习')[0]['id'] == saved.id
 
 
+def test_wiki_guides_retrieval_to_original_chunks_only(tmp_path):
+    from deepsearch_agent.core.evidence import TextChunk
+    from deepsearch_agent.knowledge.retrieval_pipeline import retrieve
+    original = TextChunk('Actual evidence from the PDF.', 'a.pdf', 1, 0)
+    unrelated = TextChunk('Other evidence.', 'a.pdf', 2, 1)
+    store = WikiStore(tmp_path)
+    store.save(page(chunk=original.chunk_id).model_copy(update={
+        'title': 'Rare project alias', 'markdown': 'Derived summary, not evidence. [1]'}))
+    kb = SimpleNamespace(search=lambda query, top_k: [unrelated])
+    view = WikiView(store, {'a.pdf'}, {original.chunk_id: original, unrelated.chunk_id: unrelated})
+    assert retrieve(kb, 'Rare project alias', 1, wiki_view=view) == [original]
+    assert retrieve(kb, 'Rare project alias', 1,
+                    wiki_view=WikiView(store, {'b.pdf'}, {original.chunk_id: original})) == [unrelated]
+    assert retrieve(kb, 'Rare project alias', 1,
+                    wiki_view=WikiView(store, {'a.pdf'}, {})) == [unrelated]
+
+
 def test_wiki_rejects_paths_and_checks_delete_version(tmp_path):
     store = WikiStore(tmp_path)
     with pytest.raises(WikiError, match='wiki_invalid_id'):
@@ -57,24 +75,26 @@ def test_wiki_rejects_paths_and_checks_delete_version(tmp_path):
 
 def test_wiki_compiler_uses_real_workflow_and_rejects_unverified(tmp_path):
     from test_research_graph import Client, Library
-    from deepsearch_agent.qa import AnswerService
-    outputs = [{'queries': ['light']}, {'claims': [{'text': 'white light', 'citations': [1]}]},
+    from deepsearch_agent.application.answer_service import AnswerService
+    outputs = [{'tool':'search_evidence', 'arguments':{'query':'light'}}, {'tool':'','arguments':{}}, {'claims': [{'text': 'white light', 'citations': [1]}]},
                {'supported': [0], 'queries': []}]
     kb = Library()
+    kb.chunks = kb.search('light')
+    kb.image_index = None
     kb.restrict_sources = lambda sources: kb
     service = AnswerService(Client(outputs), kb, use_graph=True)
     compiled = WikiCompiler(service).compile('Light', 'signal?', {'a.pdf'})
     assert compiled.markdown == 'white light [1]'
     assert compiled.sources[0].source_path == 'a.pdf'
-    service = AnswerService(Client([{'queries': ['light']}, {'claims': []},
+    service = AnswerService(Client([{'tool':'search_evidence', 'arguments':{'query':'light'}}, {'tool':'','arguments':{}}, {'claims': []},
                                    {'supported': [], 'queries': []}]), kb, use_graph=True)
     with pytest.raises(WikiError, match='wiki_unverified'):
         WikiCompiler(service).compile('Light', 'signal?', {'a.pdf'})
 
 
 def test_wiki_tools_are_navigation_not_citation_evidence(tmp_path):
-    from deepsearch_agent.chunking import TextChunk
-    from deepsearch_agent.tool_service import PaperToolSession
+    from deepsearch_agent.core.evidence import TextChunk
+    from deepsearch_agent.agents.tool_service import PaperToolSession
     chunk = TextChunk('White light', 'a.pdf', 1, 0)
     store = WikiStore(tmp_path)
     saved = store.save(page(chunk=chunk.chunk_id))
@@ -90,8 +110,8 @@ def test_wiki_tools_are_navigation_not_citation_evidence(tmp_path):
 def test_wiki_api_compile_link_update_and_delete(tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
     from deepsearch_agent.api import create_app
-    from deepsearch_agent.chunking import TextChunk
-    from deepsearch_agent.llm_config import LLMSettings
+    from deepsearch_agent.core.evidence import TextChunk
+    from deepsearch_agent.adapters.llm_config import LLMSettings
     from uuid import uuid4
     source = 'pdf://' + 'b' * 64 + '/paper.pdf'
     chunk = TextChunk('White light', source, 1, 0)
@@ -127,8 +147,8 @@ def test_wiki_api_compile_link_update_and_delete(tmp_path, monkeypatch):
 def test_wiki_compile_rechecks_sources_after_model_finishes(tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
     from deepsearch_agent.api import create_app
-    from deepsearch_agent.chunking import TextChunk
-    from deepsearch_agent.llm_config import LLMSettings
+    from deepsearch_agent.core.evidence import TextChunk
+    from deepsearch_agent.adapters.llm_config import LLMSettings
     source = 'pdf://' + 'b' * 64 + '/paper.pdf'
     chunk = TextChunk('White light', source, 1, 0)
     app = create_app(tmp_path / 'index.json', llm_settings=LLMSettings(backend='demo'))

@@ -1,11 +1,12 @@
+from deepsearch_agent.adapters.tool_adapters import langgraph_tools
 import asyncio
 
 import pytest
 
-from deepsearch_agent.chunking import TextChunk
-from deepsearch_agent.multimodal import PageAnalysis, PageAnalysisCache
-from deepsearch_agent.tool_service import PaperToolSession, ToolError
-from deepsearch_agent.agent_config import AgentSettings
+from deepsearch_agent.core.evidence import TextChunk
+from deepsearch_agent.workspace.multimodal import PageAnalysis, PageAnalysisCache
+from deepsearch_agent.agents.tool_service import PaperToolSession, ToolError
+from deepsearch_agent.agents.agent_config import AgentSettings
 
 
 SOURCE = 'pdf://' + 'a' * 64 + '/paper.pdf'
@@ -106,7 +107,7 @@ def test_ocr_attempts_are_budgeted_even_when_provider_fails(tmp_path):
 
 def test_langchain_adapter_returns_trusted_artifact_and_safe_errors(tmp_path):
     session = make_session(tmp_path)
-    tools = {t.name: t for t in session.tools()}
+    tools = {t.name: t for t in langgraph_tools(session)}
     value = tools['search_evidence'].invoke({'type': 'tool_call', 'name': 'search_evidence',
                                          'id': 'one', 'args': {'query': 'first'}})
     assert value.artifact['chunks'][0].chunk_id == session.kb.chunks[0].chunk_id
@@ -124,7 +125,7 @@ def test_external_tools_share_budget_without_local_evidence(tmp_path):
                                       description='external', response_format='content_and_artifact')
     session = make_session(tmp_path)
     before = session.remaining_calls
-    external = {t.name: t for t in session.tools(extra_tools=[tool])}['remote_echo']
+    external = {t.name: t for t in langgraph_tools(session, extra_tools=[tool])}['remote_echo']
     result = asyncio.run(external.ainvoke({'type': 'tool_call', 'name': 'remote_echo', 'id': 'x',
                                          'args': {'value': 'x'}}))
     assert session.remaining_calls == before - 1
@@ -140,7 +141,7 @@ def test_external_image_does_not_hide_text_or_leak_base64_into_planner(tmp_path)
     tool = StructuredTool.from_function(coroutine=read, name='remote_read',
                                       description='external', response_format='content_and_artifact')
     session = make_session(tmp_path)
-    external = {t.name: t for t in session.tools(extra_tools=[tool])}['remote_read']
+    external = {t.name: t for t in langgraph_tools(session, extra_tools=[tool])}['remote_read']
     result = asyncio.run(external.ainvoke({'type': 'tool_call', 'name': 'remote_read', 'id': 'x', 'args': {}}))
     assert 'useful external observation' in result.content
     assert 'A' * 100 not in result.content

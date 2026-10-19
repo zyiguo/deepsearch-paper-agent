@@ -1,6 +1,6 @@
 import pytest
-from deepsearch_agent.chunking import TextChunk
-from deepsearch_agent.evaluation import score, validate_cases
+from deepsearch_agent.core.evidence import TextChunk
+from deepsearch_experiments.retrieval import score, validate_cases
 
 
 def chunk(page, source="paper", index=0):
@@ -43,7 +43,7 @@ def test_validate_rejects_missing_gold_and_duplicate_ids():
 
 
 def test_shared_pipeline_expansion_preserves_current_early_stop():
-    from deepsearch_agent.retrieval_pipeline import retrieve
+    from deepsearch_agent.knowledge.retrieval_pipeline import retrieve
     class KB:
         def search(self, q, top_k):
             return [chunk(1)]
@@ -57,9 +57,9 @@ def test_shared_pipeline_expansion_preserves_current_early_stop():
 
 def test_offline_cli_all_non_llm_variants_and_comparison(tmp_path, monkeypatch):
     import json
-    from deepsearch_agent.evaluation import main
-    from deepsearch_agent.knowledge_base import KnowledgeBase
-    from deepsearch_agent.pdf import FakePdfReader
+    from deepsearch_experiments.retrieval import main
+    from deepsearch_agent.knowledge.knowledge_base import KnowledgeBase
+    from deepsearch_agent.core.pdf import FakePdfReader
     class Embed:
         def embed(self, texts):
             return [[1., 0.] for t in texts]
@@ -89,8 +89,8 @@ def test_offline_cli_all_non_llm_variants_and_comparison(tmp_path, monkeypatch):
 
 
 def test_weight_bounds():
-    from deepsearch_agent.knowledge_base import KnowledgeBase
-    from deepsearch_agent.pdf import FakePdfReader
+    from deepsearch_agent.knowledge.knowledge_base import KnowledgeBase
+    from deepsearch_agent.core.pdf import FakePdfReader
     for weight in [-.1, 1.1, float("nan")]:
         with pytest.raises(ValueError):
             KnowledgeBase(FakePdfReader([]), semantic_weight=weight)

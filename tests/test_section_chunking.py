@@ -1,7 +1,7 @@
 import json
 import pytest
-from deepsearch_agent.knowledge_base import KnowledgeBase
-from deepsearch_agent.pdf import FakePdfReader
+from deepsearch_agent.knowledge.knowledge_base import KnowledgeBase
+from deepsearch_agent.core.pdf import FakePdfReader
 
 
 class Embeddings:
@@ -112,8 +112,8 @@ def test_sentence_overlap_keeps_complete_sentences():
 
 
 def test_answer_source_keeps_section_and_individual_page_evidence():
-    from deepsearch_agent.qa import chunk_to_source_reference
-    from deepsearch_agent.research_graph import ResearchWorkflow
+    from deepsearch_agent.core.answers import chunk_to_source_reference
+    from deepsearch_experiments.legacy.workflow import LegacyResearchWorkflow as ResearchWorkflow
     chunk = make(['2 Methods\nThe experiment uses', 'two GPUs.']).ingest_pdf('x.pdf')[0]
     source = chunk_to_source_reference(chunk)
     assert source.page_end == 2

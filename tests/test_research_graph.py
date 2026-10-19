@@ -1,7 +1,7 @@
 import json
 import pytest
-from deepsearch_agent.qa import AnswerService
-from deepsearch_agent.chunking import TextChunk
+from deepsearch_experiments.legacy.qa import AnswerService
+from deepsearch_agent.core.evidence import TextChunk
 
 
 class Client:
@@ -16,7 +16,7 @@ class Client:
             state = json.loads(prompt.split('\ndata: ', 1)[1])
             if state['research_rounds'] == 0:
                 action = 'research'
-            elif not state['evidence']:
+            elif not state.get('available_evidence_count', len(state['evidence'])):
                 action = 'stop'
             elif not state['verified']:
                 action = 'draft'
@@ -84,7 +84,7 @@ def test_graph_no_evidence_does_not_generate():
 
 
 def test_graph_model_failure_propagates():
-    from deepsearch_agent.llm_gateway import ModelServiceError
+    from deepsearch_agent.core.models import ModelServiceError
     class Broken:
         def complete(self, prompt):
             raise ModelServiceError('模型超时', 504)
@@ -106,9 +106,9 @@ def test_graph_disables_inherited_hosted_tracing(monkeypatch):
 def test_live_api_and_session_use_graph_and_save_only_final_answer(tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
     from deepsearch_agent.api import create_app
-    from deepsearch_agent.llm_config import LLMSettings
-    outputs = [{'queries':['模型怎么训练？']}, {'claims':[{'text':'对比学习','citations':[1]}]}, {'supported':[0], 'queries':[]}]*2
-    monkeypatch.setattr('deepsearch_agent.api.build_llm', lambda _: Client(outputs))
+    from deepsearch_agent.adapters.llm_config import LLMSettings
+    outputs = [{'tool':'search_evidence','arguments':{'query':'模型怎么训练？'}}, {'tool':'','arguments':{}}, {'claims':[{'text':'对比学习','citations':[1]}]}, {'supported':[0], 'queries':[]}]*2
+    monkeypatch.setattr('deepsearch_agent.application.bootstrap.build_llm', lambda _: Client(outputs))
     settings = LLMSettings(backend='openai_compatible', api_key='test-only', base_url='https://example.com/v1', model='test')
     with TestClient(create_app(index_path=tmp_path/'index.json', llm_settings=settings)) as client:
         client.post('/api/demo/ingest').raise_for_status()
@@ -120,6 +120,25 @@ def test_live_api_and_session_use_graph_and_save_only_final_answer(tmp_path, mon
         assert result.status_code == 201
         saved = client.get(f'/api/sessions/{sid}').json()['turns']
         assert len(saved) == 1 and saved[0]['answer']['text'] == '对比学习 [1]'
+
+
+def test_research_graph_sqlite_checkpoint_can_resume_completed_state(tmp_path):
+    import sqlite3
+    from langgraph.checkpoint.sqlite import SqliteSaver
+    from deepsearch_experiments.legacy.workflow import LegacyResearchWorkflow as ResearchWorkflow
+    connection = sqlite3.connect(tmp_path / 'checkpoints.sqlite3', check_same_thread=False)
+    try:
+        client = Client([{'queries': ['light']},
+                         {'claims': [{'text': 'white light', 'citations': [1]}]},
+                         {'supported': [0], 'queries': []}])
+        saver = SqliteSaver(connection)
+        first = ResearchWorkflow(client, Library(), checkpointer=saver, run_id='run-one')
+        answer = first.answer('signal?', 1, [])
+        assert answer.text == 'white light [1]'
+        restarted = ResearchWorkflow(Client([]), Library(), checkpointer=saver, run_id='run-one')
+        assert restarted.answer('signal?', 1, [], resume=True) == answer
+    finally:
+        connection.close()
 
 
 # ── Token budget management in research_graph ────────────────────────
@@ -155,7 +174,7 @@ def test_graph_small_context_preserves_full_evidence():
 
 def test_graph_truncation_does_not_reinflate_via_page_excerpts():
     """When text is truncated, page excerpts must not restore the full original."""
-    from deepsearch_agent.tokens import estimate_tokens
+    from deepsearch_agent.core.tokens import estimate_tokens
     original = '灯塔每隔十二秒闪白光。' * 100
     chunk = TextChunk(
         text=original,
@@ -201,7 +220,7 @@ class ResearchWorkflowForTest:
         self.kb = kb
         self.context_window = context_window
         self.max_output_tokens = max_output_tokens
-        from deepsearch_agent.research_graph import ResearchWorkflow
+        from deepsearch_experiments.legacy.workflow import LegacyResearchWorkflow as ResearchWorkflow
         self._rw = ResearchWorkflow.__new__(ResearchWorkflow)
         self._rw.kb = kb
         self._rw.context_window = context_window
@@ -216,7 +235,7 @@ class ResearchWorkflowForTest:
 
 def test_graph_reranks_research_candidates():
     """research() uses reranker to over-fetch and reorder candidates."""
-    from deepsearch_agent.research_graph import ResearchWorkflow
+    from deepsearch_experiments.legacy.workflow import LegacyResearchWorkflow as ResearchWorkflow
 
     class RerankingKB:
         def __init__(self):

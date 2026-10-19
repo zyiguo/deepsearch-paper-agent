@@ -4,11 +4,11 @@ from dataclasses import asdict
 import httpx
 import pytest
 
-from deepsearch_agent.chunking import TextChunk
-from deepsearch_agent.demo import build_demo_knowledge_base
-from deepsearch_agent.image_embeddings import ImageEmbeddingSettings, SiliconFlowImageEmbeddingClient
-from deepsearch_agent.image_index import ImageVectorIndex
-from deepsearch_agent.llm_gateway import ModelServiceError
+from deepsearch_agent.core.evidence import TextChunk
+from deepsearch_agent.adapters.demo import build_demo_knowledge_base
+from deepsearch_agent.adapters.image_embeddings import ImageEmbeddingSettings, SiliconFlowImageEmbeddingClient
+from deepsearch_agent.knowledge.image_index import ImageVectorIndex
+from deepsearch_agent.core.models import ModelServiceError
 
 
 class Images:
@@ -95,7 +95,7 @@ def test_invalid_cloud_vectors_rejected(vector):
 
 
 def test_image_reranking_uses_original_images_not_placeholder_text():
-    from deepsearch_agent.reranker import LLMReranker
+    from deepsearch_agent.knowledge.reranker import LLMReranker
     class TextModel:
         def complete(self, prompt):
             pytest.fail('Raw images must not be ranked by a text-only model')
@@ -110,7 +110,7 @@ def test_image_reranking_uses_original_images_not_placeholder_text():
 
 
 def test_config_reuses_injected_credentials_without_coupling_models(tmp_path):
-    from deepsearch_agent.embedding_runtime import EmbeddingSettings
+    from deepsearch_agent.adapters.embedding_runtime import EmbeddingSettings
     path = tmp_path / '.env.image_embedding'
     path.write_text('IMAGE_EMBEDDING_BACKEND=siliconflow\nIMAGE_EMBEDDING_USE_EMBEDDING_CREDENTIALS=true\n', encoding='utf-8')
     shared = EmbeddingSettings(backend='openai_compatible', api_key='test-key',
@@ -123,7 +123,7 @@ def test_config_reuses_injected_credentials_without_coupling_models(tmp_path):
 
 
 def test_deepsearch_answers_and_verifies_raw_image_hits():
-    from deepsearch_agent.qa import AnswerService
+    from deepsearch_experiments.legacy.qa import AnswerService
     from test_visual_research import TextClient
     calls = []
     class Visual:
@@ -141,9 +141,9 @@ def test_deepsearch_answers_and_verifies_raw_image_hits():
 
 
 def test_visual_reranker_bounds_page_pool_before_calling_provider():
-    from deepsearch_agent.reranker import LLMReranker
-    from deepsearch_agent.vision_config import VisionSettings
-    from deepsearch_agent.llm_config import LLMSettings
+    from deepsearch_agent.knowledge.reranker import LLMReranker
+    from deepsearch_agent.adapters.vision_config import VisionSettings
+    from deepsearch_agent.adapters.llm_config import LLMSettings
     class TextModel:
         def complete(self, prompt):
             pytest.fail('Wrong reranker model')

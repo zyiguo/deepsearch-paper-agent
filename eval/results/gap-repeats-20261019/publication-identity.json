@@ -1,0 +1,8 @@
+{
+  "evaluated_source_sha256": "ec5cb218c70c2ffe2970c263f5574be4fcd9a02b0ce1a3022cf364f1d510e407",
+  "published_working_tree_source_sha256": "2289e91bbcda60ce7f74e953701c3f728656b973b35ba4ebe506cd854a2a1afb",
+  "only_source_difference": "src/deepsearch_experiments/audits/audit_release.py",
+  "difference": "Exact localhost dummy proxy credential exception in offline release scanner; no question-answering or evaluation execution changes.",
+  "evaluated_source_reconstruction_verified": true,
+  "fingerprint_scope": "Raw local Python bytes; Git line-ending normalization can change hashes across checkouts."
+}

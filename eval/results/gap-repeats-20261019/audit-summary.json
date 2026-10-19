@@ -1,0 +1,26 @@
+{
+  "natural_deferred_paths": 9,
+  "judge_calls": 9,
+  "valid_judgments": 7,
+  "model_reported_supported_candidates": 0,
+  "model_reported_sufficient_paths": 0,
+  "model_false_defer_risk_fraction": 0.0,
+  "true_false_defer_rate": null,
+  "human_labels_assigned": 0,
+  "reported_total_tokens": 60162,
+  "known_reported_tokens": 60162,
+  "usage_missing_calls": 0,
+  "counterfactual_model_calls": 11,
+  "counterfactual_statuses": {
+    "ok": 8,
+    "invalid_output": 1
+  },
+  "valid_counterfactual_reviews": 8,
+  "counterfactual_accepts_deferred_candidates": 0,
+  "counterfactual_supported_deferred_paths": 1,
+  "counterfactual_known_tokens": 79392,
+  "counterfactual_unknown_usage_calls": 0,
+  "queue_sha256": "88d4c692575c816876ecf0c7f3813bf1e1bdf257c9a0d84799ad4c4eb785bb99",
+  "cost_scope": "Additional diagnostic calls, never included in main paired budgets or savings.",
+  "limitation": "Same-model independent judgments can share errors. Repeated paths are correlated; not human ground truth."
+}

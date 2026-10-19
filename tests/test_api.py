@@ -2,8 +2,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from deepsearch_agent.api import create_app
-from deepsearch_agent.embedding_runtime import EmbeddingSettings
-from deepsearch_agent.llm_config import LLMSettings
+from deepsearch_agent.adapters.embedding_runtime import EmbeddingSettings
+from deepsearch_agent.adapters.llm_config import LLMSettings
 
 # 显式注入演示配置，避免测试继承开发者本机的 live .env。
 DEMO_SETTINGS = dict(
@@ -151,7 +151,7 @@ def test_failed_load_preserves_memory_and_blocks_overwrite(tmp_path):
         assert client.post("/api/knowledge-base/save").status_code == 409
         assert index_path.read_text(encoding="utf-8") == "broken json"
 def test_failed_auto_save_does_not_commit_import(client, monkeypatch):
-    from deepsearch_agent.knowledge_base import KnowledgeBase
+    from deepsearch_agent.knowledge.knowledge_base import KnowledgeBase
 
     def fail_save(self, path):
         raise OSError("模拟磁盘写入失败")

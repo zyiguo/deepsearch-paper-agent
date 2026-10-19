@@ -1,10 +1,4 @@
-import importlib.util
-from pathlib import Path
-
-
-spec = importlib.util.spec_from_file_location('audit_release', Path(__file__).parents[1] / 'scripts/audit_release.py')
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
+from deepsearch_experiments.audits import audit_release as module
 
 
 def test_audit_never_echoes_secret():
@@ -23,6 +17,15 @@ def test_audit_blocks_memory_and_env_but_allows_template():
 def test_audit_fixture_exception_is_exact_and_path_scoped():
     fixture = ('"http://' + 'user:secret@localhost/mcp"').encode()
     path = 'tests/test_mcp_runtime.py'
+    assert not module.inspect(path, fixture)
+    assert module.inspect('config.py', fixture)
+    assert module.inspect(path, fixture.replace(b'localhost', b'example.com'))
+    assert module.inspect(path, fixture.replace(b'secret', b'real-password'))
+
+
+def test_audit_proxy_rejection_fixture_exception_is_exact():
+    fixture = ("'http://" + "user:secret@localhost:7897'").encode()
+    path = 'tests/test_multihop_upstream.py'
     assert not module.inspect(path, fixture)
     assert module.inspect('config.py', fixture)
     assert module.inspect(path, fixture.replace(b'localhost', b'example.com'))

@@ -9,10 +9,11 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 
 from deepsearch_agent.api import create_app
-from deepsearch_agent.embedding_runtime import EmbeddingSettings, RemoteEmbeddingClient
-from deepsearch_agent.llm_config import LLMSettings
-from deepsearch_agent.llm_gateway import ModelServiceError, OpenAICompatibleClient
-from deepsearch_agent.vision_config import VisionSettings
+from deepsearch_agent.adapters.embedding_runtime import EmbeddingSettings, RemoteEmbeddingClient
+from deepsearch_agent.adapters.llm_config import LLMSettings
+from deepsearch_agent.core.models import ModelServiceError
+from deepsearch_agent.adapters.llm_gateway import OpenAICompatibleClient
+from deepsearch_agent.adapters.vision_config import VisionSettings
 
 
 def pdf(scanned=True):

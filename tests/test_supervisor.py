@@ -1,7 +1,7 @@
 import json
 import pytest
-from deepsearch_agent.qa import AnswerService
-from deepsearch_agent.chunking import TextChunk
+from deepsearch_experiments.legacy.qa import AnswerService
+from deepsearch_agent.core.evidence import TextChunk
 
 
 class Script:
@@ -112,3 +112,24 @@ def test_supervisor_unknown_action_fails_closed():
     bad = decision('execute_shell')
     result = AnswerService(Script([('Supervisor', bad), ('Supervisor', bad)]), Library(), use_graph=True).answer('信号？')
     assert '格式校验' in result.text and not result.sources
+
+
+@pytest.mark.parametrize('next_action', ['research', 'revise', 'stop'])
+def test_fully_verified_answer_cannot_be_discarded_by_extra_dispatch(next_action):
+    steps = [('Supervisor', decision('research')), ('Researcher', {'queries': ['signal']}),
+             ('Supervisor', decision('draft')),
+             ('Answerer', {'claims': [{'text': 'white light', 'citations': [1]}]}),
+             ('Verifier', {'supported': [0], 'queries': [], 'issues': [], 'missing_answerable': []}),
+             ('Supervisor', decision(next_action))]
+    result = AnswerService(Script(steps), Library(), use_graph=True).answer('signal?')
+    assert result.text == 'white light [1]'
+
+
+def test_revise_before_first_draft_becomes_draft_then_verifies():
+    steps = [('Supervisor', decision('research')), ('Researcher', {'queries': ['signal']}),
+             ('Supervisor', decision('revise')),
+             ('Answerer', {'claims': [{'text': 'white light', 'citations': [1]}]}),
+             ('Verifier', {'supported': [0], 'queries': [], 'issues': []}),
+             ('Supervisor', decision('finish'))]
+    result = AnswerService(Script(steps), Library(), use_graph=True).answer('signal?')
+    assert result.text == 'white light [1]'

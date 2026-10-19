@@ -1,4 +1,5 @@
-from deepsearch_agent.llm import FakeLLMClient,LLMClient
+from deepsearch_agent.adapters.demo_llm import FakeLLMClient
+from deepsearch_agent.core.ports import LLMClient
 
 
 def test_fake_llm_client_returns_configured_response() -> None:

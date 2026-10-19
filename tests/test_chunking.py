@@ -1,4 +1,5 @@
-from deepsearch_agent.chunking import chunk_text,chunk_pages, TextChunk
+from deepsearch_agent.knowledge.chunking import chunk_text, chunk_pages
+from deepsearch_agent.core.evidence import TextChunk
 
 
 def test_chunk_text_splits_long_text_with_overlap() -> None:

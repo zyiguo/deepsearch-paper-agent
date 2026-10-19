@@ -13,9 +13,9 @@ from pathlib import Path
 
 from pypdf import PdfReader
 
-from deepsearch_agent.evaluation import evaluate, score
-from deepsearch_agent.knowledge_base import KnowledgeBase
-from deepsearch_agent.retrieval_pipeline import retrieve
+from deepsearch_experiments.retrieval import evaluate, score
+from deepsearch_agent.knowledge.knowledge_base import KnowledgeBase
+from deepsearch_agent.knowledge.retrieval_pipeline import retrieve
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_PDF_DIR = ROOT / "output" / "eval-corpus" / "pdf"

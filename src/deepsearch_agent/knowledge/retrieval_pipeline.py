@@ -1,0 +1,45 @@
+"""Retrieval shared by quick QA and the evaluation runner (no answer generation)."""
+
+def retrieve(kb, question, top_k=5, *, query_expander=None, reranker=None, history=None, trace=None,
+             wiki_view=None):
+    chunks = []
+    queries = [question]
+    if query_expander:
+        try:
+            queries.extend(query_expander.expand(question, history))
+        except Exception:
+            pass  # fallback: use original query only
+
+    fetch_count = min(top_k * 4, 20) if reranker else top_k
+    seen_keys: set[str] = set()
+    searched_queries = []
+    for q in queries:
+        searched_queries.append(q)
+        for c in kb.search(q, top_k=fetch_count):
+            key = c.chunk_id
+            if key not in seen_keys:
+                seen_keys.add(key)
+                chunks.append(c)
+        if not reranker and len(chunks) >= top_k:
+            break
+
+    if wiki_view is not None:
+        try:
+            hints = wiki_view.evidence_hints(question, limit=min(top_k, 5))
+            hinted = []
+            for chunk in hints:
+                if chunk.chunk_id not in seen_keys:
+                    seen_keys.add(chunk.chunk_id)
+                    hinted.append(chunk)
+            if hinted:
+                chunks = hinted[:1] + chunks + hinted[1:]
+        except Exception:
+            pass  # A damaged wiki must not make original-document retrieval fail.
+
+    if trace is not None:
+        trace.update(queries=searched_queries, generated_queries=queries, candidates=list(chunks))
+    if reranker and len(chunks) > 1:
+        chunks = reranker.rerank(question, chunks, top_k)
+    elif not reranker:
+        chunks = chunks[:top_k]
+    return chunks

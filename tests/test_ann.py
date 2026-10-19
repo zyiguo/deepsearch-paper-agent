@@ -3,7 +3,7 @@ import math
 
 import pytest
 
-from deepsearch_agent.ann import AnnIndex
+from deepsearch_agent.knowledge.ann import AnnIndex
 
 
 def unit(vector: list[float]) -> list[float]:

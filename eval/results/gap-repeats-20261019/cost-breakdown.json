@@ -1,0 +1,69 @@
+{
+  "v4": {
+    "roles": {
+      "Supervisor": {
+        "calls": 61,
+        "known_tokens": 101807,
+        "usage_missing_calls": 0
+      },
+      "Researcher": {
+        "calls": 217,
+        "known_tokens": 516502,
+        "usage_missing_calls": 0
+      },
+      "Answerer": {
+        "calls": 89,
+        "known_tokens": 614247,
+        "usage_missing_calls": 0
+      },
+      "Verifier": {
+        "calls": 64,
+        "known_tokens": 443685,
+        "usage_missing_calls": 0
+      },
+      "Projection": {
+        "calls": 26,
+        "known_tokens": 7057,
+        "usage_missing_calls": 0
+      }
+    },
+    "skips": {
+      "unchanged_unknown_input": 11,
+      "no_nonempty_proof": 26
+    }
+  },
+  "v5": {
+    "roles": {
+      "Supervisor": {
+        "calls": 62,
+        "known_tokens": 103910,
+        "usage_missing_calls": 0
+      },
+      "Researcher": {
+        "calls": 217,
+        "known_tokens": 512789,
+        "usage_missing_calls": 0
+      },
+      "Answerer": {
+        "calls": 93,
+        "known_tokens": 664273,
+        "usage_missing_calls": 0
+      },
+      "Verifier": {
+        "calls": 76,
+        "known_tokens": 478570,
+        "usage_missing_calls": 0
+      },
+      "Projection": {
+        "calls": 31,
+        "known_tokens": 8970,
+        "usage_missing_calls": 0
+      }
+    },
+    "skips": {
+      "no_nonempty_proof": 14,
+      "confirmed_gap_without_new_witness": 3,
+      "unchanged_unknown_input": 10
+    }
+  }
+}

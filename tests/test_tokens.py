@@ -1,5 +1,5 @@
 """Tests for the token estimation utility."""
-from deepsearch_agent.tokens import estimate_tokens, truncate_text
+from deepsearch_agent.core.tokens import estimate_tokens, truncate_text
 
 
 def test_estimate_tokens_empty():

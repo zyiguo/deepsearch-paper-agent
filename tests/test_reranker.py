@@ -1,6 +1,6 @@
 """Tests for the LLM-based listwise reranker."""
-from deepsearch_agent.chunking import TextChunk
-from deepsearch_agent.reranker import LLMReranker
+from deepsearch_agent.core.evidence import TextChunk
+from deepsearch_agent.knowledge.reranker import LLMReranker
 
 
 class FakeClient:

@@ -1,0 +1,29 @@
+{
+  "implementation": {
+    "sha256": "ec5cb218c70c2ffe2970c263f5574be4fcd9a02b0ce1a3022cf364f1d510e407",
+    "dependencies": {
+      "pydantic": "2.13.5",
+      "httpx": "0.28.1",
+      "jieba": "0.42.1",
+      "pysbd": "0.3.4",
+      "langgraph": "1.2.11",
+      "langchain-core": "1.6.2",
+      "langsmith": "0.12.4"
+    }
+  },
+  "historical_files_unchanged": 376,
+  "source_manifests_unchanged": 2,
+  "shards_unchanged": 10,
+  "jobs": 60,
+  "predictions": 120,
+  "unique_questions": 20,
+  "all_attempts_first_attempt": true,
+  "shared_model_limits_retriever": true,
+  "model_calls": 936,
+  "reported_total_tokens": 3451810,
+  "deferred_paths_retained_unknown_at_decision": 9,
+  "exact_rule_replays": 9,
+  "missing_usage_calls": 0,
+  "remaining_run_locks": 0,
+  "audit_cost_outside_main_experiment": true
+}
