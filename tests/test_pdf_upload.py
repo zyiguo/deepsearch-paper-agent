@@ -105,7 +105,8 @@ def test_embedding_failure_keeps_old_index_and_can_retry(app, monkeypatch):
         assert finished(client, ident)['status'] == 'failed'
         assert client.get('/api/knowledge-base/status').json()['chunk_count'] == 2
         monkeypatch.setattr(RemoteEmbeddingClient, 'embed', lambda self, texts: [[1., 0.] for _ in texts])
-        assert client.post(f'/api/documents/{ident}/retry').status_code == 202
+        assert client.post(f'/api/documents/{ident}/retry').status_code == 409
+        assert client.post(f'/api/documents/{ident}/retry?confirm_unknown=true').status_code == 202
         assert finished(client, ident)['status'] == 'ready'
         assert client.get('/api/knowledge-base/status').json()['chunk_count'] == 4
 

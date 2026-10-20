@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "kind": "synthetic_provider_quota_process_faults",
+  "cases": [
+    {
+      "stage": "reserved",
+      "crash_exit": 73,
+      "result": {
+        "status": "blocked",
+        "provider_effects": 0,
+        "costs": [
+          {
+            "status": "released",
+            "reserved": 8000,
+            "actual": null,
+            "operation_id": "b0ce3a27e62d3eed605c054b34b6b7388328db2eec5cba8912bb90f209326e7b"
+          }
+        ],
+        "used_or_held": 0
+      },
+      "passed": true
+    },
+    {
+      "stage": "dispatched",
+      "crash_exit": 73,
+      "result": {
+        "status": "blocked",
+        "provider_effects": 0,
+        "costs": [
+          {
+            "status": "unknown",
+            "reserved": 8000,
+            "actual": null,
+            "operation_id": "b0ce3a27e62d3eed605c054b34b6b7388328db2eec5cba8912bb90f209326e7b"
+          }
+        ],
+        "used_or_held": 8000
+      },
+      "passed": true
+    },
+    {
+      "stage": "provider_effect",
+      "crash_exit": 73,
+      "result": {
+        "status": "blocked",
+        "provider_effects": 1,
+        "costs": [
+          {
+            "status": "unknown",
+            "reserved": 8000,
+            "actual": null,
+            "operation_id": "b0ce3a27e62d3eed605c054b34b6b7388328db2eec5cba8912bb90f209326e7b"
+          }
+        ],
+        "used_or_held": 8000
+      },
+      "passed": true
+    },
+    {
+      "stage": "cost_settled",
+      "crash_exit": 73,
+      "result": {
+        "status": "blocked",
+        "provider_effects": 1,
+        "costs": [
+          {
+            "status": "settled",
+            "reserved": 8000,
+            "actual": 10,
+            "operation_id": "b0ce3a27e62d3eed605c054b34b6b7388328db2eec5cba8912bb90f209326e7b"
+          }
+        ],
+        "used_or_held": 10
+      },
+      "passed": true
+    },
+    {
+      "stage": "tool_committed",
+      "crash_exit": 73,
+      "result": {
+        "status": "replayed",
+        "provider_effects": 1,
+        "costs": [
+          {
+            "status": "settled",
+            "reserved": 8000,
+            "actual": 10,
+            "operation_id": "b0ce3a27e62d3eed605c054b34b6b7388328db2eec5cba8912bb90f209326e7b"
+          }
+        ],
+        "used_or_held": 10
+      },
+      "passed": true
+    }
+  ],
+  "script_sha256": "21fec4794cd88dcd2abc388d3792e44a8037195f6bca570898601c8c51e2f777"
+}

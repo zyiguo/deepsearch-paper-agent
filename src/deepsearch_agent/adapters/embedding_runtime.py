@@ -12,6 +12,8 @@ from dotenv import dotenv_values
 from deepsearch_agent.adapters.demo import build_demo_knowledge_base
 from deepsearch_agent.knowledge.vector_math import normalize
 from deepsearch_agent.core.models import ModelServiceError
+from deepsearch_agent.adapters.governed_calls import metered
+from deepsearch_agent.core.governance import report_provider_usage
 
 
 @dataclass(frozen=True)
@@ -74,6 +76,7 @@ class RemoteEmbeddingClient:
         self.settings = settings
         self.transport = transport
 
+    @metered('embedding')
     def embed(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
@@ -102,7 +105,9 @@ class RemoteEmbeddingClient:
                         reason = reasons.get(response.status_code, "请求失败，请检查服务、模型与参数")
                         raise ModelServiceError(f"Embedding {reason}（HTTP {response.status_code}）")
                     try:
-                        items = response.json()["data"]
+                        body = response.json()
+                        report_provider_usage(body.get('usage'))
+                        items = body["data"]
                         if not isinstance(items, list) or len(items) != len(batch):
                             raise ValueError()
                         if any(type(item['index']) is not int for item in items):

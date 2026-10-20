@@ -15,6 +15,7 @@
 | [0011](0011-team-workspace-access.md) | 可选团队身份、会话与独立工作空间授权 | Accepted，补充 0010 |
 | [0012](0012-postgresql-business-store.md) | 可选 PostgreSQL 业务数据库、显式迁移与空间行级隔离 | Accepted，补充 0006/0011 |
 | [0013](0013-task-recovery-quality-loop.md) | 任务幂等、安全恢复、离线还原演练与人工质量回归闭环 | Accepted，补充 0010/0012 |
+| [0014](0014-deployment-governance.md) | 部署级指标告警、用户/空间成本预占与全局资源保护 | Accepted，补充 0010/0012/0013 |
 
 ADR 一旦 Accepted 不直接改写决策结论；若决策变化，新增 ADR 并标记被替代关系。Superseded/Amended 文件保留原文，仅更新「状态」与替代指向，便于对照设计演进。
 

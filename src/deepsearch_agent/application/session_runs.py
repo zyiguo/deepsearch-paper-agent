@@ -1,6 +1,8 @@
 """Conversation use cases, ordered turns, cancellation and resumable background runs."""
 import logging
-from contextlib import contextmanager
+import time
+from contextlib import contextmanager, nullcontext
+from contextvars import copy_context
 from queue import Queue, Empty
 from threading import Thread, Lock, Event, current_thread
 from deepsearch_agent.core.errors import ApplicationError
@@ -14,6 +16,7 @@ from deepsearch_agent.application.commands import TurnCommand
 from deepsearch_agent.application.run_reliability import submission_id, context_identity, error_code
 from deepsearch_agent.core.identity import fingerprint
 from deepsearch_agent.core.tool_execution import ToolExecutionBlocked
+from deepsearch_agent.core.governance import current_usage_scope, usage_context, GovernanceDenied
 
 
 class RunWorkers:
@@ -40,7 +43,8 @@ class RunWorkers:
                 raise RuntimeError('Run workers are closed')
             if len(self.active) >= self.max_active:
                 raise ApplicationError(503, '研究任务容量已满或服务正在关闭，请稍后显式重试')
-            thread = Thread(target=execute, daemon=True, name='research-run')
+            context = copy_context()
+            thread = Thread(target=lambda: context.run(execute), daemon=True, name='research-run')
             self.active[thread] = (token, finished)
             try:
                 thread.start()
@@ -268,6 +272,8 @@ def prepare_run(session_id, body, state, idempotency_key=None):
         sources, _, _ = turn_inputs(state, session_id, body, body.document_ids if body.document_ids is not None else saved.document_ids)
         manager.set_scope(session_id, sorted({s.split('/')[2] for s in sources}) if sources is not None else None)
         record = {**body.to_dict(), '_source_ids': sorted(sources or []),
+                  '_billing_user':current_usage_scope.get().user,
+                  '_billing_workspace':current_usage_scope.get().workspace,
                   '_chunk_ids': scoped_chunk_ids(state.kb, sources),
                   '_runtime_identity': context_identity(state, manager, session_id),
                   '_submission_identity': body_identity, '_execution': {'attempts': 0}}
@@ -374,20 +380,35 @@ def execute_run(session_id, body, state, run_id, on_progress=None, resume=False,
     """Claim once; never repeat a paid call to repair a result-commit ambiguity."""
     token = token or CancellationToken()
     ensure_run_state(state)
+    governor = getattr(state,'governance',None)
+    request = state.research_runs.get(run_id,session_id)['request']
     try:
-        with state.run_workers.track(token):
-            return execute_claimed_run(session_id, body, state, run_id, on_progress, resume, token)
+        with usage_context(governor,user=request.get('_billing_user',current_usage_scope.get().user),
+                           workspace=request.get('_billing_workspace',current_usage_scope.get().workspace),run_id=run_id):
+            with state.run_workers.track(token), governor.resource('research') if governor else nullcontext():
+                return execute_claimed_run(session_id, body, state, run_id, on_progress, resume, token)
     except ApplicationError as error:
         if error.status_code == 503:
             try:
                 state.research_runs.update(run_id, 'interrupted', expected={'queued'},
-                    execution={'error_code': 'worker_unavailable'})
+                    execution={'error_code': error.code if isinstance(error,GovernanceDenied) else 'worker_unavailable'})
             except Exception:
                 logging.getLogger(__name__).warning('run_terminal_persistence_failed')
         raise
 
 
 def execute_claimed_run(session_id, body, state, run_id, on_progress, resume, token):
+    started, outcome = time.monotonic(), 'interrupted'
+    governor = getattr(state,'governance',None)
+    progress = on_progress
+    phase, phase_started = None, started
+    def tracked_progress(stage):
+        nonlocal phase,phase_started
+        if phase is not None and governor:
+            governor.duration('research_phase',time.monotonic()-phase_started,phase=phase)
+        phase,phase_started = stage,time.monotonic()
+        if progress:
+            progress(stage)
     with state.lock:
         if not state.research_runs.update(run_id, 'running', expected={'queued'},
                 execution={'new_attempt': True, 'error_code': None}):
@@ -398,21 +419,29 @@ def execute_claimed_run(session_id, body, state, run_id, on_progress, resume, to
         token.check()
         turn = reconcile_saved_turn(session_id, run_id, state)
         if turn is None:
-            turn = generate_turn(session_id, body, state, on_progress=on_progress, run_id=run_id, resume=resume)
+            turn = generate_turn(session_id, body, state, on_progress=tracked_progress, run_id=run_id, resume=resume)
         state.research_runs.update(run_id, 'completed', turn_id=turn['id'],
                                    execution={'error_code': None})
+        outcome = 'completed'
         return turn
     except Exception as error:
         try:
             turn = reconcile_saved_turn(session_id, run_id, state)
             if turn is not None:
+                outcome = 'completed'
                 return turn
+            outcome = 'cancelled' if isinstance(error,ResearchCancelled) else 'interrupted'
             state.research_runs.update(run_id, 'cancelled' if isinstance(error, ResearchCancelled) else 'interrupted',
                 expected={'running', 'cancel_requested'}, execution={'error_code': 'cancelled' if isinstance(error, ResearchCancelled) else error_code(error)})
         except Exception:
             logging.getLogger(__name__).warning('run_terminal_persistence_failed')
         raise
     finally:
+        if governor:
+            governor.event('research',outcome)
+            governor.duration('research_duration',time.monotonic()-started,outcome=outcome)
+            if phase is not None:
+                governor.duration('research_phase',time.monotonic()-phase_started,phase=phase)
         current_token.reset(reset)
         with state.lock:
             state.run_tokens.pop(run_id, None)
@@ -441,6 +470,8 @@ def run_stream(session_id, body, state, run_id, resume=False):
             events.put(('done', turn))
         except ResearchCancelled:
             events.put(('cancelled', {'message': '研究已取消，未保存本轮答案。'}))
+        except GovernanceDenied as error:
+            events.put(('error',{'message':'本次调用被资源或费用配额限制，请查看用量后显式恢复。','code':error.code}))
         except ToolExecutionBlocked as error:
             events.put(('error', {'message': '工具执行结果未确认或恢复被阻止，请查看任务执行账本，勿自动重新提交。',
                                  'code': error.code, 'operation_id': error.operation_id}))

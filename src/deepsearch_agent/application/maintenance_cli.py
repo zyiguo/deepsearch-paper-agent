@@ -82,7 +82,7 @@ def main(argv=None):
                          'runtime': PROJECT_ROOT / 'data/runtime', 'skills': PROJECT_ROOT / 'skills'}
                 config_hashes = {p.name: file_hash(p) for p in [PROJECT_ROOT / name for name in (
                     '.env', '.env.embedding', '.env.vision', '.env.image_embedding', '.env.agent',
-                    '.env.access', '.env.database', '.env.mcp', '.env.infrastructure', '.env.tracing')] if p.is_file()}
+                    '.env.access', '.env.database', '.env.mcp', '.env.infrastructure', '.env.tracing', '.env.governance')] if p.is_file()}
                 report = create_bundle(args.output, roots, settings, docker=docker,
                                        container=args.postgres_container, config_hashes=config_hashes)
         elif args.command == 'verify':

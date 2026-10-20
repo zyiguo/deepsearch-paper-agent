@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-20",
+  "baseline_commit": "3ac13301c89331f5e18b1bd2aa3c968243b3d9b5",
+  "state": "uncommitted_workspace_increment",
+  "backend": {
+    "passed": 1025,
+    "skipped": 14,
+    "seconds": 88.8
+  },
+  "frontend": {
+    "passed": 63,
+    "files": 11,
+    "build": true
+  },
+  "architecture": {
+    "modules": 208,
+    "edges": 512,
+    "cycles": [],
+    "violations": []
+  },
+  "process_faults": {
+    "tool_ledger": 14,
+    "ingestion": 10,
+    "provider": "synthetic_sqlite"
+  },
+  "sha256": {
+    "src/deepsearch_agent/core/tool_execution.py": "8f89e66f40eab24f73700d35a1eeac0db990caecc3552a24f52b6ec12d8ff9ec",
+    "src/deepsearch_agent/application/tool_execution.py": "2f8cabaf76f14c718513876abe62c75cec6addc41d7b14a050688408341f4367",
+    "src/deepsearch_agent/application/tool_reconciliation.py": "65b70058b9abdedab7eb616b259e2a1e913f3d953c3addd7546e25f98042ed02",
+    "src/deepsearch_agent/adapters/persistence/tool_ledger.py": "a7ee3950b27a153c672c685a5470ce6e6a9cd7bab16d13af2cb0197189faabf0",
+    "src/deepsearch_agent/adapters/persistence/local_files.py": "5e34fcc0b75285d6f5aa23b48bf863d7cad47792d7689326587e88610c197bab",
+    "src/deepsearch_agent/agents/tool_service.py": "8fb0466becfd0b907d4dbd22ea834d08a2eae47c7b0fd0e2a2ff201e5be38b8a",
+    "src/deepsearch_agent/workspace/working_memory.py": "7f20e13539a71f4a469d3ba32704a21ba31872a01f8d44b4a219721ec64a42d3",
+    "src/deepsearch_agent/workspace/documents.py": "40e662d7a6063878a2b7449c7b24960f373aeceee9f5249401c0f06d6366cabf",
+    "src/deepsearch_agent/workspace/ingestion.py": "2dfef679b20ac15275c8ac31c6a41fee92049d4916c19753271f8e4e39c0a67b",
+    "src/deepsearch_agent/web/conversation_api.py": "fc9b6b66b7166721b6c90e3b2520a93e874b8d3ac44181b87f71762bab025b71",
+    "src/deepsearch_agent/web/document_api.py": "317210fc6d1ee06eff0c1d0f6132f9b03c40a7c3ed219e243c70705aee729778",
+    "src/deepsearch_agent/web/schemas.py": "77d067539ce679c112dd3865769e3414deac11026752d5127b4906711cf0f599",
+    "frontend/src/shared/api.ts": "614c8f871423ca5055d9f75876add24112f7d00109ad12fed8076ae8496ea867",
+    "frontend/src/features/library/useLibrary.ts": "e7d4ac175869d1546628fea70da3ce0dbb08dcc0da0eaea9b38312d01fde28fc",
+    "scripts/verify_ingestion_recovery.py": "7c7e3aabf6444733ed4d05901df2c440108ad30d3757ecab27a49d7cb3199fe3",
+    "scripts/verify_tool_ledger_faults.py": "b6f356def204959da425b6be66a5dd917f9768899906b84a1aa96709af0a1fa9",
+    "eval/results/ingestion-recovery-faults-20261020.json": "bc80d6330b58062778c899df81f8de20670407566e3806d74a8035c68290eba9",
+    "eval/results/tool-ledger-faults-20261020.json": "43220ac2ab43d886db5d45a461fad921447909eb7e3294714f7f88397eb16340"
+  }
+}

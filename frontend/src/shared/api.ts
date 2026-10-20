@@ -11,6 +11,7 @@ const documentSchema = z.object({
   vision_available: z.boolean().optional(), analysis_mode: z.enum(['text', 'vision']).optional(),
   image_index_available: z.boolean().optional(), image_indexed_pages: z.number().int().nonnegative().optional(),
   media_type: z.string().optional(),
+  retry_requires_confirmation: z.boolean().optional(),
 })
 const attachmentSchema = z.object({
   id: z.string(), title: z.string(), source_path: z.string(), image_url: z.string(),
@@ -182,9 +183,9 @@ export const api = {
   uploadPdf: (file: File) => request(`/api/documents/upload?filename=${encodeURIComponent(file.name)}`, documentSchema, {
     method: 'POST', headers: { 'Content-Type': 'application/pdf' }, body: file,
   }, 90000),
-  retryDocument: (id: string) => request(`/api/documents/${encodeURIComponent(id)}/retry`, documentSchema, { method: 'POST' }),
-  analyzeDocument: (id: string) => request(`/api/documents/${encodeURIComponent(id)}/analyze`, documentSchema, { method: 'POST' }),
-  indexDocumentImages: (id: string) => request(`/api/documents/${encodeURIComponent(id)}/index-images`, documentSchema, { method: 'POST' }),
+  retryDocument: (id: string, confirmUnknown = false) => request(`/api/documents/${encodeURIComponent(id)}/retry${confirmUnknown ? '?confirm_unknown=true' : ''}`, documentSchema, { method: 'POST' }),
+  analyzeDocument: (id: string, confirmUnknown = false) => request(`/api/documents/${encodeURIComponent(id)}/analyze${confirmUnknown ? '?confirm_unknown=true' : ''}`, documentSchema, { method: 'POST' }),
+  indexDocumentImages: (id: string, confirmUnknown = false) => request(`/api/documents/${encodeURIComponent(id)}/index-images${confirmUnknown ? '?confirm_unknown=true' : ''}`, documentSchema, { method: 'POST' }),
   documentPage: (id: string, page: number, signal?: AbortSignal) => request(`/api/documents/${encodeURIComponent(id)}/pages/${page}`, z.object({
     id: z.string(), title: z.string(), page_number: z.number().int().positive(), page_count: z.number().int().positive(), text: z.string(),
     media_type: z.string().optional(),

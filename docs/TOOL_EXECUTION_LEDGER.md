@@ -22,6 +22,7 @@
 | running/claimed | 调用尚未开始，恢复为 pending |
 | running/dispatched | 效果未确认，恢复为 unknown |
 | succeeded | 复用持久化结果，不再次调用 |
+| not_executed | 本地检查证明未发出请求/写入；重放原拒绝及错误码 |
 | unknown，只读 | 可以按相同操作身份重试 |
 | unknown，付费/写入 | 阻止自动重试，等待可信查询或既有幂等协议 |
 
@@ -45,7 +46,7 @@
 
 可信查询适配器可调用 `executor.reconcile(operation_id, lookup)`。只有查询明确确认原操作完成并返回 `ConfirmedToolResult(value)` 时才将 unknown 转为 succeeded。返回 None、普通字典“not_found”或查询超时都不触发重发。查询按 run_id 验证归属。
 
-本次实现了上述扩展接口和模拟供应商验收，没有给真实模型/OCR/MCP 供应商声明 exactly-once 能力。工作笔记文件写入与 SQLite 结果提交也不是跨存储事务：若文件已修改但结果没落库，保持 unknown，不能自动再次 replace。
+没有给真实模型/OCR/MCP 供应商声明 exactly-once 能力。工作笔记文件写入与 SQLite 结果提交也不是跨存储事务：若文件已修改但结果没落库，保持 unknown，不能自动再次 replace。2026-10-20 补充了[业务核对入口、审计与工作记忆回读确认](BACKEND_RECOVERY_CONSISTENCY.md)，核对后通过原任务恢复入口继续执行。
 
 ## 查看状态
 

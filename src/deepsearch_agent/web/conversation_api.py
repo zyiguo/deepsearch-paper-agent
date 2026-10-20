@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from fastapi.responses import StreamingResponse
 import json
 
@@ -7,6 +7,7 @@ from deepsearch_agent.web.source_schemas import CitationResponse
 from deepsearch_agent.workspace.memory import MemoryState
 from deepsearch_agent.application import session_runs as run_service
 from deepsearch_agent.application.commands import TurnCommand
+from deepsearch_agent.application import tool_reconciliation
 
 
 router = APIRouter(prefix="/api/sessions", tags=["会话"])
@@ -162,6 +163,27 @@ def cancel_run(session_id: str, run_id: str, request: Request):
 @router.get('/{session_id}/runs/{run_id}/operations')
 def list_tool_operations(session_id: str, run_id: str, request: Request):
     return run_service.list_tool_operations(session_id, run_id, request.app.state)
+
+
+class ReconcileOperationRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    confirmed: bool
+    proof_reference: str = Field(min_length=1, max_length=500)
+    external_result: str | None = Field(default=None, max_length=32000)
+
+
+@router.get('/{session_id}/runs/{run_id}/operations/{operation_id}/audit')
+def audit_tool_operation(session_id: str, run_id: str, operation_id: str, request: Request):
+    return tool_reconciliation.audit_operation(request.app.state, session_id, run_id, operation_id)
+
+
+@router.post('/{session_id}/runs/{run_id}/operations/{operation_id}/reconcile')
+def reconcile_tool_operation(session_id: str, run_id: str, operation_id: str,
+                             body: ReconcileOperationRequest, request: Request):
+    user = getattr(request.state, 'access_user', None)
+    actor = user['id'] if user else 'local-operator'
+    return tool_reconciliation.reconcile_operation(request.app.state, session_id, run_id, operation_id,
+        actor=actor, **body.model_dump())
 
 
 @router.post('/{session_id}/runs/{run_id}/resume/stream')

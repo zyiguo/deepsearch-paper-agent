@@ -1,0 +1,337 @@
+{
+  "schema_version": 1,
+  "kind": "synthetic_provider_process_faults",
+  "cases": [
+    {
+      "stage": "after_dispatch",
+      "step": "analysis",
+      "crash_exit": 73,
+      "before": {
+        "parse": 1
+      },
+      "recovery": {
+        "status": "failed",
+        "unknown": true,
+        "counts": {
+          "parse": 1
+        },
+        "consistency": "legacy_or_unpublished"
+      },
+      "explicitly_confirmed": true,
+      "final": {
+        "status": "ready",
+        "unknown": false,
+        "counts": {
+          "analysis": 1,
+          "image_vectors": 1,
+          "parse": 1,
+          "text_vectors": 1
+        },
+        "consistency": "consistent"
+      },
+      "passed": true
+    },
+    {
+      "stage": "after_effect",
+      "step": "analysis",
+      "crash_exit": 73,
+      "before": {
+        "analysis": 1,
+        "parse": 1
+      },
+      "recovery": {
+        "status": "failed",
+        "unknown": true,
+        "counts": {
+          "analysis": 1,
+          "parse": 1
+        },
+        "consistency": "legacy_or_unpublished"
+      },
+      "explicitly_confirmed": true,
+      "final": {
+        "status": "ready",
+        "unknown": false,
+        "counts": {
+          "analysis": 2,
+          "image_vectors": 1,
+          "parse": 1,
+          "text_vectors": 1
+        },
+        "consistency": "consistent"
+      },
+      "passed": true
+    },
+    {
+      "stage": "after_artifact",
+      "step": "analysis",
+      "crash_exit": 73,
+      "before": {
+        "analysis": 1,
+        "parse": 1
+      },
+      "recovery": {
+        "status": "ready",
+        "unknown": false,
+        "counts": {
+          "analysis": 1,
+          "image_vectors": 1,
+          "parse": 1,
+          "text_vectors": 1
+        },
+        "consistency": "consistent"
+      },
+      "explicitly_confirmed": false,
+      "final": {
+        "status": "ready",
+        "unknown": false,
+        "counts": {
+          "analysis": 1,
+          "image_vectors": 1,
+          "parse": 1,
+          "text_vectors": 1
+        },
+        "consistency": "consistent"
+      },
+      "passed": true
+    },
+    {
+      "stage": "after_dispatch",
+      "step": "text_vectors",
+      "crash_exit": 73,
+      "before": {
+        "analysis": 1,
+        "parse": 1
+      },
+      "recovery": {
+        "status": "failed",
+        "unknown": true,
+        "counts": {
+          "analysis": 1,
+          "parse": 1
+        },
+        "consistency": "legacy_or_unpublished"
+      },
+      "explicitly_confirmed": true,
+      "final": {
+        "status": "ready",
+        "unknown": false,
+        "counts": {
+          "analysis": 1,
+          "image_vectors": 1,
+          "parse": 1,
+          "text_vectors": 1
+        },
+        "consistency": "consistent"
+      },
+      "passed": true
+    },
+    {
+      "stage": "after_effect",
+      "step": "text_vectors",
+      "crash_exit": 73,
+      "before": {
+        "analysis": 1,
+        "parse": 1,
+        "text_vectors": 1
+      },
+      "recovery": {
+        "status": "failed",
+        "unknown": true,
+        "counts": {
+          "analysis": 1,
+          "parse": 1,
+          "text_vectors": 1
+        },
+        "consistency": "legacy_or_unpublished"
+      },
+      "explicitly_confirmed": true,
+      "final": {
+        "status": "ready",
+        "unknown": false,
+        "counts": {
+          "analysis": 1,
+          "image_vectors": 1,
+          "parse": 1,
+          "text_vectors": 2
+        },
+        "consistency": "consistent"
+      },
+      "passed": true
+    },
+    {
+      "stage": "after_artifact",
+      "step": "text_vectors",
+      "crash_exit": 73,
+      "before": {
+        "analysis": 1,
+        "parse": 1,
+        "text_vectors": 1
+      },
+      "recovery": {
+        "status": "ready",
+        "unknown": false,
+        "counts": {
+          "analysis": 1,
+          "image_vectors": 1,
+          "parse": 1,
+          "text_vectors": 1
+        },
+        "consistency": "consistent"
+      },
+      "explicitly_confirmed": false,
+      "final": {
+        "status": "ready",
+        "unknown": false,
+        "counts": {
+          "analysis": 1,
+          "image_vectors": 1,
+          "parse": 1,
+          "text_vectors": 1
+        },
+        "consistency": "consistent"
+      },
+      "passed": true
+    },
+    {
+      "stage": "after_dispatch",
+      "step": "image_vectors",
+      "crash_exit": 73,
+      "before": {
+        "analysis": 1,
+        "parse": 1,
+        "text_vectors": 1
+      },
+      "recovery": {
+        "status": "failed",
+        "unknown": true,
+        "counts": {
+          "analysis": 1,
+          "parse": 1,
+          "text_vectors": 1
+        },
+        "consistency": "legacy_or_unpublished"
+      },
+      "explicitly_confirmed": true,
+      "final": {
+        "status": "ready",
+        "unknown": false,
+        "counts": {
+          "analysis": 1,
+          "image_vectors": 1,
+          "parse": 1,
+          "text_vectors": 1
+        },
+        "consistency": "consistent"
+      },
+      "passed": true
+    },
+    {
+      "stage": "after_effect",
+      "step": "image_vectors",
+      "crash_exit": 73,
+      "before": {
+        "analysis": 1,
+        "image_vectors": 1,
+        "parse": 1,
+        "text_vectors": 1
+      },
+      "recovery": {
+        "status": "failed",
+        "unknown": true,
+        "counts": {
+          "analysis": 1,
+          "image_vectors": 1,
+          "parse": 1,
+          "text_vectors": 1
+        },
+        "consistency": "legacy_or_unpublished"
+      },
+      "explicitly_confirmed": true,
+      "final": {
+        "status": "ready",
+        "unknown": false,
+        "counts": {
+          "analysis": 1,
+          "image_vectors": 2,
+          "parse": 1,
+          "text_vectors": 1
+        },
+        "consistency": "consistent"
+      },
+      "passed": true
+    },
+    {
+      "stage": "after_artifact",
+      "step": "image_vectors",
+      "crash_exit": 73,
+      "before": {
+        "analysis": 1,
+        "image_vectors": 1,
+        "parse": 1,
+        "text_vectors": 1
+      },
+      "recovery": {
+        "status": "ready",
+        "unknown": false,
+        "counts": {
+          "analysis": 1,
+          "image_vectors": 1,
+          "parse": 1,
+          "text_vectors": 1
+        },
+        "consistency": "consistent"
+      },
+      "explicitly_confirmed": false,
+      "final": {
+        "status": "ready",
+        "unknown": false,
+        "counts": {
+          "analysis": 1,
+          "image_vectors": 1,
+          "parse": 1,
+          "text_vectors": 1
+        },
+        "consistency": "consistent"
+      },
+      "passed": true
+    },
+    {
+      "stage": "after_publish",
+      "step": "publication",
+      "crash_exit": 73,
+      "before": {
+        "analysis": 1,
+        "image_vectors": 1,
+        "parse": 1,
+        "text_vectors": 1
+      },
+      "recovery": {
+        "status": "ready",
+        "unknown": false,
+        "counts": {
+          "analysis": 1,
+          "image_vectors": 1,
+          "parse": 1,
+          "text_vectors": 1
+        },
+        "consistency": "consistent"
+      },
+      "explicitly_confirmed": false,
+      "final": {
+        "status": "ready",
+        "unknown": false,
+        "counts": {
+          "analysis": 1,
+          "image_vectors": 1,
+          "parse": 1,
+          "text_vectors": 1
+        },
+        "consistency": "consistent"
+      },
+      "passed": true
+    }
+  ],
+  "script_sha256": "7c7e3aabf6444733ed4d05901df2c440108ad30d3757ecab27a49d7cb3199fe3",
+  "passed": 10
+}

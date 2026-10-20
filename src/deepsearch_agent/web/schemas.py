@@ -44,6 +44,7 @@ class DocumentResponse(BaseModel):
     image_index_available: bool = False
     image_indexed_pages: int = 0
     media_type: str = 'application/pdf'
+    retry_requires_confirmation: bool = False
 
 
 class AskRequest(BaseModel):

@@ -3,10 +3,30 @@ from contextlib import contextmanager
 import json
 from pathlib import Path
 import sqlite3
+import time
 from uuid import uuid4
 
 from deepsearch_agent.core.identity import fingerprint
 from deepsearch_agent.core.tool_execution import ToolExecutionBlocked
+
+
+def read_backlog(root, *, workspaces=False):
+    """Read inactive workspace journals without starting/migrating their runtimes."""
+    root = Path(root).resolve()
+    paths = root.glob('*/tool_executions.sqlite3') if workspaces else [root/'tool_executions.sqlite3']
+    total, oldest = 0, 0
+    for path in paths:
+        if not path.is_file() or path.is_symlink() or not path.resolve().is_relative_to(root):
+            continue
+        db = sqlite3.connect(path.resolve().as_uri()+'?mode=ro',uri=True,timeout=2)
+        try:
+            row=db.execute("SELECT count(*),min(strftime('%s',updated_at)) FROM tool_operations WHERE status='unknown'").fetchone()
+            total += row[0]
+            if row[1] is not None:
+                oldest=max(oldest,max(0,time.time()-int(row[1])))
+        finally:
+            db.close()
+    return {'unknown_count':total,'oldest_unknown_seconds':oldest}
 
 
 class SQLiteToolLedger:
@@ -27,6 +47,14 @@ class SQLiteToolLedger:
                     status TEXT NOT NULL, reason TEXT NOT NULL,
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
             ''')
+            columns = {r['name'] for r in db.execute('PRAGMA table_info(tool_operations)')}
+            for name in ('rejection_code', 'arguments_json'):
+                if name not in columns:
+                    db.execute(f'ALTER TABLE tool_operations ADD COLUMN {name} TEXT')
+            db.execute('''CREATE TABLE IF NOT EXISTS tool_reconciliations (
+                sequence INTEGER PRIMARY KEY AUTOINCREMENT, operation_id TEXT NOT NULL,
+                actor TEXT NOT NULL, proof_reference TEXT NOT NULL, result_digest TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)''')
 
     @contextmanager
     def connect(self):
@@ -60,8 +88,9 @@ class SQLiteToolLedger:
                 raise ToolExecutionBlocked('tool_ledger_run_missing', ident)
             row = db.execute('SELECT * FROM tool_operations WHERE id=?', (ident,)).fetchone()
             if row is None:
-                db.execute('INSERT INTO tool_operations(id,run_id,slot,tool,kind,identity,status) VALUES (?,?,?,?,?,?,?)',
-                           (ident, run_id, slot, tool, str(kind), identity, 'pending'))
+                db.execute('INSERT INTO tool_operations(id,run_id,slot,tool,kind,identity,status,arguments_json) VALUES (?,?,?,?,?,?,?,?)',
+                           (ident, run_id, slot, tool, str(kind), identity, 'pending',
+                            json.dumps(arguments, ensure_ascii=False, allow_nan=False)))
                 self.event(db, ident, 'pending', 'intent_persisted')
             elif row['identity'] != identity:
                 raise ToolExecutionBlocked('tool_operation_conflict', ident)
@@ -116,6 +145,15 @@ class SQLiteToolLedger:
             if changed:
                 self.event(db, operation_id, 'unknown', 'outcome_unconfirmed')
 
+    def reject(self, operation_id, owner, code):
+        with self.connect() as db:
+            changed = db.execute("UPDATE tool_operations SET status='not_executed',rejection_code=?,"
+                "phase=NULL,owner=NULL,updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner=? AND status='running'",
+                (code, operation_id, owner)).rowcount
+            if changed != 1:
+                raise ToolExecutionBlocked('tool_execution_fenced', operation_id)
+            self.event(db, operation_id, 'not_executed', code)
+
     def recover_interrupted(self, run_id=None):
         """Only after exclusive startup or an interrupted run is atomically claimed."""
         with self.connect() as db:
@@ -131,10 +169,10 @@ class SQLiteToolLedger:
 
     def list_run(self, run_id):
         with self.connect() as db:
-            return [dict(row) for row in db.execute('SELECT id,slot,tool,kind,status,attempt,updated_at '
+            return [dict(row) for row in db.execute('SELECT id,slot,tool,kind,status,attempt,updated_at,rejection_code '
                                                    'FROM tool_operations WHERE run_id=? ORDER BY slot', (run_id,))]
 
-    def resolve(self, operation_id, result):
+    def resolve(self, operation_id, result, *, actor='provider-adapter', proof_reference='provider-status-query'):
         encoded = json.dumps(result, ensure_ascii=False, allow_nan=False)
         with self.connect() as db:
             changed = db.execute("UPDATE tool_operations SET status='succeeded',result_json=?,"
@@ -143,9 +181,23 @@ class SQLiteToolLedger:
             if changed != 1:
                 raise ToolExecutionBlocked('tool_reconciliation_conflict', operation_id)
             self.event(db, operation_id, 'succeeded', 'provider_result_confirmed')
+            db.execute('INSERT INTO tool_reconciliations(operation_id,actor,proof_reference,result_digest) VALUES (?,?,?,?)',
+                       (operation_id, actor, proof_reference, fingerprint(result)))
+
+    def audit(self, operation_id):
+        with self.connect() as db:
+            events = [dict(r) for r in db.execute('SELECT status,reason,created_at FROM tool_operation_events WHERE operation_id=? ORDER BY sequence', (operation_id,))]
+            resolutions = [dict(r) for r in db.execute('SELECT actor,proof_reference,result_digest,created_at FROM tool_reconciliations WHERE operation_id=? ORDER BY sequence', (operation_id,))]
+        return {'events': events, 'reconciliations': resolutions}
+
+    def summary(self):
+        with self.connect() as db:
+            row = db.execute("SELECT count(*) AS n,min(strftime('%s',updated_at)) AS oldest FROM tool_operations WHERE status='unknown'").fetchone()
+        return {'unknown_count': row['n'], 'oldest_unknown_seconds': max(0,time.time()-int(row['oldest'])) if row['oldest'] is not None else 0}
 
     def delete_run(self, run_id):
         with self.connect() as db:
+            db.execute('DELETE FROM tool_reconciliations WHERE operation_id IN (SELECT id FROM tool_operations WHERE run_id=?)', (run_id,))
             db.execute('DELETE FROM tool_operation_events WHERE operation_id IN (SELECT id FROM tool_operations WHERE run_id=?)', (run_id,))
             db.execute('DELETE FROM tool_operations WHERE run_id=?', (run_id,))
             db.execute('DELETE FROM tool_ledger_runs WHERE run_id=?', (run_id,))

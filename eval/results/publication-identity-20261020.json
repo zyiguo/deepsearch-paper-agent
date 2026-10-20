@@ -1,0 +1,1257 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-20",
+  "baseline_commit": "3ac13301c89331f5e18b1bd2aa3c968243b3d9b5",
+  "purpose": "Link original local validation bytes to Git repository blob bytes without rewriting frozen evidence.",
+  "scope": "governance validation sources, fixtures, scripts and six public verification reports; Git index before commit",
+  "validation_manifest": "eval/results/governance-validation-20261020.json",
+  "historical_recovery_manifest": "eval/results/backend-recovery-validation-20261020.json",
+  "historical_recovery_note": "Frozen before governance integration; original source hashes and uncommitted snapshot state are preserved.",
+  "publication_allowlist": [
+    ".env.governance.example",
+    ".gitignore",
+    "README.md",
+    "docs/ARCHITECTURE.md",
+    "docs/BACKEND_ENGINEERING_KNOWLEDGE_20261020.md",
+    "docs/BACKEND_RECOVERY_CONSISTENCY.md",
+    "docs/BACKEND_RECOVERY_VALIDATION_20261020.md",
+    "docs/GITHUB_PUBLICATION_20261020.md",
+    "docs/GOVERNANCE_CAPACITY.md",
+    "docs/GOVERNANCE_VALIDATION_20261020.md",
+    "docs/HISTORICAL_VERSIONS.md",
+    "docs/INTERVIEW_TECHNICAL_REPORT_20261019.md",
+    "docs/RELIABILITY_RECOVERY_QUALITY.md",
+    "docs/TOOL_EXECUTION_LEDGER.md",
+    "docs/adr/0014-deployment-governance.md",
+    "docs/adr/README.md",
+    "docs/plans/2026-10-20-backend-recovery-consistency.md",
+    "docs/plans/2026-10-20-governance-capacity.md",
+    "eval/results/backend-recovery-validation-20261020.json",
+    "eval/results/governance-capacity-20261020.json",
+    "eval/results/governance-recovery-20261020.json",
+    "eval/results/governance-validation-20261020.json",
+    "eval/results/ingestion-recovery-faults-20261020.json",
+    "eval/results/publication-identity-20261020.json",
+    "eval/results/tool-ledger-faults-20261020.json",
+    "frontend/src/features/library/documents.test.ts",
+    "frontend/src/features/library/useLibrary.ts",
+    "frontend/src/shared/api.ts",
+    "scripts/benchmark_governance_capacity.py",
+    "scripts/verify_governance_recovery.py",
+    "scripts/verify_ingestion_recovery.py",
+    "src/deepsearch_agent/adapters/embedding_runtime.py",
+    "src/deepsearch_agent/adapters/governance_config.py",
+    "src/deepsearch_agent/adapters/governed_calls.py",
+    "src/deepsearch_agent/adapters/image_embeddings.py",
+    "src/deepsearch_agent/adapters/infrastructure.py",
+    "src/deepsearch_agent/adapters/llm_gateway.py",
+    "src/deepsearch_agent/adapters/persistence/governance.py",
+    "src/deepsearch_agent/adapters/persistence/local_files.py",
+    "src/deepsearch_agent/adapters/persistence/tool_ledger.py",
+    "src/deepsearch_agent/agents/tool_service.py",
+    "src/deepsearch_agent/application/bootstrap.py",
+    "src/deepsearch_agent/application/bootstrap_team.py",
+    "src/deepsearch_agent/application/governance.py",
+    "src/deepsearch_agent/application/library_service.py",
+    "src/deepsearch_agent/application/maintenance_cli.py",
+    "src/deepsearch_agent/application/run_reliability.py",
+    "src/deepsearch_agent/application/session_runs.py",
+    "src/deepsearch_agent/application/tool_execution.py",
+    "src/deepsearch_agent/application/tool_reconciliation.py",
+    "src/deepsearch_agent/core/governance.py",
+    "src/deepsearch_agent/core/tool_execution.py",
+    "src/deepsearch_agent/web/access.py",
+    "src/deepsearch_agent/web/conversation_api.py",
+    "src/deepsearch_agent/web/document_api.py",
+    "src/deepsearch_agent/web/governance.py",
+    "src/deepsearch_agent/web/operations.py",
+    "src/deepsearch_agent/web/schemas.py",
+    "src/deepsearch_agent/workspace/documents.py",
+    "src/deepsearch_agent/workspace/ingestion.py",
+    "src/deepsearch_agent/workspace/working_memory.py",
+    "tests/test_architecture.py",
+    "tests/test_backend_recovery.py",
+    "tests/test_governance.py",
+    "tests/test_governance_api.py",
+    "tests/test_ingestion_recovery.py",
+    "tests/test_multimodal_api.py",
+    "tests/test_pdf_upload.py"
+  ],
+  "checks": {
+    "files": 165,
+    "relations": {
+      "exact": 54,
+      "crlf_to_lf": 111
+    },
+    "architecture": {
+      "modules": 214,
+      "edges": 544,
+      "cycles": 0,
+      "violations": 0
+    },
+    "frontend": {
+      "test_files": 11,
+      "passed": 63,
+      "build": "passed"
+    },
+    "backend": "1059 passed / 14 skipped from unchanged-source validation; full suite not repeated during documentation publication",
+    "changed_markdown_links": "passed"
+  },
+  "files": [
+    {
+      "path": ".env.governance.example",
+      "verified_workspace_sha256": "5b42d14565598d1c0588079fd4fc76ba9a80aaf5747128bae1ec5616ce043219",
+      "repository_blob_sha256": "5b42d14565598d1c0588079fd4fc76ba9a80aaf5747128bae1ec5616ce043219",
+      "git_blob_oid": "3ece3effc24e26b0e354b38ae2625b8f86423ab5",
+      "relation": "exact"
+    },
+    {
+      "path": "eval/results/backend-recovery-validation-20261020.json",
+      "verified_workspace_sha256": "2fcfb11ce3297701f3a8e74bd8375c6dd4bb37ed4e88e84acc213625a77294be",
+      "repository_blob_sha256": "6df1cc60c105e93457e19a67da290e2f5b31a743128efd1703f6adc36c61970d",
+      "git_blob_oid": "128cf4da3d48c132d8b4907238364fe9623faa63",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "eval/results/governance-capacity-20261020.json",
+      "verified_workspace_sha256": "13b43e587aa7167693d7030233741d7ec448e9b1f5faf45403b973e868c6f3ac",
+      "repository_blob_sha256": "1683a2ba7818e56caaaf6411150c194305013e4b24786b4fdbd923e207183b4f",
+      "git_blob_oid": "88578b8064d967300976a8e507b0f36280ead233",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "eval/results/governance-recovery-20261020.json",
+      "verified_workspace_sha256": "01a0a92d91a828e6210a3285e798e7c1eab55c4546aa80d041f5564d3b2ea69a",
+      "repository_blob_sha256": "30d72e91c2df606a049394483ed2fdcc707a15a5a0ced75d9db2e1bbc8f57667",
+      "git_blob_oid": "9e6b49802ad70e783e2340bf7f41f72de7f1af95",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "eval/results/governance-validation-20261020.json",
+      "verified_workspace_sha256": "6a678c0d97b64fefe0428dcf5fb24d534882ba7121f9ba0ee5406f6a64052f6d",
+      "repository_blob_sha256": "b92a4b2923dbb4f019b54d2227e584fdc2604ff3743123c0d966a9b2b80967f2",
+      "git_blob_oid": "6d7903a1791f985ee0b3220e996ded2786cdb4c3",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "eval/results/ingestion-recovery-faults-20261020.json",
+      "verified_workspace_sha256": "bc80d6330b58062778c899df81f8de20670407566e3806d74a8035c68290eba9",
+      "repository_blob_sha256": "e7b8a3441d17629cf6194024eb160371f9dd6e006f632759f6979cbebfa7175c",
+      "git_blob_oid": "0cdf00b97b3d62929ff1f60f9c044cd829bc1b30",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "eval/results/tool-ledger-faults-20261020.json",
+      "verified_workspace_sha256": "43220ac2ab43d886db5d45a461fad921447909eb7e3294714f7f88397eb16340",
+      "repository_blob_sha256": "76d78d5a08f3399ce6c69c5a85f8843881e3519ec6a512bc667d3f18ef8b7aae",
+      "git_blob_oid": "3d91928cd8db1679dc9c06b189e989552cc1c718",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "scripts/benchmark_governance_capacity.py",
+      "verified_workspace_sha256": "ed53501dc7ab675d1e971aec2f2e13d2ea33e0b964f0b0d5d7353c568c04d09f",
+      "repository_blob_sha256": "ed53501dc7ab675d1e971aec2f2e13d2ea33e0b964f0b0d5d7353c568c04d09f",
+      "git_blob_oid": "9fc8d3bb0f20133d2ede3f98fadd31705ae78b69",
+      "relation": "exact"
+    },
+    {
+      "path": "scripts/verify_governance_recovery.py",
+      "verified_workspace_sha256": "21fec4794cd88dcd2abc388d3792e44a8037195f6bca570898601c8c51e2f777",
+      "repository_blob_sha256": "21fec4794cd88dcd2abc388d3792e44a8037195f6bca570898601c8c51e2f777",
+      "git_blob_oid": "65ffe527afd4626be3fad46a742bb962a5655437",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/__init__.py",
+      "verified_workspace_sha256": "fff08ba82b16850f6e89f4d01ba03eaaa932a9d09f374a61e044a61bc998ff4d",
+      "repository_blob_sha256": "3b533895188fc573ee7e2fafda2235d79122fa6acf1849e69c33135982ce82a0",
+      "git_blob_oid": "a8abfe3d48256ba3f440122f7a0124f59033785c",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/__init__.py",
+      "verified_workspace_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "repository_blob_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "git_blob_oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/access_config.py",
+      "verified_workspace_sha256": "22cc6ae93ffb463602499279c92f53b202108c0a6b7d22d4a4658bb0416c8e65",
+      "repository_blob_sha256": "22cc6ae93ffb463602499279c92f53b202108c0a6b7d22d4a4658bb0416c8e65",
+      "git_blob_oid": "c6f25bd1d6ffe3118e7cc8144263dd139c3edffa",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/database_config.py",
+      "verified_workspace_sha256": "394c2e956b239f5d84b5502319353c7bd979c8de2b88462beb81d062d1f7c4f3",
+      "repository_blob_sha256": "394c2e956b239f5d84b5502319353c7bd979c8de2b88462beb81d062d1f7c4f3",
+      "git_blob_oid": "eaea6be2003bbbb98b3e8df766c4bcbe4c89f7db",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/demo.py",
+      "verified_workspace_sha256": "a033d11603d49896a95930278d0f666bcbc7f844be174f1f84ddf8a6b054cbe6",
+      "repository_blob_sha256": "2362573414fc50cd6acda946836b4b59822386ae91e4cd23789f5818917c408d",
+      "git_blob_oid": "4f6ee80f3c9840d36d7931d63f20c01209d72592",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/demo_llm.py",
+      "verified_workspace_sha256": "0318d5347d41ac39d4e9e20de2f231a937d36b1b9b87267cd18793d507f0f8c0",
+      "repository_blob_sha256": "bcfb8851ff1a3c946a18f930a0064a9736ee9d11bc1242b1705a3ff29fad698c",
+      "git_blob_oid": "3be4f19daebd2084acf2e2c05486d03dc2a7be7f",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/embedding_runtime.py",
+      "verified_workspace_sha256": "2f873a5c8cb187d5adcf1807250cf09faac346e2c74d75ffe7742e8532d33318",
+      "repository_blob_sha256": "3f4f69b6266d8913d0cd5eabe951a4b6ae11170485b2367c1a1d1c95cc86d7ed",
+      "git_blob_oid": "7b649affcb8b26b4065b853154830b66a7f4786e",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/governance_config.py",
+      "verified_workspace_sha256": "e23df484bfeb9caa9073c16f4b1563e4f3238ac4ef22db1fad16b7f9403273f2",
+      "repository_blob_sha256": "e23df484bfeb9caa9073c16f4b1563e4f3238ac4ef22db1fad16b7f9403273f2",
+      "git_blob_oid": "73f203fe6b1c9a7d751e045d256f61a2c1635e89",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/governed_calls.py",
+      "verified_workspace_sha256": "1304ddcf9cd8fe26eadd13ca68849d10e22a3cdf8fc12a74d1168e2268e4a9f8",
+      "repository_blob_sha256": "1304ddcf9cd8fe26eadd13ca68849d10e22a3cdf8fc12a74d1168e2268e4a9f8",
+      "git_blob_oid": "dadba0f1bc939b561e3d415f47d01e9ce36a15fb",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/image_embeddings.py",
+      "verified_workspace_sha256": "934d71df32ddde8368892b4af48ac532018ea8bc4c059a36a963195381b76b6a",
+      "repository_blob_sha256": "e78128eb610698ed8cc4f96720d1175e63243b0bf037177a9e7918274e3c82cc",
+      "git_blob_oid": "966b7feee4eb7fb1590d3549ff3054ce6fd07ac9",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/infrastructure.py",
+      "verified_workspace_sha256": "c1dcce737310b3a65f5173d5e31acb99e8582c9e90364a4d1414f152b28c1138",
+      "repository_blob_sha256": "a436debc12bb6f0e86190514f3279dd3656e3a6201e2fd829b0104064f9e5129",
+      "git_blob_oid": "25e2c3b97ba68cc5510759e6705cf248f05f83ca",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/llm_config.py",
+      "verified_workspace_sha256": "9caaa66ae4aba782b3b4ec30da7d9f81cea252769f96ca17fc726a1b41291bd9",
+      "repository_blob_sha256": "bfbc4674635944966aa73b95bfd4702aa831fe89dd7ab7097be82f19c57fc7b9",
+      "git_blob_oid": "fdc0c771a45ba176ff66b9d55b8adfbe2d2957a0",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/llm_factory.py",
+      "verified_workspace_sha256": "0be655c17bd16c17224159c3061a4371e08ed5d1fb2423e8bd4d3c786ae64bae",
+      "repository_blob_sha256": "a696d42de48a6637cccf48e20b969b6a451d124746b008b37b996d1d78459210",
+      "git_blob_oid": "d207693bb8307d8c4585ce2c980e41215d0c77e6",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/llm_gateway.py",
+      "verified_workspace_sha256": "32af8bfe1e4e3ece0de918dc1aaa82323d45756a6fb5b5f913d75ff0ed1f6b2e",
+      "repository_blob_sha256": "2046928391e0e2f13a0d69468362e597e7091b25a4bdcb55ebdf9224ddac36c6",
+      "git_blob_oid": "443444a3596c5dd3ac181d104f9dfe724591a3d2",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/mcp_config.py",
+      "verified_workspace_sha256": "af6bb48b6d24533cf84283c35c8951433a5ac0b76714567161519c8deb12810f",
+      "repository_blob_sha256": "54055384009be16b3aa354f75a5ffe5f65457a73a5a17eb66753ab92380452e4",
+      "git_blob_oid": "423c9d3388825fd83dc8d929c50eab5ebca7a60c",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/mcp_runtime.py",
+      "verified_workspace_sha256": "c1bd20f5c68ed223ff9e3a082f0c36d7ca22c49c076389c0eec0c64a454ef260",
+      "repository_blob_sha256": "5f22c702a0fa8e9f91ddea375b89ca35de34aa12b863d85417c640d5bfb5f6a1",
+      "git_blob_oid": "e427605129158f51aded5e293e5ac3833cdb12c7",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/passwords.py",
+      "verified_workspace_sha256": "0239a7f43235654f1cb3fd3fad4b601f3561cccb0fe78156c2586f9d70d73851",
+      "repository_blob_sha256": "0239a7f43235654f1cb3fd3fad4b601f3561cccb0fe78156c2586f9d70d73851",
+      "git_blob_oid": "9e41e08c7be316f546dbf73778c09a5c8705eff3",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/pdf.py",
+      "verified_workspace_sha256": "767919f345e11b909faa8686317b629f830dad96a0c42e84c2f8ab3c60eda9f6",
+      "repository_blob_sha256": "eb8103b4c4ac73b96a96820ef6693f254337e6853e80a4cbbf84738b91f4fe96",
+      "git_blob_oid": "d166b378a3a45a1c8cdfcdbb51e7310d3083e69f",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/pdf_worker.py",
+      "verified_workspace_sha256": "b6438974f7664f4cfaf8784df37a9500e735b4632d752625068f5e19a639b73b",
+      "repository_blob_sha256": "5d65163e3755ed513dc0623af720704c474433d35734e2aaa33bc55ec0fd2274",
+      "git_blob_oid": "7358e0cbe021c5334d24b33008de7478eac96c7d",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/persistence/__init__.py",
+      "verified_workspace_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "repository_blob_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "git_blob_oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/persistence/access.py",
+      "verified_workspace_sha256": "cb6b11be8baa201ebb53d02478864e34808e5e9bafa06fbd1746f82bff4171fb",
+      "repository_blob_sha256": "cb6b11be8baa201ebb53d02478864e34808e5e9bafa06fbd1746f82bff4171fb",
+      "git_blob_oid": "5e090f020b77baeadfdcbf49b9f8d1d3e6b5f2c4",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/persistence/business.py",
+      "verified_workspace_sha256": "f2b7116030326215c69f4b6fc5c2177e94f394e71e98af8cfe0660d5aadd7063",
+      "repository_blob_sha256": "f2b7116030326215c69f4b6fc5c2177e94f394e71e98af8cfe0660d5aadd7063",
+      "git_blob_oid": "918ac816cabb52e51a981587ac9ab7d844a55a91",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/persistence/checkpoints.py",
+      "verified_workspace_sha256": "610a0ab63e7832e724fdf77e0ce85786c2ba03303af6ccf0fba9320e562cfeb8",
+      "repository_blob_sha256": "f360518109e6044315dce32dee2d20350bbd95d559b525727c6b6745b34cfe6c",
+      "git_blob_oid": "3aa5735a51c4a9178c12c22494fef0b75500519e",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/persistence/database_import.py",
+      "verified_workspace_sha256": "a2eaec12b577c0cd1f837a5796cc956824763b82ffe4f002eb23bea87bc8a0cf",
+      "repository_blob_sha256": "a2eaec12b577c0cd1f837a5796cc956824763b82ffe4f002eb23bea87bc8a0cf",
+      "git_blob_oid": "19cb11af4b27b1d1cab51cd4d325b7f672043897",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/persistence/deployment_lock.py",
+      "verified_workspace_sha256": "3d0c9c7552a23d8d03be61c393085fc3781ed88e9657373fcde415887fc7bf12",
+      "repository_blob_sha256": "3d0c9c7552a23d8d03be61c393085fc3781ed88e9657373fcde415887fc7bf12",
+      "git_blob_oid": "30fa62f726c29b73e95ff1cd9ce3f4bcf604adac",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/persistence/governance.py",
+      "verified_workspace_sha256": "8ba4a58a4800f03dc1e4d5bd65116e51ca98dc1e1eccc8574a14ff357fa213d1",
+      "repository_blob_sha256": "8ba4a58a4800f03dc1e4d5bd65116e51ca98dc1e1eccc8574a14ff357fa213d1",
+      "git_blob_oid": "4b8d71955be57f02fc9b5c53740f301131609d9b",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/persistence/local_files.py",
+      "verified_workspace_sha256": "5e34fcc0b75285d6f5aa23b48bf863d7cad47792d7689326587e88610c197bab",
+      "repository_blob_sha256": "8a933c1bf0409de2f8bd358e0e6810b4fe7a76b2f0f0b4147f557a67a4203940",
+      "git_blob_oid": "45138d3613967887775f8df1a8d076e021891127",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/persistence/postgres.py",
+      "verified_workspace_sha256": "baca7c47f26d0b15151223745f73793d77b8a07768c9a62c3d59feb8334c55a0",
+      "repository_blob_sha256": "baca7c47f26d0b15151223745f73793d77b8a07768c9a62c3d59feb8334c55a0",
+      "git_blob_oid": "1bf98486be182c1dff5176be83f38ba2f5bf0cec",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/persistence/postgres_access.py",
+      "verified_workspace_sha256": "9600b6efee62916b3e26d2156ca57a0cf4ca0cb27d67ebb0ada3e55e1f27f5d8",
+      "repository_blob_sha256": "9600b6efee62916b3e26d2156ca57a0cf4ca0cb27d67ebb0ada3e55e1f27f5d8",
+      "git_blob_oid": "35f8b9d2b8504b333d2b9bdeec1d8dd8cc668682",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/persistence/postgres_conversations.py",
+      "verified_workspace_sha256": "a665e03ba547408c233ac6c97223b3e6dff7a17c3f323011d07b28278d34744b",
+      "repository_blob_sha256": "a665e03ba547408c233ac6c97223b3e6dff7a17c3f323011d07b28278d34744b",
+      "git_blob_oid": "b42ff686c05b3f81ba58cca4313167fe9bc08040",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/persistence/postgres_runs.py",
+      "verified_workspace_sha256": "bc5e7ac9f224cbca0e1a30f9ac1a5c04da633008f2076b119fabb102c8e0099b",
+      "repository_blob_sha256": "bc5e7ac9f224cbca0e1a30f9ac1a5c04da633008f2076b119fabb102c8e0099b",
+      "git_blob_oid": "4722f2eb08a28df2db5d3653e8062d44609f1173",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/persistence/postgres_schema.py",
+      "verified_workspace_sha256": "8ef0f71aa38a1c16b447d571b5d43528cab64195f83f35771f9d5c168477efe6",
+      "repository_blob_sha256": "8ef0f71aa38a1c16b447d571b5d43528cab64195f83f35771f9d5c168477efe6",
+      "git_blob_oid": "d6e0791caa84883db2c8013e14934fcdbf0e859c",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/persistence/recovery.py",
+      "verified_workspace_sha256": "46a58129decfff91c5a1e4e3f2a9d7ac78c2fdc4025cc777c173d8da8dff17d8",
+      "repository_blob_sha256": "46a58129decfff91c5a1e4e3f2a9d7ac78c2fdc4025cc777c173d8da8dff17d8",
+      "git_blob_oid": "8e10f9021cf6ea44eafaf31b843788123a70a948",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/persistence/research_runs.py",
+      "verified_workspace_sha256": "a426a16f54f30adac2129f7264af4864a5961a9af32b9820c8441a79067d41d9",
+      "repository_blob_sha256": "2491ef3c798872392ee2a8cb59f7677ec1845e12ca9a1c1852345dd5f01d3e58",
+      "git_blob_oid": "438e47ceba74d9d51afda3d356d35878b0f90981",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/persistence/storage.py",
+      "verified_workspace_sha256": "74ccc86ede7b862789acea75529e1bbac73781b53e79d9db1eba5bb5779380d6",
+      "repository_blob_sha256": "78a66253f704a08f55522f173cc4609fe042e47d532bec7c560e5df32fdef8ba",
+      "git_blob_oid": "8255dd7588502cfc948a08fbfae4decab26dd56d",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/persistence/tool_ledger.py",
+      "verified_workspace_sha256": "5127023abd8ad0018029a7bb7bffb67276148b6f5e150e8c0c34a0cdc12f3eec",
+      "repository_blob_sha256": "5127023abd8ad0018029a7bb7bffb67276148b6f5e150e8c0c34a0cdc12f3eec",
+      "git_blob_oid": "a20967ed48ab4402c1e74b2b9512c034c95ed4a0",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/tool_adapters.py",
+      "verified_workspace_sha256": "abcab9684f54fa585c926113ac209d3940c686b9de232600da3d9a589788ab35",
+      "repository_blob_sha256": "0724b5fbf4e4355f0b5cc114aa637304c7aa795d76423daf0328fff942cf0fbe",
+      "git_blob_oid": "724e9d68bf5b62ad9cd2f8ea4f435f70a7ed8d46",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/tracing.py",
+      "verified_workspace_sha256": "b32bfec6847c7dd61f13c9b3490641591bad5b45bab091cf21341ad04be3ad26",
+      "repository_blob_sha256": "60a0edcc6169b67e9dd19fe20d00167b44cd788acc2fc4c887c10e3649be549d",
+      "git_blob_oid": "6e3c7320c3fdc073b8fc1a78e8cdbec4fef604d2",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/tracing_config.py",
+      "verified_workspace_sha256": "4d8ebffdd83ac2cee833ad8e3f2169870ead37a0eb7743fb9c8330d25819f386",
+      "repository_blob_sha256": "4d8ebffdd83ac2cee833ad8e3f2169870ead37a0eb7743fb9c8330d25819f386",
+      "git_blob_oid": "597dfcbaef153e6aee6426ea31738579d27ef8e3",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/vision.py",
+      "verified_workspace_sha256": "8ab571843d17fbab91f1d3dc2dd4892654df893dffb03ef738e280be0cab344c",
+      "repository_blob_sha256": "b9b21f24ff91dae22c6bda994684324a452bd77594784834f8a4e3260a1f4808",
+      "git_blob_oid": "cd2a94f3b90ccbbe78d83136c7bc415fce0bf0e9",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/vision_config.py",
+      "verified_workspace_sha256": "f7bf3deffd9bd0d7de3747599450c2e2e7aa18bc34461e1f983854318e067da8",
+      "repository_blob_sha256": "4a3d06f1af9feb178a1eccabf8372c9bd89ef372992f50b6915199ce61473c32",
+      "git_blob_oid": "debd7cfabe33f55b9d17b9b6160be5633f4a6276",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/adapters/visual_evidence.py",
+      "verified_workspace_sha256": "d1548e64e1731bfbd3da8d9b2bf258ae27e1266ad327b639684c5dd2efc861a1",
+      "repository_blob_sha256": "9975e434a0d48b45b15c12ab80ae082ac62cad66a9128c7b670289bf3d7a96ed",
+      "git_blob_oid": "3e341bb382af3a26cd1f898847a98177e6cc247e",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/agents/__init__.py",
+      "verified_workspace_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "repository_blob_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "git_blob_oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/agents/agent_config.py",
+      "verified_workspace_sha256": "9b04caec40e3ba2262273a9bc04f1e203174f70c0e87198b3ff28ad5addef79b",
+      "repository_blob_sha256": "11aee9261c073b8c1fbc938dd86905d9a7bf668db7b5ff2a37184dd7723c79be",
+      "git_blob_oid": "7fd02ce5e0ba4dc8fde5331760687bc34dec0135",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/agents/agentic_research.py",
+      "verified_workspace_sha256": "122843aed3a9a6e4e57336bc52c1f5377add90288405dd00616e04b230acdb3d",
+      "repository_blob_sha256": "3f39925860145f766f4278a69150d4b7a9c02423b191165411a17e55107a6a90",
+      "git_blob_oid": "47f04dbd25888a49098c4205cd7334d54aedaf0e",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/agents/answering.py",
+      "verified_workspace_sha256": "db455035e5cc1c254d40e5f71f4e8356cd0ac57281ff0bbcd521f65ea9217849",
+      "repository_blob_sha256": "8a6b8c9ca5fe73de94696244cfcfac9ae1b5f2c8c3f9bf3c18bc22ab8d6f88c5",
+      "git_blob_oid": "65f6e8120f5c7dfad45720232841d2ee6854166f",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/agents/budget_control.py",
+      "verified_workspace_sha256": "41266fefdc39a07145437522e72f0acad3ac3ac7c19d4363d7672daff7d882ab",
+      "repository_blob_sha256": "9f2b6fc3321ac1a7e31e020970dfc11e925e354d77fc9ba67d43d93028cc615b",
+      "git_blob_oid": "037aa6aad9cf6daab574f90e9460880bd595c5e2",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/agents/context.py",
+      "verified_workspace_sha256": "53c48f3cc5e9e45e8fd96f2bf9fff4351a2a02d374c29b92adec99a07c0d9007",
+      "repository_blob_sha256": "8c36dc4c8df79da16756ff84d5e04bffaf5bf4e60908eb49d24660b317de8539",
+      "git_blob_oid": "9c0dd463e3d11a8e63288bd24cfc56151f81da1b",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/agents/contracts.py",
+      "verified_workspace_sha256": "776b0b11eb50938986a3bf3919a58939ec00905fa2f90d4f976647300451bee4",
+      "repository_blob_sha256": "7c6fb903d0d0c4a11fd9f7f55b542f4ff25eb2d3f1ff572b12b1705bdef23305",
+      "git_blob_oid": "2ed21f25593a5117be3a332594996ec9ccb376c4",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/agents/coordinator.py",
+      "verified_workspace_sha256": "db8ffa7a6fa992355151cfc40fcfeb30cee61330c01166b561fd857571fd605d",
+      "repository_blob_sha256": "bb61b9e77b0dc3e22223a01d57562499de612eaec0dbf8a238c58a20c3235700",
+      "git_blob_oid": "e9ff2a07b312d7be26d8c8aae51f51903489ad96",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/agents/evidence_policy.py",
+      "verified_workspace_sha256": "dfe8f1bedb422b50edbaf891d8f1ef416d36d4d393049a6499547843437b891c",
+      "repository_blob_sha256": "22241ca86608bb799b15aadc8d41718f00a8cd4dbb78491d746fc14adb35607d",
+      "git_blob_oid": "66635d65ab264d66035ccc24447796fa76e263e1",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/agents/model_calls.py",
+      "verified_workspace_sha256": "e7601ac7f39606b8c7a8da822ea7d285a5d728e2c6c2aa72793d88125d73dfe6",
+      "repository_blob_sha256": "7daefe34e452a824ee94779ce014710be394b1c3ef3f59a2f2295642a62e3407",
+      "git_blob_oid": "2d8f4778fcdd8a7022408469807634d49848b0d1",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/agents/path_answering.py",
+      "verified_workspace_sha256": "f8f72150510eed7fc0326af1afb022b30fd7471e7d99ae980966b8f43206573c",
+      "repository_blob_sha256": "f8f72150510eed7fc0326af1afb022b30fd7471e7d99ae980966b8f43206573c",
+      "git_blob_oid": "eca84fce886b19ad74a003f6d97413851369e5c5",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/agents/path_contracts.py",
+      "verified_workspace_sha256": "9dba3c38143f468397a8f4d862235a89221ffb84af52965bba0b9e0544719316",
+      "repository_blob_sha256": "9dba3c38143f468397a8f4d862235a89221ffb84af52965bba0b9e0544719316",
+      "git_blob_oid": "e0e88f1f1d4bca9b34af01fe56fe722b017382b8",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/agents/researcher.py",
+      "verified_workspace_sha256": "c32141da49a5428eaecce820b026a72fc48a4bfa7a4799dbac3d22a79c0cd2bf",
+      "repository_blob_sha256": "ef02cdcb8385b6b263d56903ca763d3faab992623bc97129a3605e76c7bc7766",
+      "git_blob_oid": "ad0a5d6b504829378c9b7007874a7a21cb10d7cf",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/agents/review_control.py",
+      "verified_workspace_sha256": "9e33d82e6817a7ace73e58bdf06367447922693522757453af2432c7126cfd81",
+      "repository_blob_sha256": "9e33d82e6817a7ace73e58bdf06367447922693522757453af2432c7126cfd81",
+      "git_blob_oid": "a9dc14c337de985a08e45713578bad97bdaf93ce",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/agents/runtime.py",
+      "verified_workspace_sha256": "063c581bfc30f3a0e4cc483812774e19e16f663d507d13d80dc3bbeecda19203",
+      "repository_blob_sha256": "cd978b7683187b0bb1091a2ecb5702559b8060185ca3026fe0495cfa8a9c9975",
+      "git_blob_oid": "bbb68658651df15f76ec436e5a1961387426b68e",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/agents/subagent_contracts.py",
+      "verified_workspace_sha256": "a2c140b426bd314b4c4787e0f1875a84563eaf46482e9d204f134e43f7c02a48",
+      "repository_blob_sha256": "0005d6bb433be958cb945b3e882333afcb14bcefffdf19d5aa0adf0b58c34b4a",
+      "git_blob_oid": "8f755a70a982daee9e6f4e3d7a3791449cd77b11",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/agents/tool_service.py",
+      "verified_workspace_sha256": "7a8cbe86471d9bca2de6b2395320b882910271d067fd308647f9b4de085f6116",
+      "repository_blob_sha256": "1a0a70b780406baa27e3ec5be601182f29c1c340f10ec2f02bd120b83405c2e5",
+      "git_blob_oid": "655ccd5a8a860f46b9f3b89db2a35eb70346c9c4",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/api.py",
+      "verified_workspace_sha256": "106a51c961c927d1b21f1e0472bc2ea6630cf58e3eb45dede3cafbbd868a6db7",
+      "repository_blob_sha256": "d024e6f64f7f6b705826934ffa0bcc55671f0d016067f1ce4a09a8dd53ca383b",
+      "git_blob_oid": "03f52331241718b79c5607f6c80793e4f0eae33f",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/application/__init__.py",
+      "verified_workspace_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "repository_blob_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "git_blob_oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/application/access.py",
+      "verified_workspace_sha256": "d4f9737423bbb79795acf9df942cc0be7d13a4927b7cf72292df787728c68f43",
+      "repository_blob_sha256": "d4f9737423bbb79795acf9df942cc0be7d13a4927b7cf72292df787728c68f43",
+      "git_blob_oid": "473c897ef43083451e815c3d2d31a3b0b4f62f84",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/application/access_cli.py",
+      "verified_workspace_sha256": "2f760c79a306add295d9c1d12858cd5379953b3edda2d4f490b3fa6c78a09e59",
+      "repository_blob_sha256": "2f760c79a306add295d9c1d12858cd5379953b3edda2d4f490b3fa6c78a09e59",
+      "git_blob_oid": "b22cc2f07ac188bff57fa7f833f0c3d65dbdc630",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/application/answer_service.py",
+      "verified_workspace_sha256": "16b8deef990618672ab438270cc889b08e1802259783369c6f204d8378fb0bc8",
+      "repository_blob_sha256": "6c968f0a7e349394466ac003a129ee16d809e96b3f9c261a70265c902aec0dab",
+      "git_blob_oid": "ec13d11a202db20c092ed12095fef22d139185b8",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/application/bootstrap.py",
+      "verified_workspace_sha256": "e61501b914f373c7c842a30dea9327db570d5fb1176405ed99dc139caee7a826",
+      "repository_blob_sha256": "2c40dde28fe971392fda1ffb0165fea6e3875f628fb51cc929bf9133bab0e3f4",
+      "git_blob_oid": "1e7418a27045f29ae8767c882960aeac3b3ba888",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/application/bootstrap_team.py",
+      "verified_workspace_sha256": "cf3115adebbd9b4addfc6fc8d58a83be4fe91e82565b50b1d76d99dc11ff860e",
+      "repository_blob_sha256": "cf3115adebbd9b4addfc6fc8d58a83be4fe91e82565b50b1d76d99dc11ff860e",
+      "git_blob_oid": "2cdbf1701909342c39310fd4f00e3d9da4d83ad3",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/application/commands.py",
+      "verified_workspace_sha256": "ad19bac0dba76e48a7f9b949f5e474f3b610b4951d458d6e620f19757c192100",
+      "repository_blob_sha256": "02637df81f638fa2dafd4124d2ee41117c653dcf2aa225ce587efc65186c6176",
+      "git_blob_oid": "aa5370a764e9008ea5853284ff213de41429bb48",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/application/database_cli.py",
+      "verified_workspace_sha256": "95fb6b8032f2485cde2cb65858eea0d0d1ce64964c484fe80d19bc0b9a6cf4c3",
+      "repository_blob_sha256": "95fb6b8032f2485cde2cb65858eea0d0d1ce64964c484fe80d19bc0b9a6cf4c3",
+      "git_blob_oid": "fc2da1d5f6555dac26ae698782c4bc1f611ef3b3",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/application/demo.py",
+      "verified_workspace_sha256": "fd04d7ff510956c01f62dd9523e65984637bb4342f6ff2011d9e735847718b8a",
+      "repository_blob_sha256": "43273e420094390fddf396d825935505d307ea6b980c6bad3d12d0ed1b470bb6",
+      "git_blob_oid": "6bcebd61a5b357bb372dd07122eecc7cffb66960",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/application/governance.py",
+      "verified_workspace_sha256": "26bb2fedd04488dd443de136f4a07e35547a3023282997dbcfd54e581ffc2d29",
+      "repository_blob_sha256": "26bb2fedd04488dd443de136f4a07e35547a3023282997dbcfd54e581ffc2d29",
+      "git_blob_oid": "4dd54b3e3094792d4389edd722b53fe051b3f23c",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/application/library_service.py",
+      "verified_workspace_sha256": "681872c73c568d126e4a247c9b4f9d61e225611ab1fac669ff1d256aa3870833",
+      "repository_blob_sha256": "6e7633915aefd45c9c1960ac3f18b653f9bf7c1374172004042200496f753d80",
+      "git_blob_oid": "c8adebc0e8f1c3dbf8b5d95b33e5f89a3e46b07e",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/application/maintenance_cli.py",
+      "verified_workspace_sha256": "4c417e5858575f66f41891870c99920454c648f2ac1a3a54d5389260075e8472",
+      "repository_blob_sha256": "4c417e5858575f66f41891870c99920454c648f2ac1a3a54d5389260075e8472",
+      "git_blob_oid": "0afbe1ee58e85717cb52741eb0cbed68ffea1964",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/application/mcp_cli.py",
+      "verified_workspace_sha256": "fbe5714b5a94074e84849c1aef1eac6a8da53f5c783a4805ae133a1076a98094",
+      "repository_blob_sha256": "fa7119110e5857d5772ba53de6388c1897f84f45d22f33ddc5851e2775eadb46",
+      "git_blob_oid": "9fc5d287af15d9570111a34e953e16197538c710",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/application/retrieval_answer.py",
+      "verified_workspace_sha256": "283a5dcf6c43868c55e800e45ea09193ec77cd49351c7feba0e08043e2a5fee3",
+      "repository_blob_sha256": "6e0eea729a73bbe8525ff7e8d969b86fc1b0e997206b6b5ac84f3d1699d2a8ae",
+      "git_blob_oid": "1e0d32c324650426607bd0d7e34a8372928921ec",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/application/run_reliability.py",
+      "verified_workspace_sha256": "400d5ba6d1a8050220973692d4a271270c3e5f95ee528c6376c3c3b59414cda4",
+      "repository_blob_sha256": "400d5ba6d1a8050220973692d4a271270c3e5f95ee528c6376c3c3b59414cda4",
+      "git_blob_oid": "4bb98ce94a4b93d729b99963ce1fc625519f31d6",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/application/scope.py",
+      "verified_workspace_sha256": "6a8071509f1d3bed1505266d4a7ef4e29232a300136fc5381506710ea5cd2866",
+      "repository_blob_sha256": "54fe436ae06a97a0e1c5b8f2df478c3c007676ccb6bfd7a06d39bfd88c23dc64",
+      "git_blob_oid": "71ce6f9a5c44219a86291579a55a93a1b4e9b541",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/application/service_base.py",
+      "verified_workspace_sha256": "ebc24e2e3344f12880280fcbbb8df30e1d969dd1237dd2888a0ebd46b48e0bec",
+      "repository_blob_sha256": "545ecda99ee69851815574828c733beeb73a44c21da62e39958c4cb8088dc2e9",
+      "git_blob_oid": "4fd5217526dba11d9af375d5a2a249740caaeb6d",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/application/session_runs.py",
+      "verified_workspace_sha256": "6e63c1f32cf8a947830f2df96966f25f5398079e940d80c30753d5634c2e6832",
+      "repository_blob_sha256": "ff59816231ae7b41c5321137744c881332e457751f3ac3057a809e7a42a3e8e9",
+      "git_blob_oid": "8e33cc7088ab46b593a16b8ff5214645ee86bf91",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/application/skills.py",
+      "verified_workspace_sha256": "cb09bbb52a3d8d1ce49f6f42ce1ad111ce344609e231d0af0237fec0b330484f",
+      "repository_blob_sha256": "ac7bb50df84589ca8bc452c6ab61b3f2dbb362b253154b329fbf1250783da55a",
+      "git_blob_oid": "d421e3d436e4879f7b5b88c6547ad7d9d0cb470d",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/application/snapshots.py",
+      "verified_workspace_sha256": "7dc70c5b2a4c97c8a2e44f0627aa82f5ac2a7011f7f69a3f062aa5bf595b1184",
+      "repository_blob_sha256": "b7ba90a6be1aafff79ef26047778c78a4eb9b4ff2523148b9a3ea89eaeafb201",
+      "git_blob_oid": "a79ebcaaf18da3d84035b866835bd88b99ca4f40",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/application/tool_execution.py",
+      "verified_workspace_sha256": "0ff2527ffcc55f0c473e462ab7594c654f20fcdaf460378e4bb41542ee1e16ad",
+      "repository_blob_sha256": "0ff2527ffcc55f0c473e462ab7594c654f20fcdaf460378e4bb41542ee1e16ad",
+      "git_blob_oid": "b7f941e6c9f10a3955a8a40c4d997670627728d1",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/application/tool_reconciliation.py",
+      "verified_workspace_sha256": "65b70058b9abdedab7eb616b259e2a1e913f3d953c3addd7546e25f98042ed02",
+      "repository_blob_sha256": "65b70058b9abdedab7eb616b259e2a1e913f3d953c3addd7546e25f98042ed02",
+      "git_blob_oid": "6ad937d32753d001a66de65064845988b331466b",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/application/wiki.py",
+      "verified_workspace_sha256": "a98da2c9d15660228145201a9339deabaf28ffa0d2db485e19b66a018483eab2",
+      "repository_blob_sha256": "3685d5c40f3b5dcfa2d8da8609caeae3933126048601cc03d79da2ff9a7f9b8e",
+      "git_blob_oid": "448ad14cc9187642c3db9d6006703082b4940733",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/benchmarks/__init__.py",
+      "verified_workspace_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "repository_blob_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "git_blob_oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/benchmarks/__main__.py",
+      "verified_workspace_sha256": "2799b898a05fa8ab8cbad8ecabc57a648b38002dee979e502c53071b105a2456",
+      "repository_blob_sha256": "3035c802a7cd0bc12484f5400bed1d5151080a52078045c4aaf173651ff2afb9",
+      "git_blob_oid": "a27c1f42fd87c3c8b3472015e585ef0df77214a9",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/benchmarks/ablation.py",
+      "verified_workspace_sha256": "d378438e557d9acc131abc0d4b2987a41072c1934f4c17237095bfdbc4668577",
+      "repository_blob_sha256": "ae89bbf08893a6aafb41548487931894579b78843dc6d99706e304fe7477881a",
+      "git_blob_oid": "0f34d420d2fb67bce46f6fed500511b3aa792bfc",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/benchmarks/ablation_report.py",
+      "verified_workspace_sha256": "e6379ff0745eeca088f52ac6a1531cbf91c7e1ad94d14d4bf128943c4d48b53b",
+      "repository_blob_sha256": "e28585b31169de7333e12c3dc1d0965dccd0e883d3af45ce10b4253f20e6d53e",
+      "git_blob_oid": "44328cd42f2c64d54f32d977273830530063aac6",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/benchmarks/dag.py",
+      "verified_workspace_sha256": "119238b314368f6c1aad9e68d5d1dc5ae14bc9b53848c803b9e7bab49bf89ba0",
+      "repository_blob_sha256": "a42a02186b0e767423887d9461842ca5d682105ecbf5dc4569d7f58cd5473461",
+      "git_blob_oid": "a8783f2466c00e7f776672c3ca6e67bce9b40bd8",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/benchmarks/multihop/__init__.py",
+      "verified_workspace_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "repository_blob_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "git_blob_oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/benchmarks/multihop/__main__.py",
+      "verified_workspace_sha256": "1081dea887f20c1cd3334589c4024fb7450dfdceb5706156948b1c21a7a751c3",
+      "repository_blob_sha256": "be8c7339b95c3736a9049726808af2335d8de9351874672d919f6a7aa20ba552",
+      "git_blob_oid": "3a5e0c8dd46d5bcd72a86c52e2bea4cacdded637",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/benchmarks/paired_regression.py",
+      "verified_workspace_sha256": "38501ab4931735421bb305518201b2f4536df5002a465f7215d0c13d1c9bfe3b",
+      "repository_blob_sha256": "dd8a3df0665bdd1137bc040f7ad1b80643ad98319216adf5c703ae66740aff64",
+      "git_blob_oid": "47926df7fac174c595ddee9eb7d71c6a48f3de59",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/chunking.py",
+      "verified_workspace_sha256": "eec815fc6d256675e7c97a0919d74df55d27caa2def03e741ed16e2466bab4f3",
+      "repository_blob_sha256": "69f2d6e28d77d9d6480b5bf43c4c09d8268a4c6ac7d7158c3c2498b2b4040849",
+      "git_blob_oid": "99af823e2e7e6eb3b78c43f5c075b9ddff9906bd",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/communication_traces.py",
+      "verified_workspace_sha256": "6ed0e25ca2ebb5288ac86fc1c65a18dc0dc25f701b5a96a36b5fcdd1c1542b68",
+      "repository_blob_sha256": "33487638b955a62a266712f7e14b4ec5cf597d5539a35dec3e282edb669fd2b6",
+      "git_blob_oid": "b3982a069ea589bac7c6b2514e5c21bbbaab7d21",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/core/__init__.py",
+      "verified_workspace_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "repository_blob_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "git_blob_oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/core/answers.py",
+      "verified_workspace_sha256": "b869fb25347d301a1418325ca0892a6fb537a7accbfcee9892be60bb7ec86c58",
+      "repository_blob_sha256": "b091aa240d76de7ab16cb102ff706b94e0c514fdc5c1c6015c79899ed617ab83",
+      "git_blob_oid": "40da924f1a93bc69dae194d8fd3d41ca72b28418",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/core/cancellation.py",
+      "verified_workspace_sha256": "a4faf73be1ab17f8d9a6ec3fb25e4856408e6a20fc2f1d8c609c8300b1c0bfbf",
+      "repository_blob_sha256": "aa8fecaa415e6d3c7227b0a3f6f465c19007533d18d93f7b2057624e2712ad21",
+      "git_blob_oid": "ff96fb5b180f5aa51e4bf789c7db77fb2766da68",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/core/candidate_reuse.py",
+      "verified_workspace_sha256": "d880e7ee27a816bc29fd099cde1f7bf2880c7f34717ac213813ff12d22912999",
+      "repository_blob_sha256": "d880e7ee27a816bc29fd099cde1f7bf2880c7f34717ac213813ff12d22912999",
+      "git_blob_oid": "77ae9b4693b041e671e257f90e533db22dec8876",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/core/chunking_config.py",
+      "verified_workspace_sha256": "cda761bdcd5089293354bd6acb6ceb9b51778c833d2a05b6139e92a44332ac1a",
+      "repository_blob_sha256": "188c8162ea4fd72bc44b3b83941e6fde90c970a83f68eea2529e9dcd7fbdf634",
+      "git_blob_oid": "1011c4306e998014934547adcb3d1121b235a4f1",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/core/errors.py",
+      "verified_workspace_sha256": "25699f3b2b4dc39fc4c02bd96b627a607670442ebd17cef4739b605be7060c94",
+      "repository_blob_sha256": "92c14c01115d92eb093cb9a3c018e8bf9e4b726bf8428dc210e1e6bf4fd12bbd",
+      "git_blob_oid": "315ec510738ca8720cad1498a5769428a60bb382",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/core/evidence.py",
+      "verified_workspace_sha256": "67fe6e44267b60757f7d56f2c3ab091d6c58fb65b6dbad10ad5174274f4a16e4",
+      "repository_blob_sha256": "302df7f664c28389b1128ded279b0bacffb810e8711ce26449c68580f5181b24",
+      "git_blob_oid": "80a14cac3c9fe9a6e4d90b4598d93de48b161de3",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/core/evidence_paths.py",
+      "verified_workspace_sha256": "e5bb188c69f1ec0da4aa4a7f61a9ccb6883e210d3e0f23a2eec5e91eadc74ba6",
+      "repository_blob_sha256": "e5bb188c69f1ec0da4aa4a7f61a9ccb6883e210d3e0f23a2eec5e91eadc74ba6",
+      "git_blob_oid": "82e7af07f2c0cf3103c7343325f407fc013a45bf",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/core/filesystem.py",
+      "verified_workspace_sha256": "39d03e0cda615e1badc67f8dd7c785c834fbcad893d19e6bbd9f32cca39a2082",
+      "repository_blob_sha256": "39d03e0cda615e1badc67f8dd7c785c834fbcad893d19e6bbd9f32cca39a2082",
+      "git_blob_oid": "f7e9210b5a272176debbbb86089a46dce4459f70",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/core/governance.py",
+      "verified_workspace_sha256": "f34ed25af62c99fb65f1e6e1a94e2eb95c6d4f69a17b5abe59f312b491813c1f",
+      "repository_blob_sha256": "f34ed25af62c99fb65f1e6e1a94e2eb95c6d4f69a17b5abe59f312b491813c1f",
+      "git_blob_oid": "1efca6a0043c0b2d2336b17f966d86d7a7ada19f",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/core/identity.py",
+      "verified_workspace_sha256": "2493809039a947dfe26f2937212c841149c8b6d4758dfbef6b94688273a406f5",
+      "repository_blob_sha256": "30a871d880ac123b1150c74332971bd540faacb90410717ad4168a76f4f42c3e",
+      "git_blob_oid": "591d6594f03e4054c407d610749a1a8bbbbe84ff",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/core/models.py",
+      "verified_workspace_sha256": "9087ff1206f88a50563498dfae4376249dd7d55253ef69607a3f971a881e1f92",
+      "repository_blob_sha256": "5f476123e4a900dea248efc31006274b293f99280a01a6e77b680855f897c441",
+      "git_blob_oid": "b0356c85352ef2308769c9359cfdbf33ea76b1b6",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/core/paths.py",
+      "verified_workspace_sha256": "d5a2d1b8b0031e561a1e6f131522f54fb6b263bb82ddd110413fa356a5dc8f77",
+      "repository_blob_sha256": "c71a8b5e7369184190700591cb77973b9818c9a3fbec6e0ad6d16eeb97290cc9",
+      "git_blob_oid": "2e71dcb1ed43fecb8f46c08e35c5d85ec3567066",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/core/pdf.py",
+      "verified_workspace_sha256": "4ba44e751d6e3c401407632daf04a672a0a44102857311093391db382583e329",
+      "repository_blob_sha256": "5f145b3c62d2c7d590bad9584bfabe7f415a91662c949674e6fd4c73d9b70ee4",
+      "git_blob_oid": "5e3f5c37bef6b868b43c501fdeb0b75ff12d56cf",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/core/ports.py",
+      "verified_workspace_sha256": "2323b6e277daa32293c35cda10a96d0733ea338cd77cbc7bd0bfeef14d615418",
+      "repository_blob_sha256": "fa878f3018b7d00d3ef80204637bef4abf618245436f2a8a60f791ccaf76b687",
+      "git_blob_oid": "02a6ecb0e6226cc99ee0b7b16da5a3419581b372",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/core/prompts.py",
+      "verified_workspace_sha256": "312c65cc3b6334bf22aa4085d36fb52265693272660ac3c4b13856152de3e108",
+      "repository_blob_sha256": "8a0aba60a9a4ed3605b843a878267a96ba41836d73cbdc3adf0848b42571a3b5",
+      "git_blob_oid": "9e3a861a43e03cf9185d5764f9985218feb6246b",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/core/tokens.py",
+      "verified_workspace_sha256": "199193ea3b7dfce9f097f4a1bc8cb4cc54842f44a0501c25745a15f7f0075333",
+      "repository_blob_sha256": "c8c11488e45cccbb695dd7d085c15e95a62b53cecdf24c592d10f29f763eaac4",
+      "git_blob_oid": "8d32666236fdbe5d9ca95d027a82acb9afb83619",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/core/tool_execution.py",
+      "verified_workspace_sha256": "8f89e66f40eab24f73700d35a1eeac0db990caecc3552a24f52b6ec12d8ff9ec",
+      "repository_blob_sha256": "8f89e66f40eab24f73700d35a1eeac0db990caecc3552a24f52b6ec12d8ff9ec",
+      "git_blob_oid": "4ca50e57a90c677bb0391edfd5d9bf088df1746c",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/core/verification_gaps.py",
+      "verified_workspace_sha256": "e3b1239e7a972b3d105ba796461354eda6a8fe5a2162a5c9cef32d953bdba8ea",
+      "repository_blob_sha256": "e3b1239e7a972b3d105ba796461354eda6a8fe5a2162a5c9cef32d953bdba8ea",
+      "git_blob_oid": "ce97a5744be7b52faa842cd39f25417c91614fbd",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/evaluation.py",
+      "verified_workspace_sha256": "3216758732676e974e13b8191b2ff8cb9cdaf858a20c577e59c5e15536398429",
+      "repository_blob_sha256": "0524a3d9dd7cc9433479259c6898452d76d885450b353d9204618438e6e823ea",
+      "git_blob_oid": "2e9b78ebeb58d373be895690d8da5ff0213b38f0",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/knowledge/__init__.py",
+      "verified_workspace_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "repository_blob_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "git_blob_oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/knowledge/ann.py",
+      "verified_workspace_sha256": "5ba4e9339932e532b4e1cdeb6c7f3eaca7bee5180aa9aa00f31ab5307d89ebf5",
+      "repository_blob_sha256": "b1d11400b878e485e7189f6b86825c545e529696fda204d449c12cdf59bf8cbb",
+      "git_blob_oid": "000e8e2f6cb6fbda58e0844e6e93bfc3e77a01de",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/knowledge/bm25.py",
+      "verified_workspace_sha256": "50496a858b49aa3948cc2736b6a41aece6610d12d366e5456e6f12c603dcf8d5",
+      "repository_blob_sha256": "640daed7df1e3ee071ec74cbd22eced71c3fcf75c1eca49bbe179e7d10762dfe",
+      "git_blob_oid": "3f1fc6cacf3186b65dc4c969f2ecc75f5e1e3958",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/knowledge/chunking.py",
+      "verified_workspace_sha256": "44bb2d9a1a21137f1e879d50d416f35ca2704210baa47b156e06b2ff3cf7c636",
+      "repository_blob_sha256": "963a6f74b504a7ec8d93710eb8d543a54494db52e7aeec2a4a41b3f5dd2a2af6",
+      "git_blob_oid": "68c27d620075c8991a3d253adf1d7cee48d211c4",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/knowledge/context.py",
+      "verified_workspace_sha256": "ee06bdb267d39244de72b935df48892a88d0f411808319c9a218ce13d9d9d789",
+      "repository_blob_sha256": "3acd5c06163f6a4437799a47f4b32ffac12e36d8825b9cfad590d4fda8bba601",
+      "git_blob_oid": "0ef539dae0278ab0800981c75730c47f6730999a",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/knowledge/image_index.py",
+      "verified_workspace_sha256": "7446f3b6bc95fcfc54aab52c588188366d0eb63583cb545442c498d22ca0a4b6",
+      "repository_blob_sha256": "2e7fc3285ad77e41895b3328e18ce4de495208286d5215e3c2415f4d908900b0",
+      "git_blob_oid": "53da1ff3a07e4bc0b63f0cd2579fb55c1490016d",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/knowledge/index_service.py",
+      "verified_workspace_sha256": "63ff37dc64fbec23611884b16650df2d96263eb09190ba32a3959a8186e2362b",
+      "repository_blob_sha256": "6f1dccac2cf8ec0423570f7381896264793dd977f4fd289f88a2103612c218df",
+      "git_blob_oid": "a2055c2c3d61a0aa81cc5ffca34c1190ff2e60dc",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/knowledge/knowledge_base.py",
+      "verified_workspace_sha256": "25bc4cf8ea5af88ef0fe3576de763f51921d2c98318e09788f66bfe520e3812a",
+      "repository_blob_sha256": "9a03c60f1de82e1372e3de7e6c0b47827efa19a88251d62b92317a5b303c3e1a",
+      "git_blob_oid": "889e287e0f9aaa566106beac7e833a53f56798d2",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/knowledge/multimodal_reranker.py",
+      "verified_workspace_sha256": "4dec3836c800cbe05121483caffe726ef6a762a93c1ceef355f2037da1f1a178",
+      "repository_blob_sha256": "f939444b8334ba9b7026e9d03157e8aa59a235710a2a2c641271b4e37de2c45b",
+      "git_blob_oid": "5ffc02a8fc7abd3b5a2ea5d0d897ebb897e1812d",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/knowledge/query_expander.py",
+      "verified_workspace_sha256": "a862bf3fa9c4d91c3d2a559d9d5a4c818ace0969f1e16c05fdb16e31e19eb95a",
+      "repository_blob_sha256": "07088810d4f1843a853b6e2dbdc664bcfb60e5d37c8aa2970fe07d79c523687a",
+      "git_blob_oid": "ef2f6a7e8a4c31a1e199e7185f75b7fe77d0ae2d",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/knowledge/reranker.py",
+      "verified_workspace_sha256": "b221c7f5c4c8c65b05a473ce650c46cb0911a13115ea89b8d63f3570c2358ace",
+      "repository_blob_sha256": "da5d4e381bb8dd18a0df2a861855da6174ab4a9181560ee9c0d59c2144a73c2f",
+      "git_blob_oid": "cfbb96e43baa5dc804e043798e313be1c453b9c0",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/knowledge/retrieval_pipeline.py",
+      "verified_workspace_sha256": "0bf2a557e53793abc57133001a7daa0b3c2c858d5ac5803d7b0d519d16bfe502",
+      "repository_blob_sha256": "d9328546c892603e1e1074350dc5967d722c05f88245fd2465f53d0854bcdf3b",
+      "git_blob_oid": "415999b481687a3e0be96cb4b3ea05e4c644ca36",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/knowledge/section_chunking.py",
+      "verified_workspace_sha256": "39cf1d76cf432c29d5f4bb8a72040c7bcbd832d8d993bd80728bfebd28fe20e2",
+      "repository_blob_sha256": "24f83f289a43e6bcb2324da980ec7e6d203006014c7831b5b1a71a9cfb433433",
+      "git_blob_oid": "54b0a4901d0081b324166494ff5d98a5fcfcc77d",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/knowledge/vector_math.py",
+      "verified_workspace_sha256": "81153be585115796671263b261f41ab56c9a263bcdb55a24bdeaca2c9fba07ed",
+      "repository_blob_sha256": "f5a34461831137f20c064b9dfee7efe8029adf0dc447fbdd5251007db73654e2",
+      "git_blob_oid": "f082a30c25eb1a0ca7aa2746557c9ead98e0e7b4",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/mcp_runtime.py",
+      "verified_workspace_sha256": "117b3f3531d4aea6b4557bd4c2730356f3dfe5004eb957b08c4f6d6ee210673f",
+      "repository_blob_sha256": "92c2f239d629b1dae08b38f9271785fe7911ad49be48bb68609e2d713a7c6a3d",
+      "git_blob_oid": "4bf969550f5c7597a8d136a945c3cd72e407a398",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/pdf_worker.py",
+      "verified_workspace_sha256": "3171ed8f47b4dba5cd4bb3341d114fde51307a536612d17fa8c8d5e23d252cd4",
+      "repository_blob_sha256": "50bef0da46cfc755cc7ff866c2602295cdae4b0775f3b59e465cd618bbe63a2b",
+      "git_blob_oid": "9f286fc2b9a4beb5edc7996f6642eb781aa7afd2",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/web/__init__.py",
+      "verified_workspace_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "repository_blob_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "git_blob_oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/web/access.py",
+      "verified_workspace_sha256": "d7843bd1b2eeacff23c91dab0ab132ef702f5fecc6c2bcfa6dc9a968e4b70216",
+      "repository_blob_sha256": "d7843bd1b2eeacff23c91dab0ab132ef702f5fecc6c2bcfa6dc9a968e4b70216",
+      "git_blob_oid": "3abf185d9064b2b85477049b2ea81c48a790f128",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/web/conversation_api.py",
+      "verified_workspace_sha256": "fc9b6b66b7166721b6c90e3b2520a93e874b8d3ac44181b87f71762bab025b71",
+      "repository_blob_sha256": "175423309f200eb0b0ae46d97382a8b080e4c33da3c39e0743cb773a97d65a1e",
+      "git_blob_oid": "b0d3ad9996ca77cee3d268ff0c108093756784e9",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/web/document_api.py",
+      "verified_workspace_sha256": "317210fc6d1ee06eff0c1d0f6132f9b03c40a7c3ed219e243c70705aee729778",
+      "repository_blob_sha256": "d8d7fe1f09332ec41bf82377524e820dfdfcb9d5e63958b2b9f0e5c9b8fff927",
+      "git_blob_oid": "9a26c7121c073f05d38bfa8864e164f0ff3bb00e",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/web/errors.py",
+      "verified_workspace_sha256": "bd66525c27da04b6dfa83ccfaf44f043372acb5745024d2a858850c581ceb963",
+      "repository_blob_sha256": "c1a8c435e5234b9b14ea4dfc5afc47f6bd8fca0f1c2b3e3c3391a678b8a10ce0",
+      "git_blob_oid": "956a0a2164c02991e2e603e8564915d0e4ef8b63",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/web/governance.py",
+      "verified_workspace_sha256": "d059e97ee8105e477918fa4c9c0849d7704f2e26ef6c1fe56fe503bd44849763",
+      "repository_blob_sha256": "d059e97ee8105e477918fa4c9c0849d7704f2e26ef6c1fe56fe503bd44849763",
+      "git_blob_oid": "926800a204bb6abe2f06efc1fb892eb913cbc823",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/web/image_api.py",
+      "verified_workspace_sha256": "ca2bdc79754262f3b9877b574ed0da83eca977e24e6195cb7b6634e91c5346bf",
+      "repository_blob_sha256": "8233effaa6d4b2f271fea749a57dbeca6aadc0d527fec868a2853e734685b35e",
+      "git_blob_oid": "19dd697a74e3419eaa1d6d3454d77750a4818687",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/web/main_routes.py",
+      "verified_workspace_sha256": "48ef8945ba54a79654440b6b312bfdbc3855c2e3d4901d60958a9efa31446a6f",
+      "repository_blob_sha256": "c51b08f339b3b365bd9783a9f0280332b5c647a57ce563ca07ddbef0ebf00e2d",
+      "git_blob_oid": "bd07fc0eefea6c7354d455a021260f0722129793",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/web/operations.py",
+      "verified_workspace_sha256": "16a604616ee47ab27f5ebeb7366fa2899da4f78d3a7cc1069ccf62d3ef2267f4",
+      "repository_blob_sha256": "55ea96eb9b56eb4ec400d0d0c9d7b99a4bc2ff85834f1cb02e99ccf0ced7bcaa",
+      "git_blob_oid": "390b6e2533a7dc684820a4615f708006a06b7a20",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/web/runtime_state.py",
+      "verified_workspace_sha256": "90d3ed4c90c314e95b4b0f213ffbcc2eb7b37562121be000909d4ff88f9874b8",
+      "repository_blob_sha256": "668e6bfa5ec87fd323ce57fdc6542c859bca5866a732420c8ed0028a81916f90",
+      "git_blob_oid": "cfcd790e6143f58d69c1ac85b6ac5949dd177049",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/web/schemas.py",
+      "verified_workspace_sha256": "77d067539ce679c112dd3865769e3414deac11026752d5127b4906711cf0f599",
+      "repository_blob_sha256": "be6617a3edd772f05fdec0052c31557f0122eb74e1dfd502546d8a92d28ba8b9",
+      "git_blob_oid": "bc080a4f02d84cd3e23498c5a19f4b743392773e",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/web/skill_api.py",
+      "verified_workspace_sha256": "ce5c66ffb7adaabc7e0dcaff60e632ac90920ec6b276bbbe1e891c72b5cd7607",
+      "repository_blob_sha256": "344e987b1f718ce42c21811c54e30c9d904ca0a7e974871120f5bd6140ed383f",
+      "git_blob_oid": "ebea6309ffdc86cfb153b8ee0ba38efb9a5328ea",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/web/source_schemas.py",
+      "verified_workspace_sha256": "1b097c7d4b528ca0528ecdbfa63af507fa6fed6517579f9d2397e60aa0dfd5ec",
+      "repository_blob_sha256": "40c796008f558be829c8dc7653e96e91d962971c5d1502e0cd8f5a848b4409ff",
+      "git_blob_oid": "c588a04ad0d8668572aeecc5ff87b358e080e665",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/web/wiki_api.py",
+      "verified_workspace_sha256": "bd97d41585fc157f8d79023eb6f6c3b7d644d4cb39b9023ee598c8aa88f5e593",
+      "repository_blob_sha256": "17cceee38cc967548983d04dd55d55ef49dd72a134a57c980005f98dc05c30b3",
+      "git_blob_oid": "d6cf4add3ac8ef736acc8bf4726e7aa36af95197",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/workspace/__init__.py",
+      "verified_workspace_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "repository_blob_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "git_blob_oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/workspace/conversations.py",
+      "verified_workspace_sha256": "11e3ed890cbe24cf691e81ca0ad8e1a0685c25333bd7a0772a4a832064f79bf2",
+      "repository_blob_sha256": "a19c6215a671d0bfa18084927c11cb91a1a60f4b349a32e4d814c67865dcc08d",
+      "git_blob_oid": "44c6cee5af3a24cf3295ad3c8683464fde9e4b24",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/workspace/documents.py",
+      "verified_workspace_sha256": "5b544d7b725ddbafaef70b7ef3c2f51eb892bc381b015e389902bf761ce71fc2",
+      "repository_blob_sha256": "cce117be3e74c8979cd1a5e4817480d924fd820a2746842ca36d6905ddf3cc21",
+      "git_blob_oid": "df24d715bfe27033cf4d518eb6d620edc70e1eaa",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/workspace/image_assets.py",
+      "verified_workspace_sha256": "b0e9258548ec57141c897d153f0b259b16a83217ed740367b254b73814a67c27",
+      "repository_blob_sha256": "2c0448abf4337b0bc09fcec691322b3c2182dd2bcfb89aee468d30adf5e0d8da",
+      "git_blob_oid": "22fe895fee831f6241f6913f0867492939ae11e4",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/workspace/ingestion.py",
+      "verified_workspace_sha256": "23dc3c9bb7a5901f8a9ea7515bfdef46d3928f49450f21a4fbc22d80847001be",
+      "repository_blob_sha256": "23dc3c9bb7a5901f8a9ea7515bfdef46d3928f49450f21a4fbc22d80847001be",
+      "git_blob_oid": "4783e8adb27e39fa64b24da4936edc146e10db62",
+      "relation": "exact"
+    },
+    {
+      "path": "src/deepsearch_agent/workspace/llm_wiki.py",
+      "verified_workspace_sha256": "5d451d4800c56f11fda82cc1b0ae1c67d7cafd171983c3fcbad3a46267902446",
+      "repository_blob_sha256": "84adb8c7d34988a1c1f412e8ff23b2bc5abcd6efed29a9b78e4b77cf31e8e574",
+      "git_blob_oid": "0242a9d4638f5e68cd20bc163de927763facb8e5",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/workspace/memory.py",
+      "verified_workspace_sha256": "62e993bd3400cd6bc6113cd409e63d148457dd1b97638378d2f2028e4857d653",
+      "repository_blob_sha256": "9aed2cc26783cab9c6dc4e7e7b478600d22f4e7570973d640c20884f38fe73ba",
+      "git_blob_oid": "1e719c40677e28a234645579988dd3985c03b3ca",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/workspace/multimodal.py",
+      "verified_workspace_sha256": "7afdf07c9e05bad1e5c451b63bf454b9e37392ab850f0592694e3a356ba52352",
+      "repository_blob_sha256": "28b08be6fb7d7191f01bd0753981edbe65bc413815e66b6f44cc0234a17a0959",
+      "git_blob_oid": "80660aefb3f93fda33bc934d2cb06ef5a48526c9",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/workspace/skills.py",
+      "verified_workspace_sha256": "a57de0a721da0abbb8b5b926441a1ce1f82c5649790c291917853c1f1e8451de",
+      "repository_blob_sha256": "f278531a8f0700b1542937bad65d8f653c74f15d8483b6c810b4f07798e4626f",
+      "git_blob_oid": "b9e32d09fd47fdb67c9837bedf22e1731b7ca5ee",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "src/deepsearch_agent/workspace/working_memory.py",
+      "verified_workspace_sha256": "7f20e13539a71f4a469d3ba32704a21ba31872a01f8d44b4a219721ec64a42d3",
+      "repository_blob_sha256": "2d1353c1a93a32081dd80ce963c6cf810816222da4f7d624b82ff8b2f3cf4e00",
+      "git_blob_oid": "f28006bbbc7433cb4ab1788bd3ea21c5f94d3102",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "tests/test_architecture.py",
+      "verified_workspace_sha256": "3ae956c928a63724c0be5fd903c4ba22700233633be443a3865b7d8c4a829379",
+      "repository_blob_sha256": "d1676d15930961608e197c573744765638f79ec91038e3e51ce497902d78d900",
+      "git_blob_oid": "81ea41b15b5718d03e9c01b70a10d2cf38aed840",
+      "relation": "crlf_to_lf"
+    },
+    {
+      "path": "tests/test_governance.py",
+      "verified_workspace_sha256": "191d504485040bb2f69f765274b0f1b7a6a6c30ccfcb902a94eca4f288167551",
+      "repository_blob_sha256": "191d504485040bb2f69f765274b0f1b7a6a6c30ccfcb902a94eca4f288167551",
+      "git_blob_oid": "607799342a505fac4fff6a21ee8dc91f5649b675",
+      "relation": "exact"
+    },
+    {
+      "path": "tests/test_governance_api.py",
+      "verified_workspace_sha256": "18222a979316a2ab3538fbd6a70cdae1b214dd1f74ee30c1f7386d0cb940deaa",
+      "repository_blob_sha256": "18222a979316a2ab3538fbd6a70cdae1b214dd1f74ee30c1f7386d0cb940deaa",
+      "git_blob_oid": "231f084d951b397056b56ea9273503f3e1cf56d5",
+      "relation": "exact"
+    }
+  ]
+}

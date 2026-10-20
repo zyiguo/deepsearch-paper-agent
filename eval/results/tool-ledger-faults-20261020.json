@@ -1,0 +1,315 @@
+{
+  "scope": "Actual process exit and SQLite restart against synthetic provider; no real API, business effects or charges.",
+  "cases": 14,
+  "all_assertions_passed": true,
+  "results": [
+    {
+      "case": "read_only-after_claim",
+      "kind": "read_only",
+      "crash_exit": 73,
+      "resume": {
+        "status": "succeeded",
+        "replayed": false
+      },
+      "requests": 1,
+      "business_effects": 0,
+      "synthetic_charges": 0,
+      "ledger": {
+        "id": "974de1a45dd6ec6caa185b5d552ac82a146411b381265b1ea4214d2faee76d0d",
+        "slot": "round:0/step:0",
+        "tool": "synthetic_tool",
+        "kind": "read_only",
+        "status": "succeeded",
+        "attempt": 2,
+        "updated_at": "2026-10-20 06:57:41",
+        "rejection_code": null
+      }
+    },
+    {
+      "case": "read_only-after_dispatch",
+      "kind": "read_only",
+      "crash_exit": 73,
+      "resume": {
+        "status": "succeeded",
+        "replayed": false
+      },
+      "requests": 1,
+      "business_effects": 0,
+      "synthetic_charges": 0,
+      "ledger": {
+        "id": "974de1a45dd6ec6caa185b5d552ac82a146411b381265b1ea4214d2faee76d0d",
+        "slot": "round:0/step:0",
+        "tool": "synthetic_tool",
+        "kind": "read_only",
+        "status": "succeeded",
+        "attempt": 2,
+        "updated_at": "2026-10-20 06:57:41",
+        "rejection_code": null
+      }
+    },
+    {
+      "case": "read_only-after_effect",
+      "kind": "read_only",
+      "crash_exit": 73,
+      "resume": {
+        "status": "succeeded",
+        "replayed": false
+      },
+      "requests": 2,
+      "business_effects": 0,
+      "synthetic_charges": 0,
+      "ledger": {
+        "id": "974de1a45dd6ec6caa185b5d552ac82a146411b381265b1ea4214d2faee76d0d",
+        "slot": "round:0/step:0",
+        "tool": "synthetic_tool",
+        "kind": "read_only",
+        "status": "succeeded",
+        "attempt": 2,
+        "updated_at": "2026-10-20 06:57:42",
+        "rejection_code": null
+      }
+    },
+    {
+      "case": "read_only-after_commit",
+      "kind": "read_only",
+      "crash_exit": 73,
+      "resume": {
+        "status": "succeeded",
+        "replayed": true
+      },
+      "requests": 1,
+      "business_effects": 0,
+      "synthetic_charges": 0,
+      "ledger": {
+        "id": "974de1a45dd6ec6caa185b5d552ac82a146411b381265b1ea4214d2faee76d0d",
+        "slot": "round:0/step:0",
+        "tool": "synthetic_tool",
+        "kind": "read_only",
+        "status": "succeeded",
+        "attempt": 1,
+        "updated_at": "2026-10-20 06:57:42",
+        "rejection_code": null
+      }
+    },
+    {
+      "case": "paid-after_claim",
+      "kind": "paid",
+      "crash_exit": 73,
+      "resume": {
+        "status": "succeeded",
+        "replayed": false
+      },
+      "requests": 1,
+      "business_effects": 0,
+      "synthetic_charges": 1,
+      "ledger": {
+        "id": "974de1a45dd6ec6caa185b5d552ac82a146411b381265b1ea4214d2faee76d0d",
+        "slot": "round:0/step:0",
+        "tool": "synthetic_tool",
+        "kind": "paid",
+        "status": "succeeded",
+        "attempt": 2,
+        "updated_at": "2026-10-20 06:57:43",
+        "rejection_code": null
+      }
+    },
+    {
+      "case": "paid-after_dispatch",
+      "kind": "paid",
+      "crash_exit": 73,
+      "resume": {
+        "status": "blocked",
+        "code": "tool_outcome_unknown"
+      },
+      "requests": 0,
+      "business_effects": 0,
+      "synthetic_charges": 0,
+      "ledger": {
+        "id": "974de1a45dd6ec6caa185b5d552ac82a146411b381265b1ea4214d2faee76d0d",
+        "slot": "round:0/step:0",
+        "tool": "synthetic_tool",
+        "kind": "paid",
+        "status": "unknown",
+        "attempt": 1,
+        "updated_at": "2026-10-20 06:57:44",
+        "rejection_code": null
+      }
+    },
+    {
+      "case": "paid-after_effect",
+      "kind": "paid",
+      "crash_exit": 73,
+      "resume": {
+        "status": "blocked",
+        "code": "tool_outcome_unknown"
+      },
+      "requests": 1,
+      "business_effects": 0,
+      "synthetic_charges": 1,
+      "ledger": {
+        "id": "974de1a45dd6ec6caa185b5d552ac82a146411b381265b1ea4214d2faee76d0d",
+        "slot": "round:0/step:0",
+        "tool": "synthetic_tool",
+        "kind": "paid",
+        "status": "unknown",
+        "attempt": 1,
+        "updated_at": "2026-10-20 06:57:44",
+        "rejection_code": null
+      }
+    },
+    {
+      "case": "paid-after_commit",
+      "kind": "paid",
+      "crash_exit": 73,
+      "resume": {
+        "status": "succeeded",
+        "replayed": true
+      },
+      "requests": 1,
+      "business_effects": 0,
+      "synthetic_charges": 1,
+      "ledger": {
+        "id": "974de1a45dd6ec6caa185b5d552ac82a146411b381265b1ea4214d2faee76d0d",
+        "slot": "round:0/step:0",
+        "tool": "synthetic_tool",
+        "kind": "paid",
+        "status": "succeeded",
+        "attempt": 1,
+        "updated_at": "2026-10-20 06:57:45",
+        "rejection_code": null
+      }
+    },
+    {
+      "case": "effectful-after_claim",
+      "kind": "effectful",
+      "crash_exit": 73,
+      "resume": {
+        "status": "succeeded",
+        "replayed": false
+      },
+      "requests": 1,
+      "business_effects": 1,
+      "synthetic_charges": 0,
+      "ledger": {
+        "id": "974de1a45dd6ec6caa185b5d552ac82a146411b381265b1ea4214d2faee76d0d",
+        "slot": "round:0/step:0",
+        "tool": "synthetic_tool",
+        "kind": "effectful",
+        "status": "succeeded",
+        "attempt": 2,
+        "updated_at": "2026-10-20 06:57:46",
+        "rejection_code": null
+      }
+    },
+    {
+      "case": "effectful-after_dispatch",
+      "kind": "effectful",
+      "crash_exit": 73,
+      "resume": {
+        "status": "blocked",
+        "code": "tool_outcome_unknown"
+      },
+      "requests": 0,
+      "business_effects": 0,
+      "synthetic_charges": 0,
+      "ledger": {
+        "id": "974de1a45dd6ec6caa185b5d552ac82a146411b381265b1ea4214d2faee76d0d",
+        "slot": "round:0/step:0",
+        "tool": "synthetic_tool",
+        "kind": "effectful",
+        "status": "unknown",
+        "attempt": 1,
+        "updated_at": "2026-10-20 06:57:46",
+        "rejection_code": null
+      }
+    },
+    {
+      "case": "effectful-after_effect",
+      "kind": "effectful",
+      "crash_exit": 73,
+      "resume": {
+        "status": "blocked",
+        "code": "tool_outcome_unknown"
+      },
+      "requests": 1,
+      "business_effects": 1,
+      "synthetic_charges": 0,
+      "ledger": {
+        "id": "974de1a45dd6ec6caa185b5d552ac82a146411b381265b1ea4214d2faee76d0d",
+        "slot": "round:0/step:0",
+        "tool": "synthetic_tool",
+        "kind": "effectful",
+        "status": "unknown",
+        "attempt": 1,
+        "updated_at": "2026-10-20 06:57:47",
+        "rejection_code": null
+      }
+    },
+    {
+      "case": "effectful-after_commit",
+      "kind": "effectful",
+      "crash_exit": 73,
+      "resume": {
+        "status": "succeeded",
+        "replayed": true
+      },
+      "requests": 1,
+      "business_effects": 1,
+      "synthetic_charges": 0,
+      "ledger": {
+        "id": "974de1a45dd6ec6caa185b5d552ac82a146411b381265b1ea4214d2faee76d0d",
+        "slot": "round:0/step:0",
+        "tool": "synthetic_tool",
+        "kind": "effectful",
+        "status": "succeeded",
+        "attempt": 1,
+        "updated_at": "2026-10-20 06:57:47",
+        "rejection_code": null
+      }
+    },
+    {
+      "case": "paid-after_effect-idempotent",
+      "kind": "paid",
+      "crash_exit": 73,
+      "resume": {
+        "status": "succeeded",
+        "replayed": false
+      },
+      "requests": 2,
+      "business_effects": 0,
+      "synthetic_charges": 1,
+      "ledger": {
+        "id": "974de1a45dd6ec6caa185b5d552ac82a146411b381265b1ea4214d2faee76d0d",
+        "slot": "round:0/step:0",
+        "tool": "synthetic_tool",
+        "kind": "paid",
+        "status": "succeeded",
+        "attempt": 2,
+        "updated_at": "2026-10-20 06:57:48",
+        "rejection_code": null
+      }
+    },
+    {
+      "case": "effectful-after_effect-idempotent",
+      "kind": "effectful",
+      "crash_exit": 73,
+      "resume": {
+        "status": "succeeded",
+        "replayed": false
+      },
+      "requests": 2,
+      "business_effects": 1,
+      "synthetic_charges": 0,
+      "ledger": {
+        "id": "974de1a45dd6ec6caa185b5d552ac82a146411b381265b1ea4214d2faee76d0d",
+        "slot": "round:0/step:0",
+        "tool": "synthetic_tool",
+        "kind": "effectful",
+        "status": "succeeded",
+        "attempt": 2,
+        "updated_at": "2026-10-20 06:57:49",
+        "rejection_code": null
+      }
+    }
+  ]
+}

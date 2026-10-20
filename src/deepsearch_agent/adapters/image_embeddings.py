@@ -1,5 +1,7 @@
 """Cloud image embeddings, independent of text embeddings and chat models."""
 import base64
+from deepsearch_agent.adapters.governed_calls import metered
+from deepsearch_agent.core.governance import report_provider_usage
 import hashlib
 import json
 import os
@@ -90,6 +92,7 @@ class SiliconFlowImageEmbeddingClient:
             raise ValueError('Image retrieval query cannot be blank')
         return self._embed([{'text': text}])[0]
 
+    @metered('image_embedding')
     def _embed(self, inputs: list[dict]) -> list[list[float]]:
         vectors = []
         try:
@@ -105,7 +108,9 @@ class SiliconFlowImageEmbeddingClient:
                     if not response.is_success:
                         raise ModelServiceError(f'Image Embedding request failed (HTTP {response.status_code}); check model access and quota')
                     try:
-                        items = response.json()['data']
+                        body = response.json()
+                        report_provider_usage(body.get('usage'))
+                        items = body['data']
                         if not isinstance(items, list) or len(items) != len(batch):
                             raise ValueError()
                         if any(type(item['index']) is not int for item in items):

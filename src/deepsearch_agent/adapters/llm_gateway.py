@@ -7,6 +7,7 @@ import httpx
 from deepsearch_agent.core.cancellation import current_token, ResearchCancelled
 
 from deepsearch_agent.adapters.llm_config import LLMSettings
+from deepsearch_agent.adapters.governed_calls import metered
 
 
 def optional_text(value):
@@ -67,6 +68,7 @@ class OpenAICompatibleClient:
     def complete_messages(self, messages: list[dict]) -> str:
         return self.generate_messages(messages).text
 
+    @metered('llm')
     def generate_messages(self, messages: list[dict], *, structured: bool = False) -> LLMResponse:
         def valid_content(content):
             if isinstance(content, str):

@@ -6,6 +6,7 @@ from deepsearch_agent.core.identity import fingerprint
 from deepsearch_agent.core.errors import ApplicationError
 from deepsearch_agent.core.models import ModelServiceError
 from deepsearch_agent.core.tool_execution import ToolExecutionBlocked
+from deepsearch_agent.core.governance import GovernanceDenied
 
 
 def submission_id(session_id, key):
@@ -42,6 +43,8 @@ def context_identity(state, manager, session_id):
 
 
 def error_code(error):
+    if isinstance(error,GovernanceDenied):
+        return error.code
     if isinstance(error, ToolExecutionBlocked):
         return error.code
     if isinstance(error, ModelServiceError):

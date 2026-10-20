@@ -126,6 +126,7 @@ def test_vision_failure_retains_previous_index_and_retry_can_recover(tmp_path, m
         assert len(application.state.kb.chunks) == 1
         assert application.state.kb.chunks[0].evidence_kind == 'text'
         monkeypatch.setattr(OpenAICompatibleClient, 'complete_images', fake_images)
-        client.post(f'/api/documents/{ident}/retry').raise_for_status()
+        assert client.post(f'/api/documents/{ident}/retry').status_code == 409
+        client.post(f'/api/documents/{ident}/retry?confirm_unknown=true').raise_for_status()
         assert finished(client, ident)['status'] == 'ready'
         assert len(application.state.kb.chunks) == 2

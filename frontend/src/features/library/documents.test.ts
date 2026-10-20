@@ -23,3 +23,13 @@ it('retains failure details and partial-page warnings in library list', async ()
   expect(result[0].error).toBe('需要 OCR')
   expect(result[0].warnings).toEqual(['空白页'])
 })
+
+it('requires explicit consent to resend an unknown paid step and preserves its warning', async () => {
+  const mock = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({ ...doc, retry_requires_confirmation: true }))))
+  vi.stubGlobal('fetch', mock)
+  expect((await api.retryDocument(doc.id)).retry_requires_confirmation).toBe(true)
+  await api.retryDocument(doc.id, true)
+  expect(mock.mock.calls[0][0]).toBe(`/api/documents/${doc.id}/retry`)
+  expect(mock.mock.calls[1][0]).toBe(`/api/documents/${doc.id}/retry?confirm_unknown=true`)
+  expect(mock).toHaveBeenCalledTimes(2)
+})

@@ -47,14 +47,30 @@ class WorkingMemoryStore:
             self._directory(session_id)
             if not self.session_exists(session_id):
                 raise WorkingMemoryError('memory_scope_expired')
-            generation = self.generations.setdefault(session_id, uuid4().hex)
+            marker = self._scope_marker(session_id)
+            if not marker.exists():
+                self.root.mkdir(parents=True, exist_ok=True)
+                self._write(marker, uuid4().hex)
+            generation = marker.read_text(encoding='utf-8')
+            if len(generation) != 32 or any(c not in '0123456789abcdef' for c in generation):
+                raise WorkingMemoryError('memory_invalid_scope')
+            self.generations[session_id] = generation
             return BoundWorkingMemory(self, session_id, generation)
+
+    def _scope_marker(self, session_id):
+        self._directory(session_id)
+        marker = self.root / f'.scope-{session_id}'
+        if marker.is_symlink() or marker.is_junction():
+            raise WorkingMemoryError('memory_unsafe_path')
+        return marker
 
     def clear(self, session_id):
         with self.lock:
             directory = self._directory(session_id)
             # Revoke handles first, including when cleanup later encounters an IO error.
             self.generations[session_id] = uuid4().hex
+            self.root.mkdir(parents=True, exist_ok=True)
+            self._write(self._scope_marker(session_id), self.generations[session_id])
             for document in DOCUMENTS:
                 self._path(session_id, document).unlink(missing_ok=True)
             if directory.exists() and not any(directory.iterdir()):
@@ -83,7 +99,8 @@ class BoundWorkingMemory:
 
     def _check(self):
         if (self.store.generations.get(self.session_id) != self.generation
-                or not self.store.session_exists(self.session_id)):
+                or not self.store.session_exists(self.session_id)
+                or self.store._scope_marker(self.session_id).read_text(encoding='utf-8') != self.generation):
             raise WorkingMemoryError('memory_scope_expired')
 
     def _load(self, document):
@@ -100,6 +117,7 @@ class BoundWorkingMemory:
         if len(content) > MAX_CONTENT_CHARS:
             raise WorkingMemoryError('memory_too_large')
         return {'document': document, 'content': content,
+                'scope_revision': self.generation,
                 'revision': hashlib.sha256(content.encode('utf-8')).hexdigest(),
                 'trust': 'working_notes_not_evidence'}
 
@@ -108,6 +126,24 @@ class BoundWorkingMemory:
             value = self._load(document)
             self.read_revisions[document] = value['revision']
             return value
+
+    def restore_read(self, document, revision, scope_revision=None):
+        """Restore the observation capability, never replace the historical observation.
+
+        A changed file still fails replace's current-revision check. Keeping the
+        original revision permits deterministic replay across completed writes.
+        """
+        with self.store.lock:
+            self._check()
+            self.store._path(self.session_id, document)
+            # A clear revokes even a cached read of identical initial content.
+            # Legacy observations remain readable but do not confer permission.
+            if scope_revision == self.generation:
+                self.read_revisions[document] = revision
+
+    def consume_read(self, document):
+        with self.store.lock:
+            self.read_revisions.pop(document, None)
 
     def replace(self, document, content, expected_revision):
         with self.store.lock:

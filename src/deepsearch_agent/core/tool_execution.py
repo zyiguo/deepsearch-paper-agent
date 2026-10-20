@@ -16,6 +16,13 @@ class ToolExecutionBlocked(RuntimeError):
         super().__init__(code)
 
 
+class ToolNotExecuted(ValueError):
+    """Trusted local precondition rejected the call before any external effect."""
+    def __init__(self, code, *, replayed=False):
+        self.code, self.replayed = code, replayed
+        super().__init__(code)
+
+
 @dataclass(frozen=True)
 class ExecutionResult:
     value: object
@@ -35,5 +42,6 @@ class ToolLedger(Protocol):
     def dispatch(self, operation_id, owner): ...
     def succeed(self, operation_id, owner, result): ...
     def uncertain(self, operation_id, owner): ...
+    def reject(self, operation_id, owner, code): ...
     def get(self, operation_id): ...
     def resolve(self, operation_id, result): ...

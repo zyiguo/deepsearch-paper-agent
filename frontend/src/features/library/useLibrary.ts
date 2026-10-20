@@ -123,9 +123,11 @@ export function useLibrary(readOnly = false) {
 
   async function retryDocument(id: string, analyze = false, images = false) {
     if (busy || actionLock.current) return
+    const unknown = documents.find(doc => doc.id === id)?.retry_requires_confirmation ?? false
+    if (unknown && !window.confirm('上次付费步骤结果未知。请先核对服务账单；继续重试可能重复计费。确认继续？')) return
     actionLock.current = true; setBusy('upload'); setError('')
     try {
-      const doc = await (images ? api.indexDocumentImages(id) : analyze ? api.analyzeDocument(id) : api.retryDocument(id))
+      const doc = await (images ? api.indexDocumentImages(id, unknown) : analyze ? api.analyzeDocument(id, unknown) : api.retryDocument(id, unknown))
       setDocuments(items => items.map(item => item.id === id ? doc : item))
       setNotice('已重新提交文献处理，可能再次调用向量服务。')
     } catch (e) { setError(messageOf(e)) }

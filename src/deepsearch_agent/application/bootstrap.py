@@ -39,6 +39,11 @@ from deepsearch_agent.adapters.access_config import AccessSettings
 from deepsearch_agent.adapters.database_config import DatabaseSettings
 from deepsearch_agent.adapters.tracing_config import tracing_enabled
 from deepsearch_agent.adapters.persistence.business import build_database, conversation_store, research_run_store
+from deepsearch_agent.adapters.governance_config import GovernanceSettings
+from deepsearch_agent.adapters.persistence.governance import GovernanceStore
+from deepsearch_agent.application.governance import Governance
+from deepsearch_agent.web.governance import router as governance_router
+from deepsearch_agent.adapters.persistence.tool_ledger import read_backlog
 
 
 def create_app(
@@ -58,7 +63,11 @@ def create_app(
     _workspace_id: str | None = None,
     database_settings: DatabaseSettings | None = None,
     _database=None,
+    governance_settings: GovernanceSettings | None = None,
+    _governance=None,
 ) -> FastAPI:
+    governance_config = governance_settings if governance_settings is not None else (
+        GovernanceSettings() if llm_settings is not None else GovernanceSettings.load(PROJECT_ROOT / '.env.governance'))
     agents = agent_settings if agent_settings is not None else (
         AgentSettings(enabled=True) if llm_settings is not None else AgentSettings.load(PROJECT_ROOT / '.env.agent'))
     mcp_config = mcp_settings if mcp_settings is not None else (
@@ -78,7 +87,7 @@ def create_app(
         infrastructure = infrastructure_settings if infrastructure_settings is not None else (
             InfrastructureSettings() if llm_settings is not None else
             InfrastructureSettings.load(PROJECT_ROOT / '.env.infrastructure'))
-        def runtime_factory(root, ident, database):
+        def runtime_factory(root, ident, database, governor):
             namespace = infrastructure.namespace[:16] + '_' + hashlib.sha256(
                 (infrastructure.namespace + ':' + ident).encode()).hexdigest()[:40]
             scoped_infra = replace(infrastructure, namespace=namespace)
@@ -90,9 +99,11 @@ def create_app(
                 vision_settings=vision_settings, image_embedding_settings=image_embedding_settings,
                 skills_path=skills_path, agent_settings=agents, mcp_settings=mcp_config,
                 infrastructure_settings=scoped_infra, access_settings=AccessSettings(), _workspace_id=ident,
-                database_settings=database_config, _database=database)
+                database_settings=database_config, _database=database, _governance=governor,
+                governance_settings=governance_config)
         return create_team_app(access, runtime_factory, database_config,
-            lock_path=PROJECT_ROOT / 'data/runtime/deployment.lock' if llm_settings is None else None)
+            lock_path=PROJECT_ROOT / 'data/runtime/deployment.lock' if llm_settings is None else None,
+            governance_settings=governance_config)
     mcp_server = None
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -120,6 +131,11 @@ def create_app(
             if llm_settings is None and _workspace_id is None:
                 from deepsearch_agent.adapters.persistence.deployment_lock import DeploymentLock
                 resources.enter_context(DeploymentLock(PROJECT_ROOT / 'data/runtime/deployment.lock'))
+            app.state.governance = _governance or Governance(GovernanceStore(Path(index_path).parent / 'governance.sqlite3'),governance_config,
+                backlog_reader=lambda:read_backlog(Path(index_path).parent))
+            if _governance is None:
+                app.state.governance.start()
+                resources.callback(app.state.governance.close)
             app.state.business_database = _database if _database is not None else build_database(database_config)
             if _database is None and app.state.business_database is not None:
                 resources.callback(app.state.business_database.close)
@@ -221,6 +237,7 @@ def create_app(
             from deepsearch_agent.adapters.persistence.tool_ledger import SQLiteToolLedger
             app.state.tool_ledger = SQLiteToolLedger(run_root / 'tool_executions.sqlite3')
             app.state.tool_ledger.recover_interrupted()
+            app.state.governance.register_workspace(_workspace_id or 'local',app.state.tool_ledger,redis_backend)
             app.state.research_runs = research_run_store(app.state.business_database, _workspace_id or 'local',
                                                         run_root / 'research_runs.sqlite3')
             app.state.run_tokens = {}
@@ -328,6 +345,7 @@ def create_app(
     register_error_handlers(app)
     app.add_middleware(OperationsMiddleware)
     app.include_router(operations_router)
+    app.include_router(governance_router)
 
     from deepsearch_agent.web.wiki_api import router as wiki_router
     app.include_router(wiki_router)

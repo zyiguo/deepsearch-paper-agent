@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictInt, ValidationError, m
 
 from deepsearch_agent.agents.agent_config import AgentSettings
 from deepsearch_agent.core.evidence import TextChunk
-from deepsearch_agent.core.tool_execution import ToolKind, ToolExecutionBlocked
+from deepsearch_agent.core.tool_execution import ToolKind, ToolExecutionBlocked, ToolNotExecuted
 from deepsearch_agent.core.cancellation import ResearchCancelled
 from deepsearch_agent.core.identity import source_identity
 from deepsearch_tracing.context import notify
@@ -18,6 +18,12 @@ from deepsearch_agent.knowledge.retrieval_pipeline import retrieve
 
 class ToolError(ValueError):
     """A deliberately public, data-free error code."""
+
+
+class ToolRejected(ToolError, ToolNotExecuted):
+    """A local check proves no paid request or requested write was made."""
+    def __init__(self, code):
+        ToolNotExecuted.__init__(self, code)
 
 
 class ToolArgs(BaseModel):
@@ -138,12 +144,19 @@ class PaperToolSession:
 
     def runtime_snapshot(self):
         return {'calls': self.calls, 'ocr_calls': self.ocr_calls,
+                'memory_reads': dict(self.memory.read_revisions) if self.memory is not None else {},
+                'memory_scope_revision': self.memory.generation if self.memory is not None else None,
                 'memory_notes': dict(self.memory_notes), 'evidence': list(self.evidence),
                 'image_refs': sorted(self.image_refs)}
 
     def restore_runtime(self, snapshot):
         self.calls, self.ocr_calls = snapshot['calls'], snapshot['ocr_calls']
         self.memory_notes = dict(snapshot['memory_notes'])
+        if self.memory is not None:
+            for document in tuple(self.memory.read_revisions):
+                self.memory.consume_read(document)
+            for document, revision in snapshot.get('memory_reads', {}).items():
+                self.memory.restore_read(document, revision, snapshot.get('memory_scope_revision'))
         self.evidence = []
         self.image_refs = {tuple(ref) for ref in snapshot['image_refs']}
         self.result({}, snapshot['evidence'])
@@ -156,7 +169,7 @@ class PaperToolSession:
 
     def reserve(self, name):
         if not self.remaining_calls:
-            raise ToolError('tool_budget')
+            raise ToolRejected('tool_budget')
         self.calls += 1
         notify(self.observer, 'tool.request', {'name': name, 'call': self.calls})
 
@@ -175,8 +188,13 @@ class PaperToolSession:
         if self.execution is not None:
             if self.operation_slot is None:
                 raise ToolExecutionBlocked('tool_operation_identity_missing')
-            outcome = self.execution.execute(self.operation_slot, name, self.tool_kind(name, values), values,
-                lambda ident: asdict(self._invoke_validated(name, values)))
+            try:
+                outcome = self.execution.execute(self.operation_slot, name, self.tool_kind(name, values), values,
+                    lambda ident: asdict(self._invoke_validated(name, values)))
+            except ToolNotExecuted as error:
+                if error.replayed:
+                    self.reserve(name)
+                raise ToolError(error.code) from None
             if outcome.replayed:
                 self.reserve(name)
                 if name == 'ocr_page':
@@ -184,6 +202,10 @@ class PaperToolSession:
                 saved = outcome.value
                 restored = self.result(saved['data'], [TextChunk(**c) for c in saved['chunks']])
                 if name == 'working_memory':
+                    if values['action'] == 'read':
+                        self.memory.restore_read(values['document'], saved['data']['revision'], saved['data'].get('scope_revision'))
+                    else:
+                        self.memory.consume_read(values['document'])
                     self.memory_notes[values['document']] = saved['data'].get('content', values.get('content', ''))
                 result = ToolResult(saved['content'], restored.chunks, saved['data'])
             else:
@@ -211,6 +233,8 @@ class PaperToolSession:
             raise
         except ToolError:
             raise
+        except ToolNotExecuted:
+            raise
         except Exception:
             notify(self.observer, 'tool.error', {'name': name, 'code': 'tool_failed'})
             raise ToolError('tool_failed') from None
@@ -223,7 +247,7 @@ class PaperToolSession:
             value = (self.memory.read(document) if action == 'read' else
                      self.memory.replace(document, content, expected_revision))
         except WorkingMemoryError as error:
-            raise ToolError(str(error)) from None
+            raise ToolRejected(str(error)) from None
         self.memory_notes[document] = value['content'] if action == 'read' else content
         return self.result(value)
 
@@ -276,7 +300,7 @@ class PaperToolSession:
         if not query.strip():
             raise ToolError('invalid_arguments')
         if sources is not None and not set(sources) <= self.sources:
-            raise ToolError('source_not_allowed')
+            raise ToolRejected('source_not_allowed')
         kb = self.kb.restrict_sources(set(sources)) if sources is not None else self.kb
         wiki = self.wiki
         if sources is not None and wiki is not None:
@@ -291,9 +315,9 @@ class PaperToolSession:
 
     def check_page(self, source, page):
         if source not in self.sources:
-            raise ToolError('source_not_allowed')
+            raise ToolRejected('source_not_allowed')
         if page > self.catalog[source]['page_count']:
-            raise ToolError('page_not_found')
+            raise ToolRejected('page_not_found')
 
     def read_page(self, source, page):
         self.check_page(source, page)
@@ -311,11 +335,11 @@ class PaperToolSession:
     def ocr_page(self, source, page):
         self.check_page(source, page)
         if self.analyzer is None or self.image_resolver is None:
-            raise ToolError('ocr_unavailable')
+            raise ToolRejected('ocr_unavailable')
         if self.ocr_calls >= self.settings.max_ocr_calls:
-            raise ToolError('ocr_budget')
+            raise ToolRejected('ocr_budget')
         if len(self.image_refs | {(source, page)}) > self.settings.max_images:
-            raise ToolError('image_budget')
+            raise ToolRejected('image_budget')
         self.ocr_calls += 1
         document_id = hashlib.sha256(source_identity(source).encode()).hexdigest()
         strategy = hashlib.sha256((self.analyzer.identity + ':tool-full-page-ocr-v1').encode()).hexdigest()[:24]

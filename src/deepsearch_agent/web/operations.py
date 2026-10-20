@@ -9,6 +9,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import MutableHeaders
+from deepsearch_agent.core.governance import usage_context
 
 log = logging.getLogger('deepsearch.access')
 router = APIRouter(prefix='/api/health', tags=['运行状态'])
@@ -34,23 +35,30 @@ class OperationsMiddleware:
                 MutableHeaders(scope=message)['X-Request-ID'] = request_id
             await send(message)
 
-        try:
-            state = scope['app'].state
-            limiter = getattr(state, 'request_limiter', None)
-            if limiter and scope['method'] in {'POST', 'PUT', 'PATCH', 'DELETE'} and scope['path'].startswith('/api/'):
-                peer = scope.get('client') or ('unknown', 0)
-                allowed, retry = await run_in_threadpool(limiter.check, peer[0])
-                if not allowed:
-                    response = JSONResponse({'detail': '请求过于频繁，请稍后重试', 'request_id': request_id},
-                                            status_code=429, headers={'Retry-After': str(retry)})
-                    return await response(scope, receive, tracked_send)
-            await self.app(scope, receive, tracked_send)
-        finally:
-            # Route templates avoid logging questions, filenames, session IDs or query strings.
-            route = getattr(scope.get('route'), 'path', 'unmatched')
-            log.info(json.dumps({'event': 'http_request', 'request_id': request_id,
-                'method': scope['method'], 'route': route, 'status': status,
-                'duration_ms': round((time.monotonic() - started) * 1000, 2)}))
+        state = scope['app'].state
+        governor = getattr(state,'governance',None)
+        user = scope['state'].get('access_user') or {}
+        with usage_context(governor,user=user.get('id','local'),workspace=scope['state'].get('workspace_id','local')):
+            try:
+                limiter = getattr(state, 'request_limiter', None)
+                if limiter and scope['method'] in {'POST', 'PUT', 'PATCH', 'DELETE'} and scope['path'].startswith('/api/'):
+                    peer = scope.get('client') or ('unknown', 0)
+                    allowed, retry = await run_in_threadpool(limiter.check, peer[0])
+                    if not allowed:
+                        response = JSONResponse({'detail': '请求过于频繁，请稍后重试', 'request_id': request_id},
+                                                status_code=429, headers={'Retry-After': str(retry)})
+                        return await response(scope, receive, tracked_send)
+                await self.app(scope, receive, tracked_send)
+            finally:
+                # Templates omit questions, identifiers and query strings.
+                route = getattr(scope.get('route'), 'path', 'unmatched')
+                elapsed = time.monotonic()-started
+                log.info(json.dumps({'event': 'http_request', 'request_id': request_id,
+                    'method': scope['method'], 'route': route, 'status': status,
+                    'duration_ms': round(elapsed * 1000, 2)}))
+                if governor is not None and not scope['path'].startswith(('/w/','/api/governance/')):
+                    governor.record('http',method=scope['method'],route=route,status=str(status))
+                    governor.duration('http_duration',elapsed,route=route)
 
 
 @router.get('/live')

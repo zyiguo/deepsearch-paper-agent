@@ -4,6 +4,7 @@ from deepsearch_agent.adapters.demo import DEMO_QUESTIONS, DEMO_SOURCE
 from deepsearch_agent.application.snapshots import snapshot_answer_service
 from deepsearch_agent.application.skills import validate_skills
 from deepsearch_agent.core.errors import ApplicationError
+from contextlib import nullcontext
 
 def health(state):
     return dict(status='ok', mode=state.mode, retrieval_mode=state.kb.retrieval_mode if not state.demo_retrieval else None, vision_enabled=True if state.vision_enabled else None, image_retrieval_enabled=True if state.image_retrieval_enabled else None, agentic_rag_enabled=True if state.agentic_rag_enabled else None, mcp_server_enabled=True if state.mcp_server_enabled else None)
@@ -40,7 +41,9 @@ def ask(body, state):
         validate_skills(state, body.skill_ids)
         sources = resolve_sources(state, body.document_ids)
         service = snapshot_answer_service(state)
-    result = service.answer(body.question, top_k=body.top_k, **{'allowed_sources': sources} if sources is not None else {}, **{'skill_ids': body.skill_ids} if body.skill_ids is not None else {})
+    governor = getattr(state,'governance',None)
+    with governor.resource('research') if governor else nullcontext():
+        result = service.answer(body.question, top_k=body.top_k, **{'allowed_sources': sources} if sources is not None else {}, **{'skill_ids': body.skill_ids} if body.skill_ids is not None else {})
     return result
 
 def persistence_status(state):

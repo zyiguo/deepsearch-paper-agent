@@ -14,6 +14,7 @@ import time
 from urllib.parse import urlsplit
 
 from dotenv import dotenv_values
+from deepsearch_agent.core.governance import current_governance
 
 log = logging.getLogger(__name__)
 
@@ -123,6 +124,8 @@ class RedisBackend:
                 self.retry_at = self.clock() + self.settings.cooldown
             if first:
                 log.warning('redis_unavailable: cache bypassed; rate limiter uses local fallback')
+            if current_governance.get() is not None:
+                current_governance.get().event('redis','unavailable')
             return None
         with self.lock:
             self.status = 'available'
@@ -195,6 +198,8 @@ class CachedEmbeddingClient:
                 missing.append(text)
             else:
                 found[text] = vector
+            if current_governance.get() is not None:
+                current_governance.get().record('embedding_cache',outcome='miss' if vector is None else 'hit')
         if missing:
             vectors = self.delegate.embed(missing)
             if len(vectors) != len(missing) or not all(self.valid(v) for v in vectors):

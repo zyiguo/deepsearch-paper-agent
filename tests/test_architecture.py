@@ -229,12 +229,36 @@ def test_http_contract_matches_pre_refactor_snapshot():
     app = create_app(llm_settings=LLMSettings(), mcp_settings=MCPSettings())
     current = app.openapi()
     previous = json.loads((FIXTURES / 'openapi.json').read_text(encoding='utf-8'))
-    # Preserve the immutable historical fixture and every original contract;
-    # this increment intentionally adds only the authorized ledger inspection API.
-    new_path = '/api/sessions/{session_id}/runs/{run_id}/operations'
-    assert set(current['paths']) - set(previous['paths']) == {new_path}
-    assert set(current['paths'][new_path]) == {'get'}
-    current['paths'].pop(new_path)
+    additions = {
+        '/api/sessions/{session_id}/runs/{run_id}/operations': {'get'},
+        '/api/sessions/{session_id}/runs/{run_id}/operations/{operation_id}/audit': {'get'},
+        '/api/sessions/{session_id}/runs/{run_id}/operations/{operation_id}/reconcile': {'post'},
+        '/api/documents/{ident}/consistency': {'get'},
+        '/api/documents/{ident}/repair': {'post'},
+        '/api/governance/usage': {'get'},
+        '/api/governance/metrics': {'get'},
+        '/api/governance/status': {'get'},
+        '/api/governance/alerts': {'get'},
+        '/api/governance/audit': {'get'},
+        '/api/governance/limits/{scope}/{subject}': {'put'},
+        '/api/governance/reservations/unknown': {'get'},
+        '/api/governance/reservations/{ident}/settle': {'post'},
+    }
+    assert set(current['paths']) - set(previous['paths']) == set(additions)
+    for path, methods in additions.items():
+        assert set(current['paths'].pop(path)) == methods
+    # Only the explicitly added, optional retry consent and inspection field
+    # extend old contracts. Preserve the immutable original fixture.
+    for action in ('retry', 'analyze', 'index-images'):
+        params = current['paths'][f'/api/documents/{{ident}}/{action}']['post']['parameters']
+        added = next(p for p in params if p['name'] == 'confirm_unknown')
+        assert added['in'] == 'query' and not added['required'] and added['schema']['default'] is False
+        params.remove(added)
+    schemas = current['components']['schemas']
+    schemas.pop('ReconcileOperationRequest')
+    schemas.pop('QuotaLimit')
+    schemas.pop('Settlement')
+    assert schemas['DocumentResponse']['properties'].pop('retry_requires_confirmation')['default'] is False
     assert current == previous
 
 

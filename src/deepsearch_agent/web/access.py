@@ -42,7 +42,7 @@ class AccessBoundary:
                         or (origin is not None and origin not in self.settings.origins)
                         or headers.get('sec-fetch-site') == 'cross-site'):
                     raise ApplicationError(403, '请求来源校验失败，请从工作台重新操作')
-                if path.startswith('/api/access/') or path.startswith('/api/workspaces') or path.startswith('/api/admin/'):
+                if path.startswith(('/api/access/','/api/workspaces','/api/admin/','/api/governance/')):
                     length = headers.get('content-length', '0')
                     if not length.isdigit() or int(length) > 8192:
                         raise ApplicationError(413, '请求过大')
@@ -79,7 +79,7 @@ class AccessBoundary:
                 child_scope['headers'] = [(k, v) for k, v in scope['headers'] if k.lower() != b'x-request-id']
                 child_scope['headers'].append((b'x-request-id', scope['state']['request_id'].encode('ascii')))
                 return await child(child_scope, receive, private_send)
-            if path.startswith(('/api/access/', '/api/workspaces', '/api/admin/')):
+            if path.startswith(('/api/access/', '/api/workspaces', '/api/admin/', '/api/governance/')):
                 return await self.app(scope, receive, private_send)
             raise ApplicationError(404, '请通过工作空间入口访问资源')
         except ApplicationError as error:

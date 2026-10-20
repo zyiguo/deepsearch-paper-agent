@@ -15,6 +15,10 @@ from deepsearch_agent.web.access import AccessBoundary, router
 from deepsearch_agent.web.errors import register_error_handlers
 from deepsearch_agent.web.operations import OperationsMiddleware
 from deepsearch_agent.adapters.persistence.business import build_database, access_store
+from deepsearch_agent.application.governance import Governance
+from deepsearch_agent.adapters.persistence.governance import GovernanceStore
+from deepsearch_agent.web.governance import router as governance_router
+from deepsearch_agent.adapters.persistence.tool_ledger import read_backlog
 
 
 class WorkspaceRuntimes:
@@ -40,7 +44,7 @@ class WorkspaceRuntimes:
             return self.apps[ident]
 
 
-def create_team_app(settings, runtime_factory, database_settings, *, lock_path=None):
+def create_team_app(settings, runtime_factory, database_settings, *, lock_path=None, governance_settings):
     @asynccontextmanager
     async def lifespan(app):
         with ExitStack() as resources:
@@ -53,9 +57,13 @@ def create_team_app(settings, runtime_factory, database_settings, *, lock_path=N
                 resources.callback(database.close)
             store = access_store(database, settings.root / 'identity.sqlite3')
             app.state.access = AccessService(store, settings)
+            app.state.governance = Governance(GovernanceStore(settings.root / 'governance.sqlite3'),governance_settings,
+                backlog_reader=lambda:read_backlog(settings.root/'workspaces',workspaces=True))
+            app.state.governance.start()
+            resources.callback(app.state.governance.close)
             app.state.request_limiter = RequestLimiter(InfrastructureSettings(rate_limit=30, rate_window=60))
             async with AsyncExitStack() as stack:
-                factory = lambda root, ident: runtime_factory(root,ident,database)
+                factory = lambda root, ident: runtime_factory(root,ident,database,app.state.governance)
                 app.state.workspace_runtimes = WorkspaceRuntimes(settings, factory, stack)
                 yield
 
@@ -63,6 +71,7 @@ def create_team_app(settings, runtime_factory, database_settings, *, lock_path=N
                   docs_url=None, redoc_url=None, openapi_url=None)
     app.state.access_settings = settings
     app.include_router(router)
+    app.include_router(governance_router)
     register_error_handlers(app)
 
     @app.exception_handler(RequestValidationError)

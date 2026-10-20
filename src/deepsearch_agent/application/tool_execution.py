@@ -1,8 +1,9 @@
 """Claim, dispatch and persist tool outcomes; retries require an explicit safe policy."""
 import json
 from deepsearch_agent.core.cancellation import ResearchCancelled, current_token
+from deepsearch_agent.core.governance import usage_context, current_governance
 
-from deepsearch_agent.core.tool_execution import ConfirmedToolResult, ExecutionResult, ToolExecutionBlocked, ToolKind, ToolLedger
+from deepsearch_agent.core.tool_execution import ConfirmedToolResult, ExecutionResult, ToolExecutionBlocked, ToolNotExecuted, ToolKind, ToolLedger
 
 
 class ToolExecutor:
@@ -17,6 +18,8 @@ class ToolExecutor:
         try:
             ident = self.ledger.prepare(self.run_id, slot, tool, kind, arguments, idempotency_contract)
             row = self.ledger.get(ident)
+            if row['status'] == 'not_executed':
+                raise ToolNotExecuted(row['rejection_code'], replayed=True)
             if row['status'] == 'succeeded':
                 return ident, None, ExecutionResult(json.loads(row['result_json']), ident, True)
             if row['status'] == 'unknown' and kind != ToolKind.READ_ONLY and not idempotency_contract:
@@ -25,11 +28,13 @@ class ToolExecutor:
             if owner is None:
                 # Another execution may have finished after the first read.
                 row = self.ledger.get(ident)
+                if row['status'] == 'not_executed':
+                    raise ToolNotExecuted(row['rejection_code'], replayed=True)
                 if row['status'] == 'succeeded':
                     return ident, None, ExecutionResult(json.loads(row['result_json']), ident, True)
                 raise ToolExecutionBlocked('tool_outcome_unknown' if row['status'] == 'unknown' else 'tool_operation_running', ident)
             return ident, owner, None
-        except ToolExecutionBlocked:
+        except (ToolExecutionBlocked, ToolNotExecuted):
             raise
         except Exception:
             raise ToolExecutionBlocked('tool_ledger_unavailable') from None
@@ -38,7 +43,11 @@ class ToolExecutor:
         self.fault('after_claim', ident)
         token = current_token.get()
         if token is not None:
-            token.check()
+            try:
+                token.check()
+            except ResearchCancelled:
+                self._reject(ident, owner, ToolNotExecuted('cancelled_before_dispatch'))
+                raise
         try:
             self.ledger.dispatch(ident, owner)
         except ToolExecutionBlocked:
@@ -51,11 +60,23 @@ class ToolExecutor:
         self.fault('after_effect', ident)
         self.ledger.succeed(ident, owner, value)
         self.fault('after_commit', ident)
+        if current_governance.get() is not None:
+            current_governance.get().record('tool',outcome='succeeded')
         return ExecutionResult(value, ident, False)
 
     def _uncertain(self, ident, owner, kind):
         try:
             self.ledger.uncertain(ident, owner)
+            if current_governance.get() is not None:
+                current_governance.get().record('tool',outcome='unknown')
+        except Exception:
+            raise ToolExecutionBlocked('tool_ledger_unavailable', ident) from None
+
+    def _reject(self, ident, owner, error):
+        try:
+            self.ledger.reject(ident, owner, error.code)
+            if current_governance.get() is not None:
+                current_governance.get().record('tool',outcome='not_executed')
         except Exception:
             raise ToolExecutionBlocked('tool_ledger_unavailable', ident) from None
 
@@ -63,10 +84,17 @@ class ToolExecutor:
         """invoke receives the stable operation ID; capability is trusted adapter config."""
         ident, owner, replay = self._prepare(slot, tool, kind, arguments, idempotency_contract)
         if replay is not None:
+            if current_governance.get() is not None:
+                current_governance.get().record('tool',outcome='replayed')
             return replay
         self._start(ident, owner)
         try:
-            return self._commit(ident, owner, invoke(ident))
+            with usage_context(operation_id=ident):
+                value = invoke(ident)
+            return self._commit(ident, owner, value)
+        except ToolNotExecuted as error:
+            self._reject(ident, owner, error)
+            raise
         except Exception as error:
             self._uncertain(ident, owner, kind)
             if kind != ToolKind.READ_ONLY and not isinstance(error, ResearchCancelled):
@@ -76,10 +104,17 @@ class ToolExecutor:
     async def aexecute(self, slot, tool, kind, arguments, invoke, *, idempotency_contract=''):
         ident, owner, replay = self._prepare(slot, tool, kind, arguments, idempotency_contract)
         if replay is not None:
+            if current_governance.get() is not None:
+                current_governance.get().record('tool',outcome='replayed')
             return replay
         self._start(ident, owner)
         try:
-            return self._commit(ident, owner, await invoke(ident))
+            with usage_context(operation_id=ident):
+                value = await invoke(ident)
+            return self._commit(ident, owner, value)
+        except ToolNotExecuted as error:
+            self._reject(ident, owner, error)
+            raise
         except Exception as error:
             self._uncertain(ident, owner, kind)
             if kind != ToolKind.READ_ONLY and not isinstance(error, ResearchCancelled):

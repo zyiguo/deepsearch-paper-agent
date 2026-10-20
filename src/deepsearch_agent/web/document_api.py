@@ -3,6 +3,7 @@ from fastapi.responses import FileResponse
 from starlette.concurrency import run_in_threadpool
 
 from deepsearch_agent.workspace.documents import DocumentError, MAX_UPLOAD_BYTES
+from deepsearch_agent.workspace.ingestion import IngestionBlocked
 
 router = APIRouter(prefix='/api/documents', tags=['PDF 文献'])
 
@@ -62,13 +63,13 @@ def detail(ident: str, request: Request):
 
 
 @router.post('/{ident}/retry', status_code=202)
-def retry(ident: str, request: Request):
+def retry(ident: str, request: Request, confirm_unknown: bool = False):
     writable(request)
     try:
-        return request.app.state.documents.retry(ident)
+        return request.app.state.documents.retry(ident, confirm_unknown=confirm_unknown)
     except KeyError:
         raise HTTPException(404, '文献不存在') from None
-    except DocumentError as error:
+    except (DocumentError, IngestionBlocked) as error:
         raise HTTPException(409, str(error)) from None
 
 
@@ -81,25 +82,46 @@ def page(ident: str, number: int, request: Request):
 
 
 @router.post('/{ident}/analyze', status_code=202)
-def analyze(ident: str, request: Request):
+def analyze(ident: str, request: Request, confirm_unknown: bool = False):
     writable(request)
     try:
-        return request.app.state.documents.retry(ident, analyze=True)
+        return request.app.state.documents.retry(ident, analyze=True, confirm_unknown=confirm_unknown)
     except KeyError:
         raise HTTPException(404, '文献不存在') from None
-    except DocumentError as error:
+    except (DocumentError, IngestionBlocked) as error:
         raise HTTPException(409, str(error)) from None
 
 
 @router.post('/{ident}/index-images', status_code=202)
-def index_images(ident: str, request: Request):
+def index_images(ident: str, request: Request, confirm_unknown: bool = False):
     writable(request)
     try:
-        return request.app.state.documents.index_images(ident)
+        return request.app.state.documents.index_images(ident, confirm_unknown=confirm_unknown)
     except KeyError:
         raise HTTPException(404, '文献不存在') from None
-    except DocumentError as error:
+    except (DocumentError, IngestionBlocked) as error:
         raise HTTPException(409, str(error)) from None
+
+
+@router.get('/{ident}/consistency')
+def consistency(ident: str, request: Request):
+    try:
+        return request.app.state.documents.consistency(ident)
+    except KeyError:
+        raise HTTPException(404, '文献不存在') from None
+    except (IngestionBlocked, OSError, ValueError):
+        raise HTTPException(409, '入库记录或产物无法校验，请检查备份') from None
+
+
+@router.post('/{ident}/repair')
+def repair(ident: str, request: Request):
+    local_origin(request)
+    try:
+        return request.app.state.documents.consistency(ident, repair=True)
+    except KeyError:
+        raise HTTPException(404, '文献不存在') from None
+    except (IngestionBlocked, OSError, ValueError):
+        raise HTTPException(409, '入库记录或产物无法校验，未确认修复') from None
 
 
 @router.get('/{ident}/pages/{number}/image')

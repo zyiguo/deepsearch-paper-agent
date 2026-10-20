@@ -6,14 +6,23 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
+from dataclasses import asdict
 from pathlib import Path
 from threading import Lock
 from urllib.parse import quote, urlsplit
 
 from deepsearch_agent.knowledge.knowledge_base import KnowledgeBase
 from deepsearch_agent.core.models import ModelServiceError
+from deepsearch_agent.core.evidence import TextChunk
+from deepsearch_agent.core.identity import fingerprint
+from deepsearch_agent.core.chunking_config import SectionConfig
+from deepsearch_agent.knowledge.image_index import ImageVectorIndex
+from deepsearch_agent.workspace.ingestion import IngestionJournal, IngestionBlocked
+from deepsearch_agent.adapters.governed_calls import GovernedExecutor
+from deepsearch_agent.core.governance import current_governance, GovernanceDenied
 from deepsearch_agent.workspace.multimodal import DocumentProcessor
 from deepsearch_agent.adapters.persistence.local_files import atomic_write
 from deepsearch_agent.workspace.image_assets import normalize_image, image_title
@@ -40,11 +49,13 @@ class DocumentLibrary:
         root.mkdir(parents=True, exist_ok=True)
         self.index = index
         self.processor = processor
+        self.fault = lambda stage, step: None
         self.lock = Lock()
         self.render_lock = Lock()
         self.records = {}
         self.inflight = set()
-        self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='pdf-index')
+        self.executor = GovernedExecutor(ThreadPoolExecutor(max_workers=1, thread_name_prefix='pdf-index'))
+        self.phase_started = {}
         for path in root.glob('*.meta.json'):
             try:
                 record = json.loads(path.read_text(encoding='utf-8'))
@@ -80,6 +91,24 @@ class DocumentLibrary:
             record = {**self.records[ident], **changes}
             self.persist(record)
             self.records[ident] = record
+            service = current_governance.get()
+            if service is not None and 'status' in changes:
+                prior = self.phase_started.pop(ident,None)
+                if prior:
+                    service.duration('ingestion_phase',time.monotonic()-prior[1],phase=prior[0])
+                if changes['status'] in ACTIVE:
+                    self.phase_started[ident] = (changes['status'],time.monotonic())
+
+    def enqueue(self, ident, **kwargs):
+        """Caller holds the library lock; failed admission must not strand queued UI."""
+        try:
+            self.executor.submit(self.process,ident,**kwargs)
+        except BaseException:
+            self.inflight.discard(ident)
+            record = {**self.records[ident], 'status':'failed','error':'任务未接纳，请检查资源容量后重试'}
+            self.persist(record)
+            self.records[ident] = record
+            raise
 
     def fail(self, ident, message):
         try:
@@ -108,6 +137,12 @@ class DocumentLibrary:
         record['vision_available'] = self.processor is not None
         record.setdefault('analysis_mode', 'text')
         record.setdefault('media_type', 'application/pdf')
+        try:
+            record['retry_requires_confirmation'] = any(self.journal(ident, images_only=mode).pending_unknown()
+                                                        for mode in (False, True))
+        except (OSError, ValueError, KeyError, TypeError):
+            record['retry_requires_confirmation'] = True
+            record['error'] = '入库记录无法校验，请先检查备份；不会自动重新计费'
         return record
 
     def list(self):
@@ -135,12 +170,19 @@ class DocumentLibrary:
                 self.records[ident] = record
         return self.retry(ident)
 
-    def retry(self, ident, *, analyze=False):
+    def retry(self, ident, *, analyze=False, confirm_unknown=False):
         if analyze and self.processor is None:
             raise DocumentError('请先在 .env.vision 配置视觉模型并重启后端')
         record = self.view(ident)
         if record['status'] == 'ready' and not analyze:
             return record
+        if record['status'] not in ACTIVE and not analyze:
+            checked = self.consistency(ident, repair=True)
+            if checked['repaired']:
+                return self.view(ident)
+        images_only = bool(record.get('ingestion_images_only', False)) and not analyze
+        if self.journal(ident, images_only=images_only).pending_unknown() and not confirm_unknown:
+            raise DocumentError('付费步骤结果未知；核对账单后请明确确认重试，可能重复计费')
         with self.lock:
             if ident not in self.inflight:
                 if len(self.inflight) >= 4:
@@ -149,7 +191,7 @@ class DocumentLibrary:
                 record = {**self.records[ident], 'status': 'queued', 'error': None}
                 self.persist(record)
                 self.records[ident] = record
-                self.executor.submit(self.process, ident)
+                self.enqueue(ident, images_only=images_only, confirm_unknown=confirm_unknown)
         return self.view(ident)
 
     def submit_image(self, content: bytes, filename: str):
@@ -175,7 +217,7 @@ class DocumentLibrary:
                 self.records[ident] = record
         return self.retry(ident)
 
-    def index_images(self, ident):
+    def index_images(self, ident, *, confirm_unknown=False):
         record = self.view(ident)
         if not record['image_index_available']:
             raise DocumentError('请配置 .env.image_embedding 并重启后端')
@@ -185,6 +227,8 @@ class DocumentLibrary:
             raise DocumentError('请先完成文献入库')
         if record['image_indexed_pages'] == record['page_count']:
             return record
+        if self.journal(ident, images_only=True).pending_unknown() and not confirm_unknown:
+            raise DocumentError('图像向量步骤结果未知；核对账单后请明确确认重试，可能重复计费')
         with self.lock:
             if ident not in self.inflight:
                 if len(self.inflight) >= 4:
@@ -193,7 +237,7 @@ class DocumentLibrary:
                 record = {**self.records[ident], 'status': 'queued', 'error': None}
                 self.persist(record)
                 self.records[ident] = record
-                self.executor.submit(self.process, ident, images_only=True)
+                self.enqueue(ident, images_only=True, confirm_unknown=confirm_unknown)
         return self.view(ident)
 
     def worker(self, operation, ident, target, page=None):
@@ -213,10 +257,78 @@ class DocumentLibrary:
                 message = 'PDF 处理失败，请检查文件或本地依赖'
             raise DocumentError(message)
 
-    def process(self, ident, *, images_only=False):
+    def journal(self, ident, *, images_only=False, confirm_unknown=False):
+        with self.lock:
+            source = self.records[ident]['source_path']
+        with self.index.lock:
+            kb = self.index.kb
+            images = kb.image_index
+            image_identity = images.identity if images and images.client is not None else None
+            embedding = kb.embedding_id
+        processor = self.processor
+        analyzer = getattr(processor, 'analyzer', None)
+        context = dict(protocol=1, document=ident, source=source, images_only=images_only,
+                       embedding=embedding, image_embedding=image_identity,
+                       processor=(getattr(analyzer, 'identity', None) or
+                                  type(processor).__module__ + '.' + type(processor).__qualname__) if processor else None,
+                       allow_image_only=getattr(processor, 'allow_image_only', False),
+                       chunking=asdict(SectionConfig()))
+        return IngestionJournal(self.root / '.ingestion', context,
+                                confirm_unknown=confirm_unknown, fault=self.fault)
+
+    @staticmethod
+    def source_snapshot(kb, source, *, images_only=False):
+        images = kb.image_index.restrict_sources({source}) if kb.image_index else None
+        # Saving/loading normalizes vectors; ignore only floating point roundoff.
+        image_payload = images.snapshot() if images and images.chunks else None
+        if image_payload:
+            for entry in image_payload['entries']:
+                entry['vector'] = [round(v, 12) for v in entry['vector']]
+        return {'text': [] if images_only else [
+                    {'chunk': asdict(c), 'vector': [round(v, 12) for v in kb._vectors[i]] if kb._vectors else None}
+                    for i, c in enumerate(kb.chunks) if c.source_path == source],
+                'images': image_payload}
+
+    def consistency(self, ident, *, repair=False):
+        self.check_id(ident)
+        with self.lock:
+            record = dict(self.records[ident])
+            active = ident in self.inflight
+        result = {'id': ident, 'status': 'legacy_or_unpublished', 'repaired': False,
+                  'original_exists': self.path(ident, '.png' if record.get('media_type') == 'image/png' else '.pdf').is_file()}
+        if active:
+            return {**result, 'status': 'active'}
+        original_path = self.path(ident, '.png' if record.get('media_type') == 'image/png' else '.pdf')
+        result['original_matches'] = result['original_exists'] and hashlib.sha256(original_path.read_bytes()).hexdigest() == ident
+        for mode in (record.get('ingestion_images_only', False),):
+            job = self.journal(ident, images_only=mode)
+            if record.get('ingestion_identity') and record['ingestion_identity'] != job.identity:
+                return {**result, 'status': 'context_changed'}
+            publication = job.read('publication')
+            if publication is None:
+                continue
+            with self.index.lock:
+                actual = fingerprint(self.source_snapshot(self.index.kb, record['source_path'], images_only=mode))
+                matches = actual == publication['expected']
+                pages_exist = self.path(ident, '.pages.json').is_file()
+                pages_match = pages_exist and fingerprint(json.loads(self.path(ident, '.pages.json').read_text(encoding='utf-8'))) == publication['pages_digest']
+                complete = matches and result['original_matches'] and pages_match
+                result.update(status='consistent' if complete else 'index_or_artifact_mismatch',
+                              index_matches=matches, pages_exist=pages_exist, pages_match=pages_match)
+                if complete and repair and record['status'] != 'ready':
+                    self.update(ident, **publication['metadata'])
+                    job.published()
+                    result['repaired'] = True
+            if matches:
+                break
+        return result
+
+    def process(self, ident, *, images_only=False, confirm_unknown=False):
         try:
+            job = self.journal(ident, images_only=images_only, confirm_unknown=confirm_unknown)
+            self.update(ident, ingestion_identity=job.identity, ingestion_images_only=images_only)
             if images_only:
-                self.process_images(ident)
+                self.process_images(ident, job=job)
                 return
             self.update(ident, status='parsing')
             pages_path = self.path(ident, '.pages.json')
@@ -227,26 +339,30 @@ class DocumentLibrary:
             native_path = self.path(ident, '.native-pages.json') if processor else pages_path
             with self.lock:
                 is_image = self.records[ident].get('media_type') == 'image/png'
-            if is_image:
-                atomic_write(native_path, b'[""]')
-            else:
+            def extract():
+                if is_image:
+                    return ['']
                 self.worker('extract-visual' if processor or images_enabled else 'extract', ident, native_path)
-            pages = json.loads(native_path.read_text(encoding='utf-8'))
-            warnings = []
-            prepared = None
+                return json.loads(native_path.read_text(encoding='utf-8'))
+            native_pages = job.run('parse', extract)
             with self.lock:
                 source = self.records[ident]['source_path']
-            if processor:
-                self.update(ident, status='analyzing', page_count=len(pages))
-                try:
+            def prepare():
+                warnings, pages = [], native_pages
+                if processor:
+                    self.update(ident, status='analyzing', page_count=len(pages))
                     prepared = processor.prepare(pages, source, ident, lambda n: self.render_page(ident, n, vision=True))
-                except ValueError as error:
-                    raise DocumentError(str(error)) from None
-                pages, warnings = prepared.pages, prepared.warnings
-                atomic_write(pages_path, json.dumps(pages, ensure_ascii=False).encode('utf-8'))
-            blank_pages = [i + 1 for i, p in enumerate(pages) if not p.strip()]
-            if blank_pages:
-                warnings.append(f'第 {", ".join(map(str, blank_pages))} 页没有可提取文字' + ('；可查看原页与视觉证据' if processor or images_enabled else '，已跳过（可能需 OCR）'))
+                    pages, warnings, chunks = prepared.pages, prepared.warnings, prepared.chunks
+                else:
+                    from deepsearch_agent.knowledge.section_chunking import section_chunks
+                    chunks = section_chunks(pages, source, SectionConfig())
+                blank_pages = [i + 1 for i, p in enumerate(pages) if not p.strip()]
+                if blank_pages:
+                    warnings.append(f'第 {", ".join(map(str, blank_pages))} 页没有可提取文字' + ('；可查看原页与视觉证据' if processor or images_enabled else '，已跳过（可能需 OCR）'))
+                return {'pages': pages, 'warnings': warnings, 'chunks': [asdict(c) for c in chunks]}
+            prepared = job.run('analysis', prepare, paid=processor is not None)
+            pages, warnings = prepared['pages'], prepared['warnings']
+            atomic_write(pages_path, json.dumps(pages, ensure_ascii=False).encode('utf-8'))
             self.update(ident, status='embedding', page_count=len(pages), warnings=warnings)
             with self.index.lock:
                 if self.index.write_blocked:
@@ -255,13 +371,20 @@ class DocumentLibrary:
                 client, identity = original.embedding_client, original.embedding_id
             temporary = KnowledgeBase(ExtractedPages(pages), chunking_strategy='section-rules-v1',
                                       embedding_client=client, embedding_id=identity)
-            if prepared:
-                temporary.ingest_chunks(prepared.chunks)
-            else:
-                temporary.ingest_pdf(source)
+            def embed():
+                temporary.ingest_chunks([TextChunk(**c) for c in prepared['chunks']])
+                return {'chunks': [asdict(c) for c in temporary.chunks], 'vectors': temporary._vectors}
+            embedded = job.run('text_vectors', embed, paid=client is not None and bool(prepared['chunks']))
+            temporary.chunks = [TextChunk(**c) for c in embedded['chunks']]
+            for chunk in temporary.chunks:
+                chunk.validate_structure()
+            temporary._vectors = embedded['vectors']
             if original.image_index is not None and original.image_index.client is not None:
-                temporary.image_index = original.image_index.prepare(source, [
-                    self.render_page(ident, page, vision=True) for page in range(1, len(pages) + 1)])
+                images = job.run('image_vectors', lambda: original.image_index.prepare(source, [
+                    self.render_page(ident, page, vision=True) for page in range(1, len(pages) + 1)]).snapshot(), paid=True)
+                temporary.image_index = ImageVectorIndex.restore(images, original.image_index.client, original.image_index.identity)
+            metadata = dict(status='ready', error=None, page_count=len(pages), warnings=warnings,
+                            analysis_mode='vision' if processor else 'text')
             with self.index.lock:
                 if self.index.write_blocked:
                     raise DocumentError('知识库写入受保护，请先修复快照')
@@ -272,17 +395,23 @@ class DocumentLibrary:
                 candidate.merge_index(temporary)
                 if candidate.image_index is not None:
                     candidate.image_index.merge(temporary.image_index if temporary.image_index is not None else preserved_images)
+                job.publication(fingerprint(self.source_snapshot(candidate, source)), metadata, pages_digest=fingerprint(pages))
                 self.index.publish(candidate)
-            self.update(ident, status='ready', error=None, analysis_mode='vision' if processor else 'text')
-        except (DocumentError, ModelServiceError) as error:
+                self.fault('after_publish', 'publication')
+                job.published()
+            self.update(ident, **metadata)
+        except GovernanceDenied as error:
+            self.fail(ident, '本次付费步骤未执行：'+error.code)
+        except (DocumentError, ModelServiceError, IngestionBlocked) as error:
             self.fail(ident, str(error))
         except Exception:
-            self.fail(ident, '文献处理或保存失败，原知识库未被本次失败操作替换；请检查磁盘与配置后重试')
+            self.fail(ident, '文献处理或状态保存失败；请先检查入库一致性，再恢复已保存步骤')
         finally:
             with self.lock:
                 self.inflight.discard(ident)
 
-    def process_images(self, ident):
+    def process_images(self, ident, *, job=None):
+        job = job or self.journal(ident, images_only=True)
         self.update(ident, status='embedding')
         with self.lock:
             record = dict(self.records[ident])
@@ -290,8 +419,10 @@ class DocumentLibrary:
             if self.index.write_blocked:
                 raise DocumentError('知识库写入受保护，请先修复快照')
             image_index = self.index.kb.image_index
-        prepared = image_index.prepare(record['source_path'], [
-            self.render_page(ident, page, vision=True) for page in range(1, record['page_count'] + 1)])
+        images = job.run('image_vectors', lambda: image_index.prepare(record['source_path'], [
+            self.render_page(ident, page, vision=True) for page in range(1, record['page_count'] + 1)]).snapshot(), paid=True)
+        prepared = ImageVectorIndex.restore(images, image_index.client, image_index.identity)
+        metadata = dict(status='ready', error=None)
         with self.index.lock:
             if self.index.write_blocked:
                 raise DocumentError('知识库写入受保护，请先修复快照')
@@ -299,8 +430,12 @@ class DocumentLibrary:
             candidate.image_index = candidate.image_index.restrict_sources(
                 {c.source_path for c in candidate.image_index.chunks} - {record['source_path']})
             candidate.image_index.merge(prepared)
+            job.publication(fingerprint(self.source_snapshot(candidate, record['source_path'], images_only=True)), metadata,
+                            pages_digest=fingerprint(json.loads(self.path(ident, '.pages.json').read_text(encoding='utf-8'))))
             self.index.publish(candidate)
-        self.update(ident, status='ready', error=None)
+            self.fault('after_publish', 'publication')
+            job.published()
+        self.update(ident, **metadata)
 
     def page(self, ident, page):
         record = self.view(ident)

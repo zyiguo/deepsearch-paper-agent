@@ -12,6 +12,7 @@
 !.env.database.example
 !.env.database.compose.example
 !.env.tracing.example
+!.env.governance.example
 compose.override.yaml
 
 # Runtime data
