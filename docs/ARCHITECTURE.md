@@ -117,7 +117,9 @@ HTTP 请求、持久研究结果、供应商调用和工具结果分别计量。
 
 ## 配置与数据兼容
 
-高并发、高可用与性能扩展的取舍见 [专题说明](CONCURRENCY_AVAILABILITY_PERFORMANCE_REDIS.md)。当前缓存只做单次输入去重与固定 TTL，没有跨请求 singleflight；Redis 故障冷却和本地回退不是 Sentinel/Cluster。多 API 部署需要共同调整任务认领、共享费用事实、索引版本与存储，不能通过增加 workers 绕开单进程所有权。
+高并发、高可用与性能扩展的取舍见 [专题说明](CONCURRENCY_AVAILABILITY_PERFORMANCE_REDIS.md)。文本缓存已实现单次输入去重、同一缓存客户端实例及其快照共享的跨请求 singleflight，以及不延长 freshness 上限的向下 TTL 抖动。合并表按全批原子登记并限制键数，owner 先二次查缓存、批量计算自己拥有的键，再等待重叠键，避免交叉批次互等；只在实际计算结束后释放所有权。follower 有界等待，不取消、接管或自动重发 leader 的付费调用。实际回源保持 leader 的用户/空间上下文，缓存命中或 follower 复用不新建供应商费用预占。实现、配置和异常语义见 [缓存保护](REDIS_CACHE_PROTECTION.md)，本轮证据见 [验证记录](REDIS_CACHE_PROTECTION_VALIDATION_20261020.md)。
+
+缓存键仍使用模型身份、凭据 scope 和文本摘要，格式不变；团队模式的不同缓存客户端实例不共享 singleflight 表，这不是跨工作区部署级合并或分布式锁。Redis 故障冷却和本地回退仍不提供 Sentinel/Cluster；L1、MGET/pipeline、负缓存、Bloom Filter 与跨进程协调尚未接入。多 API 部署需要共同调整任务认领、共享费用事实、索引版本与存储，不能通过增加 workers 绕开单进程所有权。
 
 `core.paths.PROJECT_ROOT` 集中定位项目根目录，默认指向仓库根；可显式设置 `DEEPSEARCH_ROOT`。模块移动不参与数据目录推算。现有 `create_app(index_path=..., conversation_path=..., trace_path=...)` 注入路径和模型/资料身份仍有效；没有迁移或改写 `.env`、文献、检查点和人工审核文件。
 
@@ -127,4 +129,4 @@ HTTP 请求、持久研究结果、供应商调用和工具结果分别计量。
 
 评测代码身份仍使用 SHA256，但计算范围覆盖移动后的应用、轨迹与离线包；本次源码重构自然产生新的代码身份。已有实验可只读重新评分，不能用新代码冒充同一实现继续带身份校验的旧实验；新运行使用新目录。
 
-重构删除明细和当时命令见 [迁移清单](ARCHITECTURE_MIGRATION.md)、[2026-10-18 验证](ARCHITECTURE_VALIDATION_20261018.md) 与 [容器及真实 Redis 验收](CONTAINER_REDIS_E2E_20261018.md)。2026-10-20 当前导入审计为 214 模块、544 依赖、0 循环、0 违规；本次发布与证据身份见 [发布记录](GITHUB_PUBLICATION_20261020.md)。继续保持单 API 进程，资源池与内存索引尚未扩展到多进程一致性。
+重构删除明细和当时命令见 [迁移清单](ARCHITECTURE_MIGRATION.md)、[2026-10-18 验证](ARCHITECTURE_VALIDATION_20261018.md) 与 [容器及真实 Redis 验收](CONTAINER_REDIS_E2E_20261018.md)。2026-10-20 缓存保护增量后的导入审计为 214 模块、545 依赖、0 循环、0 违规，见[本轮验证](REDIS_CACHE_PROTECTION_VALIDATION_20261020.md)；发布与证据身份见 [发布记录](GITHUB_PUBLICATION_20261020.md)。继续保持单 API 进程，资源池与内存索引尚未扩展到多进程一致性。

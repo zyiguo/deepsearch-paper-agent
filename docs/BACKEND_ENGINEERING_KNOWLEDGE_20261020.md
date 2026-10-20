@@ -17,6 +17,8 @@
 
 容量实验使用真实 ASGI、团队入口和父子 Agent 图，但模型是固定 10ms 延迟的合成提供者，每份文献只有一个固定片段，向量为 1024 维合成向量。测量时全局研究限额为 4、供应商限额为 2，区别于默认配置。数据与限制详见[运行治理验证](GOVERNANCE_VALIDATION_20261020.md)。本文引用这些已有报告；重新执行得到的新结果应使用新目录，不能改写历史结果。
 
+本轮 singleflight 与 TTL 抖动已经实现，验证结果单独记录在[缓存保护验证](REDIS_CACHE_PROTECTION_VALIDATION_20261020.md)，不能借用上表的 1059 项通过或 144 条容量请求作为新机制的验收数字。配置、错误码、统计分母与真实 Redis/模型入口见[缓存保护](REDIS_CACHE_PROTECTION.md)。
+
 ## 1. 工具幂等：逻辑操作身份、请求摘要与 owner fencing
 
 ### 输入
@@ -458,33 +460,36 @@ SQL 加上 `WHERE workspace_id=?` 防正常路径串空间，复合外键防跨�
 
 ### 输入
 
-多个用户同时发起研究，其中一些请求需要相同模型、凭据作用域和文本的 Embedding。这里有两个独立问题：系统能同时承担多少工作，以及这些工作中有多少可以合并。第 6 节的资源租约解决前者；跨请求 singleflight 是后者的一种设计，目前未接入本项目。
+多个用户同时发起研究，其中一些请求需要相同模型、凭据作用域和文本的 Embedding。这里有两个独立问题：系统能同时承担多少工作，以及这些工作中有多少可以合并。第 6 节的资源租约解决前者；当前已接入的实例级跨请求 singleflight 解决同一时段相同向量计算的复用，具体配置和本轮证据见[缓存保护](REDIS_CACHE_PROTECTION.md)。
 
 ### 执行顺序
 
 1. 当前 `Governance.resource` 在一个进程共享锁内同时检查 global/workspace/user，全部允许后才增加三类计数，超限立即返回 503。默认全局研究 8、入库 4、供应商调用 8；入库租约覆盖队列等待与实际执行，结束、异常和队列取消均释放。
 2. research、ingestion、provider 分别计数，形成资源隔离的基础。供应商很慢时，供应商池能够拒绝更多调用；它没有把研究、解析、内存和所有外部 MCP 都变成独立的硬资源隔离区。
 3. 每个 RedisBackend 另有 16 个连接与 16 个在途操作上限，团队模式多空间运行环境的连接池会叠加，当前没有部署共享的 Redis I/O 总池。默认 socket timeout 为 0.3 秒，调用等待的墙钟上限为其两倍；失败后冷却 5 秒。等待超时会返回降级，但底层已开始的线程可能仍在运行，在途名额要等它真正结束才释放。
-4. 当前 `CachedEmbeddingClient.embed` 只在一次输入内用 `dict.fromkeys` 去重。两个请求同时对同一个 key 未命中，仍可能分别进入供应商调用，供应商资源池只限制同时数量，不合并其内容。
-5. 若以后引入 singleflight，应在授权和输入检查后，用明确的模型、参数、凭据作用域与文本身份定位一个共享 Future；首个调用者成为 leader，其余调用者有界等待同一结果。私有部署还可把 workspace 纳入合并键，这属于更保守的新策略；当前缓存 scope 是凭据摘要，并非 workspace ID。
-6. leader 结束后清理共享状态；异常也要释放。一个 follower 取消或超时，不应取消所有用户正在共享的 leader，更不能立即抢占为第二个 leader。leader 必须有独立的调用超时与资源预算，不能把它的生存期绑在第一个 HTTP 连接上。
+4. `CachedEmbeddingClient.embed` 先用 `dict.fromkeys` 去重并逐项读缓存，再在实例共享锁内原子登记全部 miss。超过默认 4096 个在途键时整批以 `embedding_singleflight_capacity`/503 拒绝，不部分登记或回源。已有键成为 followed，新键成为 owned；一次调用可能兼具两种角色。
+5. owner 二次读缓存，把仍 miss 的 owned 文本一次传给 delegate；先计算 owned 再等 followed，避免 `[a,b]` 与 `[b,a]` 交叉批次互等。实际调用沿用 leader 的用户/空间费用上下文，follower 不新建供应商预占。有效向量以 tuple 发布，每个调用者取得独立 list 并恢复自己的输入顺序。
+6. follower 等待全部重叠键共用默认 65 秒预算，至多每 0.1 秒检查自身取消；该预算不含 owner 自己的计算耗时。超时 `embedding_singleflight_timeout` 或取消只结束等待，不取消 leader、不接管、不自动重试。leader 自身原样抛错，follower 只收 `embedding_singleflight_leader_failed`，不取得另一请求的操作 ID 或“确定未执行”分类；所有权等真实计算和发布结束才清理。
+7. 在途表由缓存客户端实例持有，deepcopy 快照返回同一客户端以共用 provider、连接与表；独立工作区客户端和进程不共享表。原 key 的模型 identity、凭据摘要 scope 与 text 不变，scope 并非 workspace ID。资料授权仍需各任务独立检查。
 
 ### 输出与解决的问题
 
-现有输出是有界接纳、清楚的拒绝原因及异常后的资源释放；拟议的 singleflight 输出是多个请求复用一次正在执行的相同读取。前者是 admission/backpressure，后者是工作合并，两者需要共同使用。当前没有持久消息队列、自动排队重试或跨进程请求合并。
+现有输出既包括有界接纳、清楚的拒绝原因及资源释放，也包括同一缓存实例上的多个请求复用进行中的相同向量计算。前者是 admission/backpressure，后者是工作合并，两者共同使用。当前没有持久消息队列、自动排队重试或跨进程请求合并；实际收益仍以完成量、调用数、等待、拒绝与费用证据分别验证。
+
+治理指标新增 `deepsearch_embedding_singleflight_total{outcome}`，outcome 为 leader、follower、capacity_rejected、timeout、cancelled、error、completed；一次调用可同时有 leader/follower 事件，二次命中的 leader 也不一定发起模型调用。`deepsearch_embedding_singleflight_wait_seconds` 按 completed/timeout/cancelled/error 统计 followed 等待直方图，不含 owner 计算。纯命中或关闭合并时不新增这些事件，指标不携带文本、key、用户/空间或操作 ID。
 
 ### 源码入口
 
 - [Governance.resource](../src/deepsearch_agent/application/governance.py)与[资源配置](GOVERNANCE_CAPACITY.md)：三维原子检查、资源计量和 fail-fast 拒绝。
 - [GovernedExecutor](../src/deepsearch_agent/adapters/governed_calls.py)：入库队列持有租约及取消释放。
-- [RedisBackend/CachedEmbeddingClient](../src/deepsearch_agent/adapters/infrastructure.py)：Redis 有界等待与批内去重。
+- [RedisBackend/CachedEmbeddingClient](../src/deepsearch_agent/adapters/infrastructure.py)：Redis 有界等待、全批登记、二次 lookup、实例级 singleflight 与抖动 TTL。
 - [一次性问答入口](../src/deepsearch_agent/application/library_service.py)：先在锁内创建快照，再申请 research 租约，快照成本尚未被该准入覆盖。
 
 ### 概念与失败示例
 
-32 个请求同时读取一个刚过期的热点向量，即使每个请求自身只含一份文本，也可能发生多次回源。给 Redis 加一个更大的连接池不会消除重复计算，还可能更快耗尽付费额度。应先测热点重复调用与拒绝情况，再评估请求合并、TTL 抖动和容量配置。
+32 个请求同时读取一个刚过期的热点向量，在同一缓存客户端上可共享重叠的 owner 计算；若来自不同客户端实例、已经清理后又遇 Redis 写失败，仍可能发生多次回源。更大的连接池不会自动扩大合并范围。先固定缓存初态和到达时序，再核对实际 provider dispatch、follower 等待/超时与费用，不能从“32 个请求”直接推导“必定一次调用”。
 
-singleflight 只协调“当前是否已有相同计算”，它的内存表随进程退出丢失；工具账本协调“原逻辑操作是否已有确认结果、是否允许重发”。两个任务的同参数付费步骤可能本来就是不同业务操作，不能只按参数合并。对已经发送却结果未知的付费/写入操作，取消 leader、锁过期或 follower 超时都不能证明远端未执行，仍须保持第 1–2 节的 unknown 策略。
+singleflight 只协调“当前是否已有相同计算”，它的内存表随进程退出丢失；工具账本协调“原逻辑操作是否已有确认结果、是否允许重发”。两个任务可以共享一个可重建向量，但保留各自 run/slot 身份，不能按相同参数把账本操作合成一条。对原 run/slot 已发送却结果未知的付费/写入操作，取消 leader、锁过期或 follower 超时都不能证明远端未执行，仍须保持第 1–2 节的 unknown 策略。
 
 ### 面试追问
 
@@ -542,7 +547,7 @@ Redis 不可达、API 进程退出、业务数据库故障，或整台机器及�
 
 1. 先固定统计对象与时间边界：成功吞吐量为完成数除以同一测量区间；同时保留拒绝数、失败数和全请求/成功请求延迟。快速拒绝很多请求可能降低全请求 p95，但不意味着用户完成更多研究。
 2. 关联请求总时延与各阶段耗时，比较命中和未命中样本。当前治理指标已有供应商、研究、研究/入库阶段、缓存事件与资源量；Redis 逐 key 耗时、锁等待及快照单独耗时仍需专门剖析，不能当作已有完整分布式追踪。
-3. 对缓存路径，令一次输入中去重后文本数为 K、未命中数为 M：当前逐 key 执行 K 次 GET、成功回源后 M 次 SET，并将 M 个文本一次传给 delegate；不是逐文本调用模型。若 K 较大且 RTT 可观，才考虑 MGET 或 pipeline 批量访问，并测量序列化、网络和线程创建成本。
+3. 对缓存路径，令输入去重后文本数为 K、认领键数为 O、二次仍 miss 的 owned 文本数为 M：默认先执行 K 次 GET，再执行 O 次二次 GET，成功回源后 M 次 SET；M 个文本一次传给 delegate，followed 键复用 Future。关闭 singleflight 时没有二次 GET。若 K/O 较大且 RTT 可观，才考虑 MGET 或 pipeline，并同时测实际模型调用、序列化、网络和线程调度成本。
 4. 批量读必须恢复原输入顺序与重复项，逐项验证维度、finite 与归一化；批量写必须保持每个值的 TTL 和失败降级语义。pipeline 减少网络往返，不会自动去重供应商请求，也不是读—算—写的原子事务；本项目尚未实现 MGET/pipeline/L1。[Redis pipelining](https://redis.io/docs/latest/develop/using-commands/pipelining/)、[MGET 命令](https://redis.io/docs/latest/commands/mget/)。
 5. 区分 I/O 等待和 CPU 工作。线程可以并行等待供应商/磁盘，但不能据此声称纯 Python 计算获得同等多核加速；向量库可能使用原生计算，需实测。增加进程还会复制内存状态，并触发现有单进程所有权边界。
 6. 对索引成本分开测量：问答 snapshot 是服务浅拷贝加 `restrict_sources` 列表视图，重置该视图的 BM25/ANN 缓存；入库发布则在索引锁内 deepcopy 候选、合并、保存后切换。它们都可能随语料增长产生开销，但不能把两者都描述成“每次问答深拷贝全部向量”，也没有现成实测数字证明谁是主瓶颈。
@@ -581,13 +586,13 @@ Redis 不可达、API 进程退出、业务数据库故障，或整台机器及�
 
 1. 先做输入和授权校验，再查缓存。当前 Embedding 包装器拒绝空白/非字符串文本；key 是 `identity + scope + text` 的摘要，装配时 scope 为 API 凭据摘要。同凭据、同模型身份的不同空间可共享同文本向量；这不是文献授权缓存，向量命中不能授予原文访问权。
 2. 命中后仍验证长度、有限数值和归一化。错误 JSON、NaN、维度变化及坏向量被当作 miss，成功生成且通过验证后才写回；供应商报错不会写成一个“有效空向量”。
-3. 识别故障模式，再选择机制；下表的新增机制均为设计方向，当前没有 negative cache、Bloom、跨请求 singleflight、TTL jitter 或 stale-while-revalidate。
+3. 识别故障模式，再选择机制；当前已实现实例级 singleflight 与向下 TTL jitter，仍没有 negative cache、Bloom 或 stale-while-revalidate。下表同时给出现有机制和可选扩展，不能将全部方案当作当前能力。
 
 | 模式 | 具体输入与压力 | 可选保护及适用条件 |
 |---|---|---|
 | 穿透 | 反复请求权威业务库确认不存在的 ID，每次都查事实源 | 输入校验、授权、限流；可短 TTL 缓存“确定不存在”，并绑定空间/模型/数据版本等必要身份，新增或授权变化时失效 |
-| 击穿 | 单个热点 key 过期，许多并发请求都回源 | 同身份请求合并、有界回源并发、热点预热；允许旧值时可后台刷新，但须遵守模型身份与授权边界 |
-| 雪崩 | 大量 key 同期过期，或 Redis 整体故障使大范围回源 | TTL 抖动分散过期、分批预热、容量/额度保护与降级；Redis 故障还需独立超时、冷却和依赖告警 |
+| 击穿 | 单个热点 key 过期，许多并发请求都回源 | 已有同实例请求合并和有界回源；预热、跨进程合并及允许旧值时的后台刷新仍需另行设计 |
+| 雪崩 | 大量 key 同期过期，或 Redis 整体故障使大范围回源 | 已有向下 TTL 抖动、容量/额度保护、Redis 超时/冷却与降级；恢复预热和独立回补节流尚未接入 |
 
 4. negative cache 只能保存有语义的确定否定，例如在某授权范围与数据版本下 ID 确定不存在；使用短 TTL，并考虑新增数据后的失效。网络超时、模型错误、未授权与“还没算过向量”不能统统写成“不存在”，否则会把临时故障或合法新输入长期屏蔽。
 5. Bloom filter 用于维护一个已知集合的近似成员判断。它可能把不存在元素判断为可能存在；只有集合完整、更新及时且作用域正确时，否定结果才能用于前置过滤。任意新 Embedding 文本没有预先枚举的合法全集，不能用 Bloom 阴性拒绝；集合过期漏加新业务 ID 也会错拒合法请求。[Redis Bloom filter 文档](https://redis.io/docs/latest/develop/data-types/probabilistic/bloom-filter/)。
@@ -595,18 +600,18 @@ Redis 不可达、API 进程退出、业务数据库故障，或整台机器及�
 
 ### 输出与解决的问题
 
-输出是有针对性的回源控制，而非一个“用了 Redis”的笼统结论。当前已经有命中校验、批内去重、固定 TTL、Redis 短超时/冷却、限流回退与治理资源/额度保护；这些提供基础保护，但没有消除热点同时回源和大范围过期的问题。详细设计与官方资料见[高并发、高可用、高性能与 Redis 专题](CONCURRENCY_AVAILABILITY_PERFORMANCE_REDIS.md)。
+输出是有针对性的回源控制，而非一个“用了 Redis”的笼统结论。当前已有命中校验、批内去重、实例级 singleflight、向下 TTL 抖动、Redis 短超时/冷却、限流回退与治理资源/额度保护；仍不覆盖跨实例/进程的所有竞争，也不能消除 Redis 整体故障下的压力。配置、低基数指标和本轮验证见[缓存保护](REDIS_CACHE_PROTECTION.md)；故障推演见[高并发、高可用、高性能与 Redis 专题](CONCURRENCY_AVAILABILITY_PERFORMANCE_REDIS.md)。
 
 ### 源码入口
 
-- [CachedEmbeddingClient.key/valid/embed](../src/deepsearch_agent/adapters/infrastructure.py)：身份、命中验证、批内去重与固定 `ex=cache_ttl`。
+- [CachedEmbeddingClient.key/valid/embed/_ttl](../src/deepsearch_agent/adapters/infrastructure.py)：身份、命中验证、批内去重、在途合并与每次写入的抖动 `ex`。
 - [适配器装配](../src/deepsearch_agent/application/bootstrap.py)：模型身份、维度和凭据摘要 scope。
 - [RequestLimiter/RedisBackend](../src/deepsearch_agent/adapters/infrastructure.py)：Lua 原子 INCR/首次 EXPIRE、最多 10000 活动来源的本地固定窗口与冷却。
 - [缓存与故障测试](../tests/test_infrastructure.py)、[资源与额度保护](../src/deepsearch_agent/application/governance.py)。
 
 ### 概念与失败示例
 
-如果给同一批缓存都设置 86400 秒 TTL，它们在相近时间写入就可能相近时间失效；随机抖动可以分散到期，但无法解决 Redis 完全不可用，也无法保证单个热点只有一个回源者。当前项目使用固定 TTL，不能在面试中说“已经用随机过期防雪崩”。
+如果给同一批缓存都设置 86400 秒 TTL，它们在相近时间写入就可能相近时间失效。当前采用 `max(1, base-randint(0,floor(base×ratio)))`，默认范围 77760–86400 秒，比例 `0 ≤ r < 1` 且 `r=0` 恢复固定 TTL；向下抖动不会延长 freshness 上限。它分散多键到期，同实例 singleflight 减少热键重叠计算；两者都不能保证 Redis 整体不可用时无额外回源，不能据此宣称雪崩已被彻底解决。
 
 再如 Redis 故障后，两个 API 进程各自启用本地窗口，各自允许 N 次请求，并不会自动得到部署级 N 次限额。当前部署只支持单 API；本地回退强调存活与有界保护，不能被解读为多副本时严格共享的全局限流。即使 Lua 原子 INCR/EXPIRE 正确，也只覆盖它所在 Redis 的计数操作，不覆盖本地副本、远端付费调用和跨存储事务。
 
@@ -706,7 +711,7 @@ Invoke-RestMethod -Uri ($practiceBase + '/api/governance/alerts')
 
 ### 练习 D：标准库演示热点读取 singleflight
 
-对应第 11、14 节。此例只验证**同一进程里正在执行的相同读取可以合并、follower 等待有超时、leader 失败后能清理**。它使用同步线程、事件和合成返回值，没有 Redis、网络、文件或付费调用；等待顺序由事件确定，不以“睡一会儿大概会重叠”为依据。
+对应第 11、14 节。此例是独立手写教学 demo，只验证**同一进程里正在执行的相同读取可以合并、follower 等待有超时、leader 失败后能清理**。它使用同步线程、事件和合成返回值，没有 Redis、网络、文件或付费调用；等待顺序由事件确定，不以“睡一会儿大概会重叠”为依据。它不调用现有生产适配器，也没有全批登记、容量上限、leader 异常脱敏与原费用上下文，不能替代[生产缓存保护](REDIS_CACHE_PROTECTION.md)或其验证。
 
 `timeout` 只限制 follower 等待，不会强制停止 leader。示例 loader 自己使用有限等待；生产 loader 还需真实下游超时、取消策略、共享状态容量、资源准入与监控。此代码没有持久状态和跨进程协调，不能复制成付费 unknown 自动重试方案。
 
@@ -799,7 +804,7 @@ print('merged_reads=1 follower_timeout=ok failure_release=ok')
 
 | 场景 | 应得到的判断 | 不应作出的推断 |
 |---|---|---|
-| 一个热点向量过期，32 个并发请求都查不到 | 击穿风险；批内去重不合并跨请求，供应商池与额度先限制成本 | 已有 singleflight、只会回源一次 |
+| 一个热点向量过期，32 个并发请求都查不到 | 同一缓存实例及快照可合并重叠 miss；供应商池与费用额度继续限制成本；须核对实例与到达时序 | 跨工作区客户端或进程也必定只回源一次；follower 超时可接管 |
 | Redis 整体不可达 | 大范围回源风险；短超时/冷却、缓存绕过、本地限流回退 | Sentinel 已切换；服务已通过整机故障验收 |
 | 用户提交一个从未出现的合法新文本 | 冷 miss；输入、权限与配额检查后可计算 | Bloom 阴性足以拒绝，或该文本必然是穿透攻击 |
 | 文献 ID 确定不存在，稍后管理员新建该文献 | 可讨论短 TTL 负缓存，但要考虑新增失效与授权范围 | 否定结果可以永久缓存或跨空间共享 |

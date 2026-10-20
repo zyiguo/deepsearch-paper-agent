@@ -54,7 +54,7 @@ class Provider:
 
 def cached(fake=None, identity='model-a', scope='account-a', clock=lambda: 0):
     provider = Provider()
-    backend = RedisBackend(fake or FakeRedis(), InfrastructureSettings(), clock=clock)
+    backend = RedisBackend(fake or FakeRedis(), InfrastructureSettings(cache_ttl_jitter_ratio=0), clock=clock)
     return CachedEmbeddingClient(provider, backend, identity, 2, scope)
 
 

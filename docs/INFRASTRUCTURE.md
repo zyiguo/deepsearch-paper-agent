@@ -23,7 +23,11 @@ docker compose up -d redis
 |---|---|---|
 | `REDIS_URL` | 空 | 关闭 Redis；支持 `redis://`、TLS 的 `rediss://`，禁止 URL 查询参数覆盖连接保护设置 |
 | `INFRA_NAMESPACE` | `deepsearch` | 部署级键空间，不同资料所有者应使用不同空间 |
-| `EMBEDDING_CACHE_TTL_SECONDS` | `86400` | 向量缓存有效期 |
+| `EMBEDDING_CACHE_TTL_SECONDS` | `86400` | 向量缓存 freshness 上限，写入时可向下抖动 |
+| `EMBEDDING_CACHE_TTL_JITTER_RATIO` | `0.1` | 向下抖动比例，有限数值且 `0 ≤ r < 1`；`0` 恢复固定 TTL |
+| `EMBEDDING_SINGLEFLIGHT_ENABLED` | `true` | 同一缓存客户端实例内合并跨请求未命中；只接受 `true`/`false` |
+| `EMBEDDING_SINGLEFLIGHT_WAIT_SECONDS` | `65` | follower 等待全部重叠键的总预算，有限且大于 0；不覆盖 owner 自己的计算耗时 |
+| `EMBEDDING_SINGLEFLIGHT_MAX_KEYS` | `4096` | 每实例在途键上限，正整数；全批登记超容量时整体拒绝 |
 | `API_RATE_LIMIT` | `0` | 每个来源每窗口允许的修改请求数，0 关闭 |
 | `API_RATE_WINDOW_SECONDS` | `60` | 从该来源首个请求开始的固定窗口长度 |
 | `REDIS_TIMEOUT_SECONDS` | `0.3` | 连接与读写分别使用的超时，上限 5 秒；单次调用总等待上限为该值的两倍，包含 DNS 等待 |
@@ -33,7 +37,13 @@ docker compose up -d redis
 
 缓存键包含版本、模型/地址/维度身份与凭据作用域、文本的组合哈希，不直接保存原文或密钥；值为校验过的归一化向量。同批重复文本只计算一次，按输入顺序返回结果。更换模型或凭据会使用不同键。损坏或维度不匹配的缓存会重新计算，模型调用失败不写缓存。缓存失效不等于资料删除；删除资料后历史向量可能保留到 TTL 到期。Redis 应作为受控内部服务管理，向量也属于用户数据。
 
-Redis 使用连接池、短超时、不自动重试和失败冷却，避免故障时逐条拖慢请求。缓存读写失败继续调用原 Embedding 服务；模型本身失败仍按原有逻辑报错。故障冷却后下一次业务请求或就绪检查会尝试恢复。此版本不提供跨进程缓存击穿锁，同时到达的相同请求可能重复调用模型。
+默认开启跨请求 singleflight：同一 `CachedEmbeddingClient` 及其 deepcopy 快照共享有界在途表，按原缓存键合并计算。全批未命中键在锁内一次登记，容量不足以 `embedding_singleflight_capacity` 整体拒绝，不部分回源。owner 二次读缓存后批量计算自己拥有的键，再等待其他 owner 的重叠键；网络调用不持表锁。向量以不可变 tuple 发布，每次返回独立 list，保留输入顺序和重复项。该合并表不跨独立客户端、工作区运行环境或进程共享。
+
+follower 总等待默认 65 秒，并至多每 0.1 秒检查自己的取消；超时以 `embedding_singleflight_timeout` 结束，取消或超时不取消 leader、不接管、不自动重试。leader 异常在自身调用中原样抛出，follower 只收到 `RuntimeError('embedding_singleflight_leader_failed')`，不携带另一请求的操作 ID 或“确定未执行”分类。所有权保持到实际计算结束并完成发布。实际供应商调用使用 leader 原有的用户/空间计费上下文；follower 复用不新增供应商预占，原工具账本与未知费用恢复规则保持不变。
+
+写入 TTL 使用整数 `max(1, base - randint(0, floor(base × r)))`；默认范围为 77760–86400 秒，每次写入独立抽样，`r=0` 为固定 TTL。它分散到期，不延长配置的 freshness 上限，也不解决 Redis 整体故障。
+
+Redis 使用连接池、短超时、不自动重试和失败冷却，避免故障时逐条拖慢请求。缓存读写失败继续走受保护的 Embedding 回源路径，同一实例内仍可合并重叠调用；provider 容量与费用配额继续限制实际回源。模型本身失败仍报错，故障冷却后下一次业务请求或就绪检查会尝试恢复。当前没有跨进程缓存锁，也没有 L1、MGET/pipeline、负缓存或 Bloom Filter。详细配置、低基数指标和验证入口见 [Embedding 缓存保护](REDIS_CACHE_PROTECTION.md)。
 
 实际停机验收发现，操作系统 DNS 查询可能超过 redis-py 的 socket 超时。因此适配器额外限制单次调用的总等待时间，最多使用 16 个并发后台 I/O 线程，与连接池容量一致；达到容量直接降级，不堆积等待队列。超时不代表远端命令一定未执行，限流仍按下面的流量保护语义处理。关闭资源后拒绝新调用，迟到连接结束时再次关闭客户端；后台 DNS 不阻止进程退出。
 
@@ -91,6 +101,8 @@ Remove-Item Env:TEST_REDIS_URL
 
 真实 Redis 集成测试必须显式指定地址；使用随机测试命名空间，结束时仅清理该空间。未指定时跳过，不把模拟测试算作真实服务验收。
 
+singleflight、TTL 抖动、故障降级及付费未知边界由独立入口 [scripts/verify_cache_protection.py](../scripts/verify_cache_protection.py)验证；用法和对照配置见 [缓存保护](REDIS_CACHE_PROTECTION.md)。[2026-10-20 缓存保护验证](REDIS_CACHE_PROTECTION_VALIDATION_20261020.md)单独保存本轮真实 Redis、回源计数与真实模型探针结果，不沿用下面的历史数字。
+
 完整容器验收使用独立 Compose 项目、临时回环端口与新命名卷，执行镜像构建、HTTP 业务、父子 Agent 图、真实缓存与原子限流、Redis 停机/恢复、API 重启持久化，以及启用真实 Redis 的完整后端测试：
 
 ```powershell
@@ -105,6 +117,6 @@ Remove-Item Env:TEST_REDIS_URL
 
 现已提供可选的 [用户、工作空间与权限](TEAM_ACCESS.md)、[持久任务及备份恢复](RELIABILITY_RECOVERY_QUALITY.md)、[工具执行账本](TOOL_EXECUTION_LEDGER.md)和[成本及容量治理](GOVERNANCE_CAPACITY.md)，仍维持单 API 进程。后续需要按容量实测设计共享任务认领、索引版本发布与独立 Worker；直接将当前 `DocumentLibrary` 放入 Celery 会失去 API 的内存索引更新，不能这样接入。
 
-缓存穿透、击穿、雪崩，singleflight/TTL 抖动的适用范围，以及 Sentinel、Cluster 和内存策略取舍见[高并发、高可用、高性能与 Redis 专题](CONCURRENCY_AVAILABILITY_PERFORMANCE_REDIS.md)。这些扩展方案尚未改变当前逐 key 访问、固定 TTL、单实例和本地回退行为。
+缓存穿透、击穿、雪崩，已实现的 singleflight/向下 TTL 抖动，以及 Sentinel、Cluster 和内存策略取舍见[高并发、高可用、高性能与 Redis 专题](CONCURRENCY_AVAILABILITY_PERFORMANCE_REDIS.md)。当前仍逐 key 访问 Redis，维持单实例和本地回退；分布式锁、Sentinel/Cluster、恢复预热和批量 Redis 访问属于后续建设。
 
 客户端机制参考 Redis 官方文档：[连接与连接池](https://redis.io/docs/latest/develop/clients/redis-py/connect/)、[超时与生产使用](https://redis.io/docs/latest/develop/clients/redis-py/produsage/)。本项目使用独立的短超时与无自动重试策略，实际故障行为由上面的测试验证。

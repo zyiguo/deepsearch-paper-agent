@@ -1,6 +1,6 @@
 # 高并发、高可用、高性能与 Redis 缓存治理
 
-本文把后端面试中的常见问题落到 DeepSearch 的请求、索引与付费调用链路。当前基线为 `fb440ef`，生产形态仍是单 API 进程；下文分别标记当前行为和扩展方案。本次只补充设计与教学文档，不改变缓存算法、部署方式或历史评测材料。
+本文把后端面试中的常见问题落到 DeepSearch 的请求、索引与付费调用链路。2026-10-20 已在 `fb440ef` 之后接入客户端实例级跨请求 singleflight 和向下 TTL 抖动；生产形态仍是单 API 进程。下文分别标记当前行为和扩展方案，历史评测保留原日期与范围；配置及本轮证据见[缓存保护](REDIS_CACHE_PROTECTION.md)与[验证报告](REDIS_CACHE_PROTECTION_VALIDATION_20261020.md)。
 
 项目全貌见[技术报告](INTERVIEW_TECHNICAL_REPORT_20261019.md)，按源码学习见[后端知识点](BACKEND_ENGINEERING_KNOWLEDGE_20261020.md)，运行配置见[基础设施说明](INFRASTRUCTURE.md)与[成本及容量治理](GOVERNANCE_CAPACITY.md)。
 
@@ -24,7 +24,7 @@
 |---|---|---|
 | 三维资源租约 | 单 API 进程内所有空间共享研究/入库/供应商资源池；任一维度超限拒绝 | 多进程统一准入、用户公平调度、供应商等待队列 |
 | 持久成本预占 | SQLite 事务同时检查 user/workspace；未知用量继续占额 | 多 API 部署的分布式账务、真实货币定价 |
-| Embedding 缓存 | 模型身份、凭据作用域和文本摘要组成键；命中校验；单次输入去重 | 跨请求 singleflight、TTL 抖动、L1、负缓存、批量 Redis 读取 |
+| Embedding 缓存 | 原模型/凭据/text 键、命中校验、批内去重；实例及快照共享 singleflight；向下 TTL 抖动 | 跨实例/进程合并、L1、负缓存、Bloom、批量 Redis 读取 |
 | Redis 故障保护 | 短超时、失败冷却、每个 backend 最多 16 个在途 I/O；缓存绕过、限流本地回退 | 部署级 Redis I/O 总池、单探针 half-open、Sentinel/Cluster 客户端与部署 |
 | 业务恢复 | 原运行、检查点、工具未知状态与费用状态独立核对 | 多机器任务接管、共享索引版本、自动故障转移 |
 | 数据发布 | 索引服务持锁保存候选后切换；分阶段产物与发布核对 | 分布式索引发布、跨存储原子事务 |
@@ -81,13 +81,13 @@ HTTP 断开、`Future.result(timeout=...)` 超时，都不必然终止底层线�
 
 一次研究可以分为资料快照、检索/重排、模型等待、工具执行、核验、持久化及 SSE 发送。串行阶段可以相加；存在并行时需要看关键路径，不能把所有 span 耗时相加当作端到端耗时。
 
-先记录每阶段的样本数、耗时分布和失败比例，再决定优化方向。当前已有部分研究/入库阶段、provider、HTTP 指标，但没有完整的快照锁等待、singleflight 等待、TTFT 和每种缓存重建指标，不能从已有出口宣称全部可见。
+先记录每阶段的样本数、耗时分布和失败比例，再决定优化方向。当前已有部分研究/入库阶段、provider、HTTP 指标，并新增 singleflight 事件与等待直方图；完整的快照锁等待、TTFT 和每种缓存重建指标仍未覆盖，不能从已有出口宣称全部可见。
 
 SSE 首个进度事件时间不等于模型首 Token 时间。前者反映用户多久看到反馈，后者反映模型生成时延，需要定义事件再采集。
 
 ### 4.2 缓存有命中，也可能有串行往返成本
 
-当前一次 `embed(texts)` 对去重后的每个文本逐个 GET，并对未命中的每个向量逐个 SET。若 `N` 个不同文本全部未命中，会产生约 `N` 次 GET、`N` 次 SET，再加 Embedding 请求；网络往返、JSON 校验和线程调度都可能成为成本。
+当前一次 `embed(texts)` 对去重后的每个文本逐个 GET；开启 singleflight 后，owner 对认领键再逐项 GET，只将二次仍 miss 的 owned 文本批量交给 delegate，再逐项 SET。若独立的一批 `N` 个不同文本全部冷 miss 且没有重叠，会产生约 `2N` 次 GET、`N` 次 SET；关闭 singleflight 时为 `N` 次 GET、`N` 次 SET。follower 共享正在计算的结果，不额外回源。网络往返、JSON 校验和线程调度都可能成为成本，应同时测减少模型调用与二次读取的代价。
 
 可选方案是分批 MGET 和 pipeline SET，按键映射恢复原顺序并保留校验。pipeline 减少逐条等待的网络往返，不自动提供事务隔离；MGET 的工作量仍随键数增长，需限制批大小。Cluster 下还要考虑键所在 slot 和客户端跨节点行为。[Redis pipelining](https://redis.io/docs/latest/develop/using-commands/pipelining/)、[MGET](https://redis.io/docs/latest/commands/mget/)。
 
@@ -109,7 +109,7 @@ p95 是混合分布的分位数，不能写成 `h × p95_hit + (1-h) × p95_miss
 
 | 观察结果 | 优先实验 | 必须保留的约束 |
 |---|---|---|
-| 相同文本并发回源 | 请求合并 singleflight | 模型/凭据/租户边界、有限等待、未知付费策略 |
+| 相同文本并发回源 | 验证已接入 singleflight 的合并范围、实际回源数与等待 | 原模型/凭据键、实例范围、有限等待、未知付费策略 |
 | Redis 往返占比高 | 分批读取与 pipeline | 原顺序、向量校验、连接上限、部分失败行为 |
 | 大文献集快照或索引重建占比高 | 共享不可变版本、按版本缓存检索结构 | 资料授权、原子发布、运行身份与恢复兼容 |
 | 供应商等待占主导 | 调整批次和调用路径、复用已确认结果 | 供应商额度、输出质量、费用与取消语义 |
@@ -123,22 +123,29 @@ p95 是混合分布的分位数，不能写成 `h × p95_hit + (1-h) × p95_miss
 flowchart TD
     A[Embedding 文本输入] --> B[非空校验与单次输入去重]
     B --> C[模型身份与凭据 scope 加文本摘要]
-    C --> D[Redis GET]
-    D --> E{存在有效向量}
-    E -->|是| F[恢复输入顺序并返回]
-    E -->|否或 Redis 故障| G[实际 Embedding 适配器]
-    G --> H[provider 准入与成本预占]
-    H --> I{调用结果有效}
-    I -->|是| J[按固定 TTL 写缓存]
-    J --> F
-    I -->|否| K[保留异常及费用未知等原语义]
+    C --> D[逐 key GET 并校验]
+    D --> E{存在未命中}
+    E -->|否| F[恢复顺序并返回独立 list]
+    E -->|是| G[全批登记有界在途表]
+    G -->|容量不足| R[整批拒绝 503]
+    G --> H{有 owned 键}
+    H -->|是| I[owner 二次查缓存]
+    I --> J{仍有 miss}
+    J -->|是| P[leader 上下文批量回源与费用治理]
+    P --> K[校验有效向量并按抖动 TTL 回填]
+    K --> L[发布 tuple 并清理已完成 owned 键]
+    J -->|否| L
+    H -->|否| M[有 followed 时有界等待重叠键]
+    L --> M
+    M --> F
+    M -->|超时或取消| N[结束本次等待 不接管或重试]
 ```
 
-图为当前流程，没有跨请求 singleflight 节点。治理只在相应部署上下文中生效；演示、独立离线调用按各自入口执行。
+图为默认开启 singleflight 的成功主流程；二次缓存命中直接复用，leader 异常仍在实际结束后发布安全失败并清理。关闭 singleflight 时，初次 miss 直接批量回源，不登记在途表。治理只在相应部署上下文中生效；演示、独立离线调用按各自入口执行。
 
 当前键中的 `scope` 由装配层传入 API key 的 SHA256，不是 workspace_id。相同凭据、模型与文本可能跨空间复用向量；资料检索范围和引用权限仍由业务层检查。哈希不是加密，也不是访问授权，Redis 中的向量与访问模式仍需受控。
 
-命中值必须通过维度、数值有限性和归一化校验，损坏值按未命中处理；供应商异常不会作为正常向量缓存。默认 TTL 为 86400 秒、没有随机抖动；`dict.fromkeys` 只合并这一次传入列表的重复文本，不合并另一个线程的调用。
+命中值必须通过维度、数值有限性和归一化校验，损坏值按未命中处理；供应商异常不会作为正常向量缓存。默认 TTL 上限 86400 秒、向下抖动比例 0.1，写入范围为 77760–86400 秒；`dict.fromkeys` 合并批内重复，singleflight 再合并同一客户端实例及其 deepcopy 快照的重叠 miss。团队模式不同客户端实例不共享在途表，也没有跨进程锁。
 
 ## 6. 缓存穿透、击穿和雪崩
 
@@ -162,14 +169,14 @@ Bloom filter 适合已知有限 ID 集合的存在性预过滤。回答“可能
 
 ### 6.2 击穿：跨请求请求合并
 
-以下为扩展方案，不是当前缓存实现：
+当前实现按以下顺序执行：
 
-1. 先验证访问范围，按可共享边界构造键。保守的私有策略可包含 workspace、模型身份、凭据作用域与文本摘要。
-2. 第一次读缓存未命中后，访问有大小上限的 in-flight 表；同一键只选一个 leader，其他请求成为 follower。
-3. leader 再读一次缓存，防止认领前已有其他重建完成。第二次仍未命中才进入 provider 准入与费用预占。
-4. 网络调用不持全局互斥锁；成功后校验向量、写缓存，再通知等待者并恢复各自输入顺序。
-5. follower 只有有限等待，单个 follower 取消不应取消其他请求共享的工作；leader 异常必须通知所有等待者并清理状态。
-6. 同一逻辑付费操作超时或结果未知时，不能把 follower 超时解释为可自动再发。后续仍由操作身份、费用账本和可信核对决定。
+1. 先验证访问范围和输入，保留原模型 identity、凭据 scope 与 text 哈希。合并表按缓存客户端实例持有，deepcopy 快照共享；未新增 workspace 键，也不跨工作区运行环境建立部署共享表。
+2. 首次 miss 后在短锁内原子登记整批键，区分 owned 与 followed。默认最多 4096 个在途键；整批放不下时以 `embedding_singleflight_capacity`/503 拒绝，避免部分登记后回源。
+3. owner 再读一次缓存，二次仍 miss 的 owned 文本一起交给 delegate；先计算 owned，再等待 followed，避免重叠批次互等。网络调用不持表锁。
+4. 实际回源沿用 owner 的调用和费用上下文；成功后校验向量、按抖动 TTL 回填，发布不可变 tuple，每次返回各自的 list。owner 的实际工作与发布结束后再清理条目。
+5. follower 等待所有 followed 键共用默认 65 秒预算，至多每 0.1 秒检查自己的取消。超时或取消只结束等待，不取消 leader、不接管、不自动重试；这个预算不含 owner 自己的计算时间。
+6. leader 原样收到自身异常，follower 只收到 `embedding_singleflight_leader_failed`，不把其他请求的操作 ID 或“确定未执行”分类传播过来。同一逻辑付费操作的 unknown 仍由原工具/费用账本和可信核对决定。
 
 singleflight 的作用是同一时段共享一次计算。工具账本去重的是同一 run/slot 的操作，两个独立研究即使参数相同也可能有不同 operation_id。研究 semaphore 只限制最多执行多少，并不合并这些操作。
 
@@ -177,7 +184,7 @@ singleflight 的作用是同一时段共享一次计算。工具账本去重的�
 
 ### 6.3 雪崩：抖动、回源预算与恢复节流
 
-可选 TTL 策略是 `max(1, base_ttl + jitter)`，抖动范围与 freshness 要求共同确定，例如教学上取基础 TTL 的正负 10%。它缓解多键过期时间聚集，不解决单热点的击穿，也不能处理 Redis 整体宕机。
+当前 TTL 策略为 `max(1, base - randint(0, floor(base×ratio)))`，只缩短配置的 freshness 上限。比例需为有限数值且 `0 ≤ r < 1`，`r=0` 精确回到固定 TTL；每次写入独立抽取整数秒。它缓解多键到期时间聚集，不保证任意两键的 TTL 不同，也不能处理 Redis 整体宕机。
 
 Redis 不可用时当前向量缓存会绕过，更多调用到达真实 Embedding。provider 并发和费用配额仍生效，因此可能出现明确拒绝；“故障时继续服务”不是无限量回源。恢复后可以分批预热和限制重建速率，避免所有客户端同时回补。
 
@@ -280,16 +287,18 @@ RTO 描述故障后恢复到约定可服务状态所允许的时间；RPO 描述
 | 内存达到 maxmemory | 固定键大小与写入量 | noeviction 写失败可识别；不能因淘汰活动计数器绕过限流 |
 | API 进程/机器中断 | 同一原运行、账本与资料身份 | 租约及状态恢复符合约定；未确认效果仍未知 |
 
-加入新机制前先记录现有基线；不要把尚未实现的 singleflight、TTL 抖动或 Sentinel 场景写成已经通过。当前行为测试入口包括 [test_infrastructure.py](../tests/test_infrastructure.py)、[test_governance.py](../tests/test_governance.py)、[test_governance_api.py](../tests/test_governance_api.py)；已有实服证据见[容器与 Redis 验收](CONTAINER_REDIS_E2E_20261018.md)，保留其日期和范围。
+singleflight 与 TTL 抖动已经实现，是否通过具体负载与故障场景仍须查看[本轮验证](REDIS_CACHE_PROTECTION_VALIDATION_20261020.md)，不能将实现本身当作收益或生产 SLA。真实 Redis 入口为 [verify_cache_protection.py](../scripts/verify_cache_protection.py)，配置与对照说明见[缓存保护](REDIS_CACHE_PROTECTION.md)。当前行为测试还包括 [test_infrastructure.py](../tests/test_infrastructure.py)、[test_governance.py](../tests/test_governance.py)、[test_governance_api.py](../tests/test_governance_api.py)；历史实服证据见[容器与 Redis 验收](CONTAINER_REDIS_E2E_20261018.md)，保留其日期和范围。Sentinel、跨进程协调等尚未接入，不能记为已通过。
 
 ### 10.2 记录哪些新指标
 
-后续可以补充：回源调用/输入数、跨请求合并率、leader/follower 数、等待耗时、重建失败、TTL 过期分布、Redis 写入失败、缓存值大小、快照锁等待与分配、索引结构重建时间、首个进度与首 Token 时间。这些是拟新增观测点，当前出口不包含全部指标。
+已新增 `deepsearch_embedding_singleflight_total{outcome}`，outcome 为 leader、follower、capacity_rejected、timeout、cancelled、error、completed；按调用者事件计数，同一调用可能同时记录 leader 和 follower，因此不能相加当作请求数或 key 数。`deepsearch_embedding_singleflight_wait_seconds{outcome}` 是等待直方图，结果为 completed、timeout、cancelled 或 error，只覆盖 followed 等待，不包含 owner 计算。纯缓存命中或关闭合并时不新增 singleflight 事件；二次命中的 leader 也未必实际调用模型。
+
+实际回源调用/输入数、TTL 分布、Redis 写入失败和真实模型用量由本轮隔离验证分别记录。缓存值大小、快照锁等待与分配、索引结构重建时间、首个进度与首 Token 时间仍可补充，不能从现有出口推断全部可见。
 
 低基数聚合可按调用种类和结果统计，不把完整 key、文本、用户或文献名作为 Prometheus 标签。单 key 定位可通过受控采样与摘要审计完成，而不是创建无限时序。
 
 ### 10.3 面试中的讲解主线
 
-从“同一热点文本过期，多个研究同时到达”开始：先解释当前固定 TTL 与单次去重，再解释为什么并发上限不能消除重复回源；用 singleflight 减少计算，用 provider 租约控制总并发，用费用事务限制累计消费，用账本处理付费未知；最后讨论 Redis 整体故障、缓存/限流内存策略，以及应用多副本必须改变的任务与索引所有权。
+从“同一热点文本过期，多个研究同时到达”开始：先解释批内去重与实例级跨请求合并的区别，再解释向下 TTL 抖动与 freshness 上限；用 singleflight 减少重叠计算，用 provider 租约控制总并发，用费用事务限制累计消费，用账本处理原逻辑操作的付费未知；最后讨论 Redis 整体故障、缓存/限流内存策略，以及应用多副本必须改变的任务与索引所有权。每一项收益回到本轮验证的模型、负载、完成/拒绝与用量分母。
 
 这条链路把性能优化、过载保护和恢复正确性连接起来，每一步都有明确输入、状态与验证方式。

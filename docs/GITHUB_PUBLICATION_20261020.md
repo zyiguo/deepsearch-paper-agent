@@ -48,3 +48,11 @@ Git 的换行转换可能使仓库 blob 与本地验收时的原始字节摘要�
 本次没有修改生产源码、测试或公开 JSON，也没有部署 singleflight、TTL 抖动或高可用集群。理论按 Redis/PostgreSQL 官方文档核对，当前机制按源码核对；链接、围栏、PowerShell 语法与发布文件范围另行检查，不用原有测试数字冒充新功能验收。
 
 文档自验：7 份文档的 308 个相对链接有效，17 段 PowerShell 语法检查无错误，问题编号 1–39 与知识点编号 1–14 连续；singleflight 和分位数两个教学示例实际执行通过。治理验收清单的 154 条源码摘要仍匹配；本次未重复完整业务回归或真实服务验收。
+
+## 同日后续实现：缓存击穿与雪崩保护
+
+在 `f4ece49` 后实现有界实例级 singleflight、向下 TTL 抖动、取消/超时不接管、低基数指标和配置开关。原 paid run/slot 与费用 unknown 仍由持久账本决定，新增混合批次持久回归避免将已付费操作误记为确定未执行。
+
+完整回归连接真实 Redis，1144 项通过、13 项跳过；架构为 214 模块、545 依赖、0 循环/违规。隔离 WSL Redis 7.4.11 的 16 项校验通过，受控热点16并发回源由16次减至1次。真实模型探针的4次baseline请求失败，4笔费用unknown保留，protected未启动；没有填造真实模型降本结果。
+
+当前实现、服务身份和复现见[指南](REDIS_CACHE_PROTECTION.md)与[本轮验证报告](REDIS_CACHE_PROTECTION_VALIDATION_20261020.md)；[验证清单](../eval/results/cache-protection-validation-20261020.json)及两份成功/失败报告分别冻结。前述发布清单是历史范围，此后源码自然有新的身份；新[发布身份记录](../eval/results/cache-protection-publication-20261020.json)处理本轮原始字节与仓库换行。运行时账本、Redis控制配置、密钥、原始目录与个人文件不在提交范围。

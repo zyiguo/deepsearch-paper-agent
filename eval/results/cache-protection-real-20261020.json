@@ -1,0 +1,275 @@
+{
+  "schema_version": 1,
+  "kind": "real_redis_synthetic_cache_protection",
+  "run_id": "73173c4cb3ba40688e544ca994f2a1e9",
+  "inputs": "fixed_synthetic_only",
+  "real_model_used": false,
+  "namespace_is_random": true,
+  "service_faults_requested": true,
+  "facility": "wsl-owned-process",
+  "source_sha256": {
+    "scripts/verify_cache_protection.py": "8cd322f454bcc054f6ed2513a9f6aa9abfdc7a78822671a8f8fb606123a397cd",
+    "src/deepsearch_agent/adapters/infrastructure.py": "e971c35982a423618ba26a71bd09a5351abab703706c723473d30730477ac1e0",
+    "src/deepsearch_agent/application/governance.py": "26bb2fedd04488dd443de136f4a07e35547a3023282997dbcfd54e581ffc2d29",
+    "src/deepsearch_agent/application/tool_execution.py": "0ff2527ffcc55f0c473e462ab7594c654f20fcdaf460378e4bb41542ee1e16ad",
+    "src/deepsearch_agent/adapters/persistence/governance.py": "8ba4a58a4800f03dc1e4d5bd65116e51ca98dc1e1eccc8574a14ff357fa213d1",
+    "src/deepsearch_agent/adapters/persistence/tool_ledger.py": "5127023abd8ad0018029a7bb7bffb67276148b6f5e150e8c0c34a0cdc12f3eec"
+  },
+  "cases": [
+    {
+      "case": "real_redis_connection",
+      "status": "passed",
+      "details": {
+        "service": "real_redis",
+        "redis_version": "7.4.11",
+        "model_provider": "synthetic_counted",
+        "real_model_used": false
+      },
+      "duration_seconds": 0.0
+    },
+    {
+      "case": "hot_key_singleflight_off",
+      "status": "passed",
+      "details": {
+        "requests": 16,
+        "provider_dispatches": 16,
+        "singleflight_enabled": false,
+        "provider_peak": 16,
+        "cache_hit_after_write": true,
+        "inflight_after": 0
+      },
+      "duration_seconds": 0.14
+    },
+    {
+      "case": "hot_key_singleflight_on",
+      "status": "passed",
+      "details": {
+        "requests": 16,
+        "provider_dispatches": 1,
+        "singleflight_enabled": true,
+        "provider_peak": 1,
+        "cache_hit_after_write": true,
+        "inflight_after": 0
+      },
+      "duration_seconds": 0.125
+    },
+    {
+      "case": "real_expiry_hot_key_rebuild",
+      "status": "passed",
+      "details": {
+        "expired_on_real_server": true,
+        "requests_after_expiry": 16,
+        "initial_dispatches": 1,
+        "rebuild_dispatches": 1
+      },
+      "duration_seconds": 1.141
+    },
+    {
+      "case": "overlapping_batches",
+      "status": "passed",
+      "details": {
+        "batches": 4,
+        "unique_texts": 4,
+        "computed_texts": 4,
+        "provider_dispatches": 3,
+        "completed_without_deadlock": true
+      },
+      "duration_seconds": 0.031
+    },
+    {
+      "case": "follower_timeout_preserves_owner",
+      "status": "passed",
+      "details": {
+        "follower_error_type": "_EmbeddingSingleflightTimeout",
+        "follower_code": "embedding_singleflight_timeout",
+        "provider_dispatches": 1,
+        "leader_completed": true,
+        "subsequent_cache_hit": true
+      },
+      "duration_seconds": 0.203
+    },
+    {
+      "case": "follower_cancel_preserves_owner",
+      "status": "passed",
+      "details": {
+        "follower": "ResearchCancelled",
+        "provider_dispatches": 1,
+        "leader_completed": true
+      },
+      "duration_seconds": 0.125
+    },
+    {
+      "case": "real_ttl_jitter_distribution",
+      "status": "passed",
+      "details": {
+        "real_server_pttl": [
+          {
+            "base_seconds": 60,
+            "ratio": 0.2,
+            "keys": 128,
+            "expected_min_seconds": 48,
+            "actual_min_ms": 47891,
+            "actual_max_ms": 59990,
+            "unique_second_buckets": 13,
+            "actual_second_bucket_counts": {
+              "48": 7,
+              "49": 11,
+              "50": 7,
+              "51": 11,
+              "52": 17,
+              "53": 8,
+              "54": 9,
+              "55": 8,
+              "56": 7,
+              "57": 12,
+              "58": 8,
+              "59": 11,
+              "60": 12
+            }
+          },
+          {
+            "base_seconds": 120,
+            "ratio": 0.2,
+            "keys": 128,
+            "expected_min_seconds": 96,
+            "actual_min_ms": 95926,
+            "actual_max_ms": 119985,
+            "unique_second_buckets": 25,
+            "actual_second_bucket_counts": {
+              "96": 5,
+              "97": 10,
+              "98": 5,
+              "99": 6,
+              "100": 1,
+              "101": 3,
+              "102": 4,
+              "103": 6,
+              "104": 7,
+              "105": 8,
+              "106": 4,
+              "107": 8,
+              "108": 3,
+              "109": 4,
+              "110": 5,
+              "111": 8,
+              "112": 2,
+              "113": 3,
+              "114": 7,
+              "115": 7,
+              "116": 3,
+              "117": 3,
+              "118": 3,
+              "119": 9,
+              "120": 4
+            }
+          }
+        ]
+      },
+      "duration_seconds": 0.531
+    },
+    {
+      "case": "corrupt_cache_recompute",
+      "status": "passed",
+      "details": {
+        "corrupt_entries": 2,
+        "provider_dispatches": 1,
+        "repaired_on_real_server": true
+      },
+      "duration_seconds": 0.016
+    },
+    {
+      "case": "paid_unknown_and_fresh_process_recovery",
+      "status": "passed",
+      "details": {
+        "requests": 16,
+        "provider_dispatches": 1,
+        "unknown_tool_slots": 16,
+        "actual_tokens": null,
+        "unknown_cost_reservations": 1,
+        "held_units": 7,
+        "original_paid_slots_blocked_after_process_reopen": 16,
+        "durable_provider_effects_after_recovery": 1,
+        "operation_ids_isolated": true
+      },
+      "duration_seconds": 0.968
+    },
+    {
+      "case": "isolated_wsl_process_ownership",
+      "status": "passed",
+      "details": {
+        "process_identity_checked": true,
+        "endpoint_identity_checked": true,
+        "facility": "wsl-owned-process"
+      },
+      "duration_seconds": 0.125
+    },
+    {
+      "case": "real_redis_pause_and_recovery",
+      "status": "passed",
+      "details": {
+        "fault": "pause",
+        "requests": 16,
+        "provider_dispatches": 1,
+        "governance_provider_peak": 1,
+        "reported_synthetic_tokens": 3,
+        "used_or_held_units": 3,
+        "quota_rejection_before_dispatch": true,
+        "concurrency_rejection_before_dispatch": true,
+        "same_backend_recovery_dispatches": 1,
+        "server_recovered": true,
+        "writeback_and_hit_after_recovery": true
+      },
+      "duration_seconds": 1.094
+    },
+    {
+      "case": "real_redis_stop_and_recovery",
+      "status": "passed",
+      "details": {
+        "fault": "stop",
+        "requests": 16,
+        "provider_dispatches": 1,
+        "governance_provider_peak": 1,
+        "reported_synthetic_tokens": 3,
+        "used_or_held_units": 3,
+        "quota_rejection_before_dispatch": true,
+        "concurrency_rejection_before_dispatch": true,
+        "same_backend_recovery_dispatches": 1,
+        "server_recovered": true,
+        "writeback_and_hit_after_recovery": true
+      },
+      "duration_seconds": 1.031
+    },
+    {
+      "case": "real_redis_server_write_denied",
+      "status": "passed",
+      "details": {
+        "real_redis_server_error": "NoPermissionError",
+        "restriction": "temporary_acl_user_set_denied",
+        "provider_dispatches": 1,
+        "valid_result_returned": true,
+        "cache_write_rejected": true
+      },
+      "duration_seconds": 0.218
+    },
+    {
+      "case": "source_freeze",
+      "status": "passed",
+      "details": {},
+      "duration_seconds": 0.0
+    },
+    {
+      "case": "namespace_cleanup",
+      "status": "passed",
+      "details": {
+        "keys_removed": 2,
+        "flush_used": false
+      }
+    }
+  ],
+  "summary": {
+    "passed": 16,
+    "failed": 0,
+    "unverified": 0,
+    "all_required_verified": true
+  }
+}
