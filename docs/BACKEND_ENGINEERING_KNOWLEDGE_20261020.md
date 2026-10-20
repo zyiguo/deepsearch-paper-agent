@@ -454,6 +454,169 @@ SQL 加上 `WHERE workspace_id=?` 防正常路径串空间，复合外键防跨�
 - **备份只带 PG 够吗？** 不够，还需同一部署的文件卷、索引、工作记忆撤销标记、检查点、工具账本与费用控制库，按既有停写备份流程保持一致。
 - **测试全绿能证明答案正确吗？** 只能证明测试覆盖的行为满足断言；真实任务质量还需固定语料、模型、预算与独立标签的评测。
 
+## 11. 高并发：先限制接纳量，再减少相同读取的重复工作
+
+### 输入
+
+多个用户同时发起研究，其中一些请求需要相同模型、凭据作用域和文本的 Embedding。这里有两个独立问题：系统能同时承担多少工作，以及这些工作中有多少可以合并。第 6 节的资源租约解决前者；跨请求 singleflight 是后者的一种设计，目前未接入本项目。
+
+### 执行顺序
+
+1. 当前 `Governance.resource` 在一个进程共享锁内同时检查 global/workspace/user，全部允许后才增加三类计数，超限立即返回 503。默认全局研究 8、入库 4、供应商调用 8；入库租约覆盖队列等待与实际执行，结束、异常和队列取消均释放。
+2. research、ingestion、provider 分别计数，形成资源隔离的基础。供应商很慢时，供应商池能够拒绝更多调用；它没有把研究、解析、内存和所有外部 MCP 都变成独立的硬资源隔离区。
+3. 每个 RedisBackend 另有 16 个连接与 16 个在途操作上限，团队模式多空间运行环境的连接池会叠加，当前没有部署共享的 Redis I/O 总池。默认 socket timeout 为 0.3 秒，调用等待的墙钟上限为其两倍；失败后冷却 5 秒。等待超时会返回降级，但底层已开始的线程可能仍在运行，在途名额要等它真正结束才释放。
+4. 当前 `CachedEmbeddingClient.embed` 只在一次输入内用 `dict.fromkeys` 去重。两个请求同时对同一个 key 未命中，仍可能分别进入供应商调用，供应商资源池只限制同时数量，不合并其内容。
+5. 若以后引入 singleflight，应在授权和输入检查后，用明确的模型、参数、凭据作用域与文本身份定位一个共享 Future；首个调用者成为 leader，其余调用者有界等待同一结果。私有部署还可把 workspace 纳入合并键，这属于更保守的新策略；当前缓存 scope 是凭据摘要，并非 workspace ID。
+6. leader 结束后清理共享状态；异常也要释放。一个 follower 取消或超时，不应取消所有用户正在共享的 leader，更不能立即抢占为第二个 leader。leader 必须有独立的调用超时与资源预算，不能把它的生存期绑在第一个 HTTP 连接上。
+
+### 输出与解决的问题
+
+现有输出是有界接纳、清楚的拒绝原因及异常后的资源释放；拟议的 singleflight 输出是多个请求复用一次正在执行的相同读取。前者是 admission/backpressure，后者是工作合并，两者需要共同使用。当前没有持久消息队列、自动排队重试或跨进程请求合并。
+
+### 源码入口
+
+- [Governance.resource](../src/deepsearch_agent/application/governance.py)与[资源配置](GOVERNANCE_CAPACITY.md)：三维原子检查、资源计量和 fail-fast 拒绝。
+- [GovernedExecutor](../src/deepsearch_agent/adapters/governed_calls.py)：入库队列持有租约及取消释放。
+- [RedisBackend/CachedEmbeddingClient](../src/deepsearch_agent/adapters/infrastructure.py)：Redis 有界等待与批内去重。
+- [一次性问答入口](../src/deepsearch_agent/application/library_service.py)：先在锁内创建快照，再申请 research 租约，快照成本尚未被该准入覆盖。
+
+### 概念与失败示例
+
+32 个请求同时读取一个刚过期的热点向量，即使每个请求自身只含一份文本，也可能发生多次回源。给 Redis 加一个更大的连接池不会消除重复计算，还可能更快耗尽付费额度。应先测热点重复调用与拒绝情况，再评估请求合并、TTL 抖动和容量配置。
+
+singleflight 只协调“当前是否已有相同计算”，它的内存表随进程退出丢失；工具账本协调“原逻辑操作是否已有确认结果、是否允许重发”。两个任务的同参数付费步骤可能本来就是不同业务操作，不能只按参数合并。对已经发送却结果未知的付费/写入操作，取消 leader、锁过期或 follower 超时都不能证明远端未执行，仍须保持第 1–2 节的 unknown 策略。
+
+### 面试追问
+
+- **连接池、限流与并发准入有何不同？** 连接池限制连接资源，时间窗口限流限制请求频率，并发准入限制同时占用的工作；它们的边界与计数周期不同。
+- **为什么不让请求一直等信号量？** 无限等待会把过载变成内存积压和长尾；若业务需要排队，还需有界队列、超时、取消、恢复与公平性设计。
+- **singleflight 能保证只收费一次吗？** 不能。它不覆盖进程重启和远端结果未知，也不提供供应商幂等协议。
+- **有 503 能否称“支持高并发”？** 可说已实现并发保护；是否满足业务容量要看固定负载下的成功吞吐量、延迟、拒绝率和资源使用，不能只统计所有 HTTP 返回数。
+
+## 12. 高可用：把恢复能力、持续服务与数据保留分别验收
+
+### 输入
+
+Redis 不可达、API 进程退出、业务数据库故障，或整台机器及其磁盘丢失。故障位置不同，恢复方法与可接受的数据损失也不同，不能用一次进程退出测试覆盖全部情况。
+
+### 执行顺序
+
+1. 先定义服务目标与故障范围：RTO 是允许业务中断的恢复时间目标，RPO 是允许恢复后丢失的数据时间范围目标。它们是目标；只有演练覆盖故障发现、切换/重启、数据恢复及业务重新可用，才能报告该场景实测值。本项目未给出生产 RTO/RPO 承诺。
+2. 当前 Redis 故障绕过缓存并回退本地固定窗口；PostgreSQL 故障使依赖该事实库的业务与 readiness 拒绝接纳，不能改写回旧 SQLite。缓存可丢弃，只表示允许重新计算，不表示可以丢弃费用或工具账本。
+3. 当前 API 退出后依赖持久检查点、工具账本、费用账本、原文和索引快照恢复。已有退出实验支持单进程故障窗口中的恢复行为；启动、检测和接流量仍需要部署系统处理，不等于两个服务副本自动故障切换。
+4. 若扩展 API 多副本，必须先设计共享索引及发布版本、任务归属、文件写入协调、共享准入和账本访问边界。增加副本数不会自动让进程内索引、计数器和 Future 表一致。
+5. Redis Sentinel 提供非分片 Redis 的监测与自动故障切换；Redis Cluster 提供按槽分片及相关故障切换能力。二者都需要相应拓扑与客户端发现/重连配置，不能靠现有单地址 `Redis.from_url` 自动获得。本项目尚未部署、演练这些拓扑。[Redis Sentinel 文档](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/)、[Redis Cluster 规范](https://redis.io/docs/latest/operate/oss_and_stack/reference/cluster-spec/)。
+6. 故障演练分别检查服务恢复、已确认数据保留、未知操作阻断和授权正确性。Redis 复制与故障切换存在其一致性边界，不能由“有主从”推导所有确认写都具备零 RPO；费用和执行账本应按其自身持久性与备份方案验收。[Redis Sentinel 的复制边界](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/)。
+
+### 输出与解决的问题
+
+输出应是一张明确的故障合同：哪些依赖故障允许降级，哪些必须拒绝，丢失什么可以重建，哪些记录必须恢复，恢复后怎样确认可以重新接纳。高可用要求在指定故障范围内维持或恢复服务；“任务能够从检查点继续”只覆盖其中一个部分。
+
+### 源码入口
+
+- [Redis 降级](../src/deepsearch_agent/adapters/infrastructure.py)与[健康检查](../src/deepsearch_agent/web/operations.py)。
+- [IndexService.publish/restore](../src/deepsearch_agent/knowledge/index_service.py)：候选保存成功后切换内存；恢复异常时保护写入。
+- [会话恢复](../src/deepsearch_agent/application/session_runs.py)、[工具执行器](../src/deepsearch_agent/application/tool_execution.py)与[费用治理](../src/deepsearch_agent/application/governance.py)。
+- [停写备份与恢复](BACKEND_RECOVERY_CONSISTENCY.md)、[已有验证边界](GOVERNANCE_VALIDATION_20261020.md)。
+
+### 概念与失败示例
+
+如果只备份业务 PostgreSQL，机器损坏后仍可能丢失本地 `governance.sqlite3`、工具账本、检查点、原文、工作记忆撤销代际与索引快照。服务即使启动，也不能安全推断某次付费请求“没有记录，所以没执行”。恢复方案必须覆盖这些事实源及其一致性边界。
+
+再看分布式锁：A 获得 300ms 租约后发起耗时 2 秒的调用，租约到期，B 再获得锁；A 与 B 可能同时对供应商产生效果。随机 owner token 与比较后释放能避免 A 删除 B 的锁，但不能撤销 A 已发出的调用。需要下游接受的 fencing 或稳定幂等协议、持久状态与未知结果核对；分布式锁本身不是 exactly-once。[Redis 分布式锁文档](https://redis.io/docs/latest/develop/clients/patterns/distributed-locks/)。
+
+### 面试追问
+
+- **Redis 挂了还能回答，就是高可用吗？** 这是缓存依赖的降级行为；API 主机、业务数据库、索引和账本故障仍需单独定义与演练。
+- **Sentinel 和 Cluster 怎么选？** 先区分需要非分片故障切换，还是容量分片与相应可用性；还要评估客户端、复制丢失窗口和运维成本，本项目没有完成任一拓扑验收。
+- **为什么 RPO 不能填 0？** 需要明确确认写的持久边界、复制方式、备份时间点及故障模型；现有进程退出测试无法证明机器或磁盘故障零丢失。
+- **缓存丢失只影响性能吗？** 还会增加回源、Token 费用与拒绝概率，因此需容量与额度保护；它仍不能改变付费 unknown 的重试语义。
+
+## 13. 高性能：先拆开成本，再判断优化能改变哪一段
+
+### 输入
+
+固定语料、模型身份、请求集合和预算下的逐请求记录：接纳/拒绝、快照构造、缓存命中/未命中、检索/重排、供应商等待、核验、持久化耗时，以及 CPU、RSS 和堆内存。只给一个平均响应时间无法定位慢点。
+
+### 执行顺序
+
+1. 先固定统计对象与时间边界：成功吞吐量为完成数除以同一测量区间；同时保留拒绝数、失败数和全请求/成功请求延迟。快速拒绝很多请求可能降低全请求 p95，但不意味着用户完成更多研究。
+2. 关联请求总时延与各阶段耗时，比较命中和未命中样本。当前治理指标已有供应商、研究、研究/入库阶段、缓存事件与资源量；Redis 逐 key 耗时、锁等待及快照单独耗时仍需专门剖析，不能当作已有完整分布式追踪。
+3. 对缓存路径，令一次输入中去重后文本数为 K、未命中数为 M：当前逐 key 执行 K 次 GET、成功回源后 M 次 SET，并将 M 个文本一次传给 delegate；不是逐文本调用模型。若 K 较大且 RTT 可观，才考虑 MGET 或 pipeline 批量访问，并测量序列化、网络和线程创建成本。
+4. 批量读必须恢复原输入顺序与重复项，逐项验证维度、finite 与归一化；批量写必须保持每个值的 TTL 和失败降级语义。pipeline 减少网络往返，不会自动去重供应商请求，也不是读—算—写的原子事务；本项目尚未实现 MGET/pipeline/L1。[Redis pipelining](https://redis.io/docs/latest/develop/using-commands/pipelining/)、[MGET 命令](https://redis.io/docs/latest/commands/mget/)。
+5. 区分 I/O 等待和 CPU 工作。线程可以并行等待供应商/磁盘，但不能据此声称纯 Python 计算获得同等多核加速；向量库可能使用原生计算，需实测。增加进程还会复制内存状态，并触发现有单进程所有权边界。
+6. 对索引成本分开测量：问答 snapshot 是服务浅拷贝加 `restrict_sources` 列表视图，重置该视图的 BM25/ANN 缓存；入库发布则在索引锁内 deepcopy 候选、合并、保存后切换。它们都可能随语料增长产生开销，但不能把两者都描述成“每次问答深拷贝全部向量”，也没有现成实测数字证明谁是主瓶颈。
+
+### 输出与解决的问题
+
+输出应是一个可验证的假设，例如“热点向量未命中造成供应商重复调用”“大量小 GET 的 RTT 占比高”“锁内发布阻塞快照”，以及对应证据与一次有限优化。现有 144 个合成请求中 68 完成、76 保护拒绝的报告证明保护路径可执行，不能推成生产高 QPS、真实模型吞吐量或高可用承诺。
+
+### 源码入口
+
+- [缓存访问与校验](../src/deepsearch_agent/adapters/infrastructure.py)、[真实调用计量边界](../src/deepsearch_agent/adapters/governed_calls.py)。
+- [指标实现](../src/deepsearch_agent/application/governance.py)与[容量脚本](../scripts/benchmark_governance_capacity.py)：逐请求、成功吞吐量、延迟分位数和资源使用。
+- [快照入口](../src/deepsearch_agent/application/library_service.py)、[AuditedAnswerService.snapshot](../src/deepsearch_agent/application/service_base.py)、[restrict_sources](../src/deepsearch_agent/knowledge/knowledge_base.py)。
+- [入库候选深拷贝](../src/deepsearch_agent/workspace/documents.py)与[IndexService.publish](../src/deepsearch_agent/knowledge/index_service.py)。
+
+### 概念与失败示例
+
+设同一请求类型的命中比例为 h，命中、未命中延迟分布分别是 `F_hit(t)`、`F_miss(t)`，混合分布为 `F(t)=h·F_hit(t)+(1-h)·F_miss(t)`。在均值存在且统计边界一致时，可写 `E[T]=h·E[T_hit]+(1-h)·E[T_miss]`；**不能用这个均值公式直接推 p95，也不能把两个 p95 加权平均**。一个请求含多个文本时，还要统计“整请求是否需要回源”，不能直接拿逐 key hit rate 代替 h。
+
+例如 90 个请求耗时 1ms、10 个请求耗时 1000ms，均值为 100.9ms，按 nearest-rank 算 p95 是 1000ms。若变为 96 个 1ms、4 个 1000ms，p95 变为 1ms，p99 仍为 1000ms。各阶段 p95 相加也不等于总时延 p95，尤其存在并行步骤与相关长尾时。第 6 节的 `平均在途量≈到达率×平均停留时间` 同样要求稳定系统与一致测量边界，不能把一次瞬时峰值当作容量保证。
+
+### 面试追问
+
+- **缓存命中率高，p95 为什么仍差？** 少量未命中、热点失效、供应商长尾、锁等待或冷启动可能落在尾部；先看分段和分组分布。
+- **pipeline 就是高性能答案吗？** 只有逐命令 RTT 是主要成本时才可能有效；还需限制批量大小与内存，保留顺序、校验和超时降级。
+- **索引越大越应该加 worker 吗？** 多进程可能放大快照、索引与内存成本；先测当前路径，再解决共享检索和发布一致性。
+- **压测报告中要保留哪些分母？** 总提交、接纳、成功完成、拒绝、失败和测量时长；成功吞吐量与拒绝吞吐量分开。
+
+## 14. Redis 缓存穿透、击穿、雪崩：按故障模式选择保护
+
+### 输入
+
+一批重复或新文本、过期缓存、无效业务 ID，或者不可用的 Redis。首先明确回源对象：Embedding 对任意合法新文本通常都有可计算结果，“缓存里不存在”本身不代表非法或业务不存在。
+
+### 执行顺序
+
+1. 先做输入和授权校验，再查缓存。当前 Embedding 包装器拒绝空白/非字符串文本；key 是 `identity + scope + text` 的摘要，装配时 scope 为 API 凭据摘要。同凭据、同模型身份的不同空间可共享同文本向量；这不是文献授权缓存，向量命中不能授予原文访问权。
+2. 命中后仍验证长度、有限数值和归一化。错误 JSON、NaN、维度变化及坏向量被当作 miss，成功生成且通过验证后才写回；供应商报错不会写成一个“有效空向量”。
+3. 识别故障模式，再选择机制；下表的新增机制均为设计方向，当前没有 negative cache、Bloom、跨请求 singleflight、TTL jitter 或 stale-while-revalidate。
+
+| 模式 | 具体输入与压力 | 可选保护及适用条件 |
+|---|---|---|
+| 穿透 | 反复请求权威业务库确认不存在的 ID，每次都查事实源 | 输入校验、授权、限流；可短 TTL 缓存“确定不存在”，并绑定空间/模型/数据版本等必要身份，新增或授权变化时失效 |
+| 击穿 | 单个热点 key 过期，许多并发请求都回源 | 同身份请求合并、有界回源并发、热点预热；允许旧值时可后台刷新，但须遵守模型身份与授权边界 |
+| 雪崩 | 大量 key 同期过期，或 Redis 整体故障使大范围回源 | TTL 抖动分散过期、分批预热、容量/额度保护与降级；Redis 故障还需独立超时、冷却和依赖告警 |
+
+4. negative cache 只能保存有语义的确定否定，例如在某授权范围与数据版本下 ID 确定不存在；使用短 TTL，并考虑新增数据后的失效。网络超时、模型错误、未授权与“还没算过向量”不能统统写成“不存在”，否则会把临时故障或合法新输入长期屏蔽。
+5. Bloom filter 用于维护一个已知集合的近似成员判断。它可能把不存在元素判断为可能存在；只有集合完整、更新及时且作用域正确时，否定结果才能用于前置过滤。任意新 Embedding 文本没有预先枚举的合法全集，不能用 Bloom 阴性拒绝；集合过期漏加新业务 ID 也会错拒合法请求。[Redis Bloom filter 文档](https://redis.io/docs/latest/develop/data-types/probabilistic/bloom-filter/)。
+6. 若允许失效读取，要明确“旧多久、哪个版本、何时必须回源”。缓存原文、检索结果或答案时，资料撤权与模型/索引身份变化应使相关结果失效；缓存 scope 和 TTL 不能替代授权。失效读只能放宽产品明确允许的时效，不得绕过权限或费用未知核对。
+
+### 输出与解决的问题
+
+输出是有针对性的回源控制，而非一个“用了 Redis”的笼统结论。当前已经有命中校验、批内去重、固定 TTL、Redis 短超时/冷却、限流回退与治理资源/额度保护；这些提供基础保护，但没有消除热点同时回源和大范围过期的问题。详细设计与官方资料见[高并发、高可用、高性能与 Redis 专题](CONCURRENCY_AVAILABILITY_PERFORMANCE_REDIS.md)。
+
+### 源码入口
+
+- [CachedEmbeddingClient.key/valid/embed](../src/deepsearch_agent/adapters/infrastructure.py)：身份、命中验证、批内去重与固定 `ex=cache_ttl`。
+- [适配器装配](../src/deepsearch_agent/application/bootstrap.py)：模型身份、维度和凭据摘要 scope。
+- [RequestLimiter/RedisBackend](../src/deepsearch_agent/adapters/infrastructure.py)：Lua 原子 INCR/首次 EXPIRE、最多 10000 活动来源的本地固定窗口与冷却。
+- [缓存与故障测试](../tests/test_infrastructure.py)、[资源与额度保护](../src/deepsearch_agent/application/governance.py)。
+
+### 概念与失败示例
+
+如果给同一批缓存都设置 86400 秒 TTL，它们在相近时间写入就可能相近时间失效；随机抖动可以分散到期，但无法解决 Redis 完全不可用，也无法保证单个热点只有一个回源者。当前项目使用固定 TTL，不能在面试中说“已经用随机过期防雪崩”。
+
+再如 Redis 故障后，两个 API 进程各自启用本地窗口，各自允许 N 次请求，并不会自动得到部署级 N 次限额。当前部署只支持单 API；本地回退强调存活与有界保护，不能被解读为多副本时严格共享的全局限流。即使 Lua 原子 INCR/EXPIRE 正确，也只覆盖它所在 Redis 的计数操作，不覆盖本地副本、远端付费调用和跨存储事务。
+
+### 面试追问
+
+- **新文本没有缓存就是穿透吗？** 不是；它通常是合法冷 miss。应通过输入长度、授权、配额与并发控制成本，不能把未知文本当成不存在。
+- **为什么负缓存 TTL 要短？** 否定事实可能因新增数据而改变，还必须有版本/失效机制；短 TTL 只是降低陈旧窗口，不能保证正确授权。
+- **Bloom 能替代业务查询吗？** 不能；阳性仍可能不存在，且过滤前提是集合覆盖、更新和作用域正确。
+- **热点锁过期就重试可以吗？** 对纯读取也要限制重复回源；对付费或写入未知，锁过期无法授予重发权限，仍看持久账本与供应商合同。
+
 ## 可执行练习：先用本地合成数据验证机制
 
 以下命令在项目根目录、PowerShell 7 与已有虚拟环境执行。只使用测试与临时合成数据，不需要真实供应商密钥或管理员账号。先设置项目内临时目录；`$practiceId` 每次新生成，避免覆盖历史输出。测试本身仍可能使用模拟网关/故障注入，不表示真实付费服务验收。
@@ -540,6 +703,137 @@ Invoke-RestMethod -Uri ($practiceBase + '/api/governance/alerts')
 ```
 
 真实核对/额度修改属于管理写入，须在具备相应权限且已核实实际记录后按[治理操作说明](GOVERNANCE_CAPACITY.md)执行。工具核对需要原空间 owner/editor，费用核对与部署额度修改需要管理员。证明引用是审计线索，不是系统自动验证过的证据。
+
+### 练习 D：标准库演示热点读取 singleflight
+
+对应第 11、14 节。此例只验证**同一进程里正在执行的相同读取可以合并、follower 等待有超时、leader 失败后能清理**。它使用同步线程、事件和合成返回值，没有 Redis、网络、文件或付费调用；等待顺序由事件确定，不以“睡一会儿大概会重叠”为依据。
+
+`timeout` 只限制 follower 等待，不会强制停止 leader。示例 loader 自己使用有限等待；生产 loader 还需真实下游超时、取消策略、共享状态容量、资源准入与监控。此代码没有持久状态和跨进程协调，不能复制成付费 unknown 自动重试方案。
+
+```powershell
+@'
+from concurrent.futures import Future, ThreadPoolExecutor
+from threading import Event, Lock
+
+class ReadFlights:
+    def __init__(self):
+        self.lock = Lock()
+        self.flights = {}
+
+    def run(self, key, load, timeout=1.0, joined=None):
+        with self.lock:
+            future = self.flights.get(key)
+            leader = future is None
+            if leader:
+                future = Future()
+                self.flights[key] = future
+        if not leader:
+            if joined is not None:
+                joined.set()
+            return future.result(timeout=timeout)
+        try:
+            value = load()
+            future.set_result(value)
+            return value
+        except BaseException as error:
+            future.set_exception(error)
+            raise
+        finally:
+            with self.lock:
+                if self.flights.get(key) is future:
+                    del self.flights[key]
+
+flights = ReadFlights()
+entered, release = Event(), Event()
+calls = []
+value = (0.6, 0.8)  # Immutable result shared by this teaching example.
+
+def load():
+    calls.append('read')  # Only the leader is allowed to call load.
+    entered.set()
+    if not release.wait(timeout=5):
+        raise TimeoutError('synthetic loader budget exceeded')
+    return value
+
+with ThreadPoolExecutor(max_workers=3) as pool:
+    leader = pool.submit(flights.run, 'model/scope/hot-text', load)
+    joined = [Event(), Event()]
+    followers = []
+    try:
+        assert entered.wait(timeout=2)
+        followers = [pool.submit(flights.run, 'model/scope/hot-text', load,
+                                 timeout=3, joined=event) for event in joined]
+        assert all(event.wait(timeout=2) for event in joined)
+        try:
+            flights.run('model/scope/hot-text', load, timeout=0.01)
+        except TimeoutError:
+            pass  # This follower times out; the leader is still running.
+        else:
+            raise AssertionError('follower must have bounded waiting')
+    finally:
+        release.set()
+    assert leader.result(timeout=2) == value
+    assert all(future.result(timeout=2) == value for future in followers)
+assert len(calls) == 1
+
+def fail():
+    raise RuntimeError('synthetic read failure')
+
+try:
+    flights.run('broken-read', fail)
+except RuntimeError:
+    pass
+else:
+    raise AssertionError('leader failure must propagate')
+assert flights.run('broken-read', lambda: value) == value
+assert flights.flights == {}
+print('merged_reads=1 follower_timeout=ok failure_release=ok')
+'@ | .venv/Scripts/python.exe -
+```
+
+预期输出 `merged_reads=1 follower_timeout=ok failure_release=ok`。移除异常路径的清理后，最后一次 `broken-read` 会重放旧异常；移除共享 Future 查找后，合并或同步断言应失败，并可能触发多次 loader。不要把同样的“失败后再调用”练习用于真实付费或写入操作，后者必须遵守第 1–2 节账本合同。
+
+### 练习 E：给故障分类，再确定能否降级与重试
+
+对应第 12、14 节。先独立填写“模式、现有行为、仍需验证的能力”，再与下表核对，不连接真实 Redis，也不修改额度或账本。
+
+| 场景 | 应得到的判断 | 不应作出的推断 |
+|---|---|---|
+| 一个热点向量过期，32 个并发请求都查不到 | 击穿风险；批内去重不合并跨请求，供应商池与额度先限制成本 | 已有 singleflight、只会回源一次 |
+| Redis 整体不可达 | 大范围回源风险；短超时/冷却、缓存绕过、本地限流回退 | Sentinel 已切换；服务已通过整机故障验收 |
+| 用户提交一个从未出现的合法新文本 | 冷 miss；输入、权限与配额检查后可计算 | Bloom 阴性足以拒绝，或该文本必然是穿透攻击 |
+| 文献 ID 确定不存在，稍后管理员新建该文献 | 可讨论短 TTL 负缓存，但要考虑新增失效与授权范围 | 否定结果可以永久缓存或跨空间共享 |
+| 工具 dispatched 后进程退出，Redis 锁随后过期 | 原逻辑付费/写入结果 unknown，等待可信核对或供应商协议 | 锁已过期，因此远端未执行、可以换新操作 ID |
+| API 磁盘损坏，仅恢复业务 PG | 需核查本地账本、检查点、原件和撤销标记是否完整 | 业务表恢复即代表费用、执行事实和资料权限都恢复 |
+
+进一步为“进程退出”和“整机损坏”分别画出检测、恢复数据、启动、恢复任务、允许接纳的时间线；指出 RTO 的业务终点和 RPO 的数据边界。没有演练时间与确认写保留证据时，填写“未实测”，不要从合成容量数字推算。
+
+### 练习 F：用确定样本观察均值、p95 与 p99
+
+对应第 13 节。单位都是毫秒，采用 `ceil(p·N)` 的 nearest-rank 定义；这是统计教学，不是本项目性能测试。这个定义也不等于监控直方图的分桶插值算法。
+
+```powershell
+@'
+from math import ceil
+from statistics import mean
+
+def nearest_rank(values, p):
+    ordered = sorted(values)
+    return ordered[ceil(p * len(ordered)) - 1]
+
+for hits in (90, 96):
+    samples = [1] * hits + [1000] * (100 - hits)
+    p95 = nearest_rank(samples, 0.95)
+    p99 = nearest_rank(samples, 0.99)
+    assert p95 == (1000 if hits == 90 else 1)
+    assert p99 == 1000
+    print(f'hit={hits}% mean={mean(samples):.2f} p95={p95} p99={p99}')
+'@ | .venv/Scripts/python.exe -
+```
+
+预期两行分别为 `hit=90% mean=100.90 p95=1000 p99=1000`、`hit=96% mean=40.96 p95=1 p99=1000`。解释为什么 p95 显著下降时最慢的 4% 请求仍然存在，再说明为什么生产中需要同时看成功吞吐量、拒绝率、命中/未命中分布与资源峰值。
+
+希望结合项目实现继续练习时，可复用练习 B 的 `tests/test_governance.py` 与 `tests/test_infrastructure.py` 入口。后者带真实 Redis 的集成用例只在设置 `TEST_REDIS_URL` 时运行；本次教学不要求开启它，也不新增一轮容量评测。检查测试输出时，应区分 FakeRedis、未监听端口故障测试、真实 Redis 服务三种证据。
 
 ## 面试串讲练习
 

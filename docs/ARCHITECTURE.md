@@ -117,6 +117,8 @@ HTTP 请求、持久研究结果、供应商调用和工具结果分别计量。
 
 ## 配置与数据兼容
 
+高并发、高可用与性能扩展的取舍见 [专题说明](CONCURRENCY_AVAILABILITY_PERFORMANCE_REDIS.md)。当前缓存只做单次输入去重与固定 TTL，没有跨请求 singleflight；Redis 故障冷却和本地回退不是 Sentinel/Cluster。多 API 部署需要共同调整任务认领、共享费用事实、索引版本与存储，不能通过增加 workers 绕开单进程所有权。
+
 `core.paths.PROJECT_ROOT` 集中定位项目根目录，默认指向仓库根；可显式设置 `DEEPSEARCH_ROOT`。模块移动不参与数据目录推算。现有 `create_app(index_path=..., conversation_path=..., trace_path=...)` 注入路径和模型/资料身份仍有效；没有迁移或改写 `.env`、文献、检查点和人工审核文件。
 
 真实模型默认启用父子 Agent。显式 `AGENTIC_RAG_ENABLED=false` 启动失败并提供离线入口提示，避免静默退回旧生产流程。`create_app(search_intent=...)` 同样给出离线迁移提示。旧算法通过 `deepsearch_experiments.legacy.qa.AnswerService` 显式使用；演示仍由配置选择 `DemoAnswerService`。演示和离线快速 QA 共用检索回答实现，不维护两套检索业务。

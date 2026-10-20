@@ -103,6 +103,8 @@ Remove-Item Env:TEST_REDIS_URL
 
 ## 下一阶段
 
-已补充可选的 [用户、工作空间与权限](TEAM_ACCESS.md)，通过独立空间运行环境隔离业务资源，仍不是多副本 SaaS。后续业务化顺序：补持久任务调度、幂等与费用额度，完善备份恢复和运维监控；有容量需求时再设计共享元数据、索引发布与独立 Worker。直接将当前 `DocumentLibrary` 放入 Celery 会失去 API 的内存索引更新，不能这样接入。
+现已提供可选的 [用户、工作空间与权限](TEAM_ACCESS.md)、[持久任务及备份恢复](RELIABILITY_RECOVERY_QUALITY.md)、[工具执行账本](TOOL_EXECUTION_LEDGER.md)和[成本及容量治理](GOVERNANCE_CAPACITY.md)，仍维持单 API 进程。后续需要按容量实测设计共享任务认领、索引版本发布与独立 Worker；直接将当前 `DocumentLibrary` 放入 Celery 会失去 API 的内存索引更新，不能这样接入。
+
+缓存穿透、击穿、雪崩，singleflight/TTL 抖动的适用范围，以及 Sentinel、Cluster 和内存策略取舍见[高并发、高可用、高性能与 Redis 专题](CONCURRENCY_AVAILABILITY_PERFORMANCE_REDIS.md)。这些扩展方案尚未改变当前逐 key 访问、固定 TTL、单实例和本地回退行为。
 
 客户端机制参考 Redis 官方文档：[连接与连接池](https://redis.io/docs/latest/develop/clients/redis-py/connect/)、[超时与生产使用](https://redis.io/docs/latest/develop/clients/redis-py/produsage/)。本项目使用独立的短超时与无自动重试策略，实际故障行为由上面的测试验证。

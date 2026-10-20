@@ -2,6 +2,8 @@
 
 面试与源码导读：[项目技术报告](docs/INTERVIEW_TECHNICAL_REPORT_20261019.md)已更新到 2026-10-20，包含总体架构、模块设计、关键执行链路、恢复与配额机制；[后端工程知识点](docs/BACKEND_ENGINEERING_KNOWLEDGE_20261020.md)按输入、执行顺序、故障场景与源码入口展开。
 
+[高并发、高可用、高性能与 Redis 缓存治理](docs/CONCURRENCY_AVAILABILITY_PERFORMANCE_REDIS.md)结合当前链路解释准入、背压、性能分析、缓存穿透/击穿/雪崩、请求合并与分布式锁，区分现有保护和多副本扩展设计。
+
 最新后端补充：[恢复、工具核对与入库一致性](docs/BACKEND_RECOVERY_CONSISTENCY.md)，包括工作记忆授权恢复、未知调用审计、原任务继续、入库步骤持久化及向量复用。
 
 [运行治理与容量基线](docs/GOVERNANCE_CAPACITY.md) 提供受保护的业务指标、持久告警状态、用户/工作空间成本点配额，以及部署共享的并发准入与合成压测入口。
